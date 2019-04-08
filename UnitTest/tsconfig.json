@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "system",
+    "target": "es6",
+    "sourceMap": true,
+    "outFile": "dist/unittest.js"
+  },
+  "include": [
+    "../Quick/dist/quick.d.ts",
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "assets",
+    "test.js",
+    "test.js.map"
+  ]
+}
