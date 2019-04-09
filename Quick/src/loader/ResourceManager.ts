@@ -5,23 +5,23 @@ namespace QuickEngine {
 	export class ResourceManager {
 
 		private _resourceCacheMap: Dictionary<Resource> = new Dictionary<Resource>();
+		public static readonly instance = new ResourceManager();
 
 		constructor() {
 
 		}
 
-		public load<T extends Resource>(url: string, type: Type): T {
-			let res = this._resourceCacheMap.getValue(url) as T;
+		public load<T extends Resource>(path: string, type: Type): T {
+			let res = this._resourceCacheMap.getValue(path) as T;
 			if (res && res.state != ResState.UnLoaded) {
 				return res;
 			}
 
-			res = new (type.baseType().constructor)() as T;
-			this._resourceCacheMap.add(url, res);
+			// @ts-ignore
+			res = new (type.getConstructor())(path) as T;
+			this._resourceCacheMap.add(path, res);
 
-			Http.get(url, null, null, function (err, data) {
-				res.load(data);
-			}, res, true);
+			res.load();
 
 			return res;
 		}

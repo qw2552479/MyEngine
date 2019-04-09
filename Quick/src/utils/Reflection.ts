@@ -26,6 +26,10 @@
                 return undefined;
             }
 
+            public getConstructor(): Function {
+                return this._cls;
+            }
+
             constructor(cls: Function) {
                 console.assert(!!cls, "类参数不能为空");
                 this._cls = cls;

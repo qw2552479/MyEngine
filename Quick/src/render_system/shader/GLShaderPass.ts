@@ -209,7 +209,7 @@ namespace QuickEngine {
 
             for (let i = 0, len = samplers.length; i < len; i++) {
                 let sampler = samplers[i];
-                if (!sampler.samplerTex || !sampler.samplerTex.isComplete) {
+                if (!sampler.samplerTex || !sampler.samplerTex.getWebGLTexture()) {
                     continue;
                 }
                 gl.uniform1i(sampler.location, sampler.index);        

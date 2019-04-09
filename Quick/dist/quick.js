@@ -75,8 +75,8 @@ var QuickEngine;
                 console.warn('重复调用destroy!');
                 return;
             }
-            this._isDestroyed = true;
             this.onDestroy();
+            this._isDestroyed = true;
         }
         onDestroy() {
         }
@@ -639,25 +639,194 @@ var QuickEngine;
         Timer.update = update;
     })(Timer = QuickEngine.Timer || (QuickEngine.Timer = {}));
 })(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    let UUID;
+    (function (UUID) {
+        // Private array of chars to use  
+        let CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+        function uuid(len, radix) {
+            let chars = CHARS, uuid = [], i;
+            radix = radix || chars.length;
+            if (len) {
+                // Compact form  
+                for (i = 0; i < len; i++)
+                    uuid[i] = chars[0 | Math.random() * radix];
+            }
+            else {
+                // rfc4122, version 4 form  
+                let r;
+                // rfc4122 requires these characters  
+                uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+                uuid[14] = '4';
+                // Fill in random data.  At i==19 set the high bits of clock sequence as  
+                // per rfc4122, sec. 4.1.5  
+                for (i = 0; i < 36; i++) {
+                    if (!uuid[i]) {
+                        r = 0 | Math.random() * 16;
+                        uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                    }
+                }
+            }
+            return uuid.join('');
+        }
+        ;
+        // A more performant, but slightly bulkier, RFC4122v4 solution.  We boost performance  
+        // by minimizing calls to random()  
+        function uuidFast() {
+            let chars = CHARS, uuid = new Array(36), rnd = 0, r;
+            for (let i = 0; i < 36; i++) {
+                if (i == 8 || i == 13 || i == 18 || i == 23) {
+                    uuid[i] = '-';
+                }
+                else if (i == 14) {
+                    uuid[i] = '4';
+                }
+                else {
+                    if (rnd <= 0x02)
+                        rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
+                    r = rnd & 0xf;
+                    rnd = rnd >> 4;
+                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                }
+            }
+            return uuid.join('');
+        }
+        ;
+        // A more compact, but less performant, RFC4122v4 solution:  
+        function newUuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        UUID.newUuid = newUuid;
+        ;
+    })(UUID = QuickEngine.UUID || (QuickEngine.UUID = {}));
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    let Reflection;
+    (function (Reflection) {
+        class Type {
+            constructor(cls) {
+                console.assert(!!cls, "类参数不能为空");
+                this._cls = cls;
+            }
+            /**
+             * 返回当前类型的上一层继承类型
+             *@return {Function}
+             */
+            get baseType() {
+                let proto = this._cls.prototype;
+                if (!proto) {
+                    return undefined;
+                }
+                let parentProto = Object.getPrototypeOf(proto);
+                if (parentProto) {
+                    return parentProto.constructor;
+                }
+                return undefined;
+            }
+            getConstructor() {
+                return this._cls;
+            }
+            static getType(instance) {
+                return new Type(instance.constructor);
+            }
+            static typeOf(cls) {
+                return new Type(cls);
+            }
+            isSubClassOf(superClass) {
+                return superClass._cls.prototype.isPrototypeOf(this._cls);
+            }
+            equal(type) {
+                return this._cls == type._cls;
+            }
+        }
+        Reflection.Type = Type;
+    })(Reflection = QuickEngine.Reflection || (QuickEngine.Reflection = {}));
+})(QuickEngine || (QuickEngine = {}));
+///<reference path="../utils/Reflection.ts"/>
+var QuickEngine;
+///<reference path="../utils/Reflection.ts"/>
+(function (QuickEngine) {
+    class ResourceManager {
+        constructor() {
+            this._resourceCacheMap = new QuickEngine.Dictionary();
+        }
+        load(path, type) {
+            let res = this._resourceCacheMap.getValue(path);
+            if (res && res.state != 0 /* UnLoaded */) {
+                return res;
+            }
+            // @ts-ignore
+            res = new (type.getConstructor())(path);
+            this._resourceCacheMap.add(path, res);
+            res.load();
+            return res;
+        }
+        reload(url, type) {
+            this.unload(url);
+            return this.load(url, type);
+        }
+        unload(url) {
+            let res = this._resourceCacheMap.getValue(url);
+            if (!res) {
+                return;
+            }
+            this._resourceCacheMap.remove(url);
+            res.unload();
+        }
+    }
+    ResourceManager.instance = new ResourceManager();
+    QuickEngine.ResourceManager = ResourceManager;
+})(QuickEngine || (QuickEngine = {}));
 ///<reference path="../core/HashObject.ts" />
+///<reference path="ResourceManager.ts" />
 var QuickEngine;
 ///<reference path="../core/HashObject.ts" />
+///<reference path="ResourceManager.ts" />
 (function (QuickEngine) {
+    class ResourceDependence extends QuickEngine.HashObject {
+        constructor(mainRes, subRes) {
+            super();
+            this._mainRes = mainRes;
+            this._subRes = subRes;
+            this._listener = new QuickEngine.QuickListener(this, ResourceDependence.prototype._onLoaded);
+            subRes._loadedEvent.add(this._listener);
+        }
+        getMainRes() {
+            return this._mainRes;
+        }
+        getSubRes() {
+            return this._subRes;
+        }
+        destroy() {
+            super.destroy();
+            this._subRes._loadedEvent.del(this._listener);
+            this._listener = null;
+            this._subRes = null;
+            this._mainRes = null;
+        }
+        _onLoaded() {
+            this._mainRes._removeDependence(this._subRes);
+        }
+    }
     // Font,Shader,Material,Mesh,Skeleton,Texture,Audio,Video
     class Resource extends QuickEngine.HashObject {
         constructor(name, group) {
             super();
             this._isDisposed = false;
+            this._dependenceFiles = [];
             this._state = 0 /* UnLoaded */;
-            this._event = new QuickEngine.QuickEvent1();
+            this._loadedEvent = new QuickEngine.QuickEvent1();
+            this._unloadedEvent = new QuickEngine.QuickEvent1();
             this._name = name;
             this._group = group;
         }
         get name() {
             return this._name;
-        }
-        set name(val) {
-            this._name = val;
         }
         get priority() {
             return this._priority;
@@ -680,19 +849,15 @@ var QuickEngine;
         copy(object) {
             super.copy(object);
         }
-        preloadImpl() {
-        }
-        postLoadImpl() {
-        }
         preload() {
         }
-        load() {
+        load(data) {
             // 已经加载
             if (this._state == 2 /* Loaded */ || this._state == 1 /* Loading */) {
                 return;
             }
             this._state = 1 /* Loading */;
-            this.loadImpl();
+            this.loadImpl(data);
         }
         unload() {
             if (this._state != 2 /* Loaded */) {
@@ -702,14 +867,36 @@ var QuickEngine;
         }
         reload() {
         }
-        _addDependence(pSubResource) {
+        _onLoad() {
+            this._loadedEvent.dispatchEvent(this);
+        }
+        _addDependence(subResource) {
+            let dep = new ResourceDependence(this, subResource);
+            this._dependenceFiles.push(dep);
         }
         _removeDependence(pSubResource) {
+            let deps = this._dependenceFiles;
+            for (let i = 0, len = deps.length; i < len; i++) {
+                let dep = deps[i];
+                if (dep.instanceId == pSubResource.instanceId) {
+                    dep.destroy();
+                    deps.splice(i, 1);
+                    break;
+                }
+            }
+            if (this._state == 1 /* Loading */ && !this._hasDependencies()) {
+                this._onLoad();
+            }
         }
         _removeAllDependence() {
+            let deps = this._dependenceFiles;
+            for (let k in deps) {
+                deps[k].destroy();
+            }
+            this._dependenceFiles.length = 0;
         }
-        _getDependencies() {
-            return undefined;
+        _hasDependencies() {
+            return this._dependenceFiles.length > 0;
         }
     }
     QuickEngine.Resource = Resource;
@@ -718,12 +905,6 @@ var QuickEngine;
 (function (QuickEngine) {
     let ResourceLoader;
     (function (ResourceLoader) {
-        class ResItem {
-        }
-        ResourceLoader.ResItem = ResItem;
-        function load(item) {
-        }
-        ResourceLoader.load = load;
         //http://www.w3school.com.cn/xmldom/dom_http.asp
         function xhrload(url, callback, thisObj, isAsync = true) {
             let xhr = new XMLHttpRequest();
@@ -2863,7 +3044,7 @@ var QuickEngine;
                 if (xhr.readyState == 4 /* Loaded */) {
                     if (xhr.status == 200) {
                         if (callback) {
-                            callback.call(thisObj, xhr.status, xhr.response);
+                            callback.call(thisObj, null, xhr.response);
                         }
                     }
                     else {
@@ -2876,7 +3057,6 @@ var QuickEngine;
                 }
             };
             xhr.open(method, url, isAsync);
-            xhr.responseType = 'blob';
             xhr.send(body);
             return xhr;
         }
@@ -2890,12 +3070,13 @@ var QuickEngine;
          * @param isAsync
          */
         static get(url, data, header, callback, thisObj, isAsync = true) {
-            return this._send('GET', url, header, callback, thisObj, isAsync);
+            return this._send('GET', url, data, header, callback, thisObj, isAsync);
         }
         static post(url, data, header, callback, thisObj, isAsync = true) {
             return this._send('POST', url, data, header, callback, thisObj, isAsync);
         }
     }
+    QuickEngine.Http = Http;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
@@ -5726,18 +5907,23 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
-    class RenderTarget {
+    class RenderTarget extends QuickEngine.HashObject {
         constructor() {
-            this._rid = undefined;
+            super();
+            this._rid = -1;
+            this._rid = RenderTarget.RdtId++;
+        }
+        get format() {
+            return this._format;
+        }
+        set format(v) {
+            this._format = v;
         }
         get id() {
             return this._rid;
         }
         getTexture() {
             return this._texture;
-        }
-        getWebGLTexture() {
-            return this._texture ? this._texture.webglTex : undefined;
         }
         init() {
             let w = this.width, h = this.height;
@@ -5753,8 +5939,8 @@ var QuickEngine;
             QuickEngine.gl.framebufferTexture2D(QuickEngine.gl.FRAMEBUFFER, QuickEngine.gl.COLOR_ATTACHMENT0, QuickEngine.gl.TEXTURE_2D, webglTex, 0);
             // 用完临时解除绑定
             QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, undefined);
-            this.frameBuffer = frameBuffer;
-            if (this.hasDepthBuffer) {
+            this._frameBuffer = frameBuffer;
+            if (this._hasDepthBuffer) {
                 // 创建深度渲染缓冲对象
                 let renderBuffer = QuickEngine.gl.createRenderbuffer();
                 // 绑定深度渲染缓冲对象
@@ -5765,7 +5951,7 @@ var QuickEngine;
                 QuickEngine.gl.framebufferRenderbuffer(QuickEngine.gl.FRAMEBUFFER, QuickEngine.gl.DEPTH_ATTACHMENT, QuickEngine.gl.RENDERBUFFER, renderBuffer);
                 // 用完临时解除绑定
                 QuickEngine.gl.bindRenderbuffer(QuickEngine.gl.RENDERBUFFER, undefined);
-                this.depthBuffer = renderBuffer;
+                this._depthBuffer = renderBuffer;
             }
             // 检查帧缓冲区完整性, 状态参数参考12.5.4
             let status = QuickEngine.gl.checkFramebufferStatus(QuickEngine.gl.FRAMEBUFFER);
@@ -5781,23 +5967,24 @@ var QuickEngine;
                     }
                 }
                 console.log("Error: Create RenderTarget Failed, format: " + this.format + ".");
-                this.dispose();
+                this.destroy();
             }
             // 用完临时解除绑定
             QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, undefined);
             QuickEngine.GL_CHECK_ERROR();
         }
-        dispose() {
-            if (this.depthBuffer) {
-                QuickEngine.gl.deleteRenderbuffer(this.depthBuffer);
-                this.depthBuffer = undefined;
+        destroy() {
+            super.destroy();
+            if (this._depthBuffer) {
+                QuickEngine.gl.deleteRenderbuffer(this._depthBuffer);
+                this._depthBuffer = undefined;
             }
-            if (this.frameBuffer) {
-                QuickEngine.gl.deleteFramebuffer(this.frameBuffer);
-                this.frameBuffer = undefined;
+            if (this._frameBuffer) {
+                QuickEngine.gl.deleteFramebuffer(this._frameBuffer);
+                this._frameBuffer = undefined;
             }
             if (this._texture) {
-                this._texture.unload();
+                this._texture.destroy();
                 this._texture = undefined;
             }
         }
@@ -5816,14 +6003,20 @@ var QuickEngine;
     *  gl.bindTexture(gl.TEXTURE_2D, webglTex);     // 绑定纹理对象, 绑定时, 会将之前绑定的纹理对象解除绑定
     *  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.imageData);//纹理真正第加载图像
     **/
-    class Texture extends QuickEngine.Resource {
-        constructor(name, group) {
-            super(name, group);
+    class Texture extends QuickEngine.HashObject {
+        constructor() {
+            super();
             this._tid = undefined;
             this._tid = ++Texture.Tid;
         }
         get id() {
             return this._tid;
+        }
+        get name() {
+            return this._name;
+        }
+        set name(val) {
+            this._name = val;
         }
         get width() {
             return this._width;
@@ -5846,6 +6039,9 @@ var QuickEngine;
         get webglTex() {
             return this._webglTex;
         }
+        getWebGLTexture() {
+            return this.webglTex;
+        }
         get usage() {
             return this._usage;
         }
@@ -5862,7 +6058,7 @@ var QuickEngine;
             super.copy(object);
         }
         clone() {
-            let m = new Texture(name);
+            let m = new Texture();
             m.copy(this);
             return m;
         }
@@ -5870,55 +6066,24 @@ var QuickEngine;
             this._image = image;
             this._width = image.width;
             this._height = image.height;
-            this.onLoad();
+            this.createWebGLTexture();
         }
         loadRawData(data, width, height) {
             if (data == undefined) {
-                this.onLoad();
+                this.createWebGLTexture();
                 return;
             }
             this._width = width;
             this._height = height;
             this._imageData = new ImageData(new Uint8ClampedArray(data), width, height);
-            this.onLoad();
+            this.createWebGLTexture();
         }
-        loadBlob(blob, width, height) {
-            let img = document.createElement("img");
-            if (window['createObjectURL'] != undefined) { // basic
-                img.src = window['createObjectURL'](blob);
-            }
-            else if (window['URL'] != undefined) { // mozilla(firefox)
-                img.src = window['URL'].createObjectURL(blob);
-            }
-            else if (window['webkitURL'] != undefined) { // webkit or chrome
-                img.src = window['webkitURL'].createObjectURL(blob);
-            }
-            else {
-                console.error("your browser don't support create image from arraybuffer!");
-                return;
-            }
-            img.onload = () => {
-                this.onLoad();
-            };
-            this._image = img;
-        }
-        loadImpl() {
-            console.assert(!!this._name);
-            QuickEngine.ResourceLoader.xhrload(this._name, (status, data) => {
-                this.loadBlob(data, this.width, this.height);
-            });
-        }
-        unloadImpl() {
+        destroy() {
             if (this._webglTex) {
                 QuickEngine.gl.deleteTexture(this._webglTex);
                 this._webglTex = undefined;
             }
             this._image = undefined;
-        }
-        onLoad() {
-            this.createWebGLTexture();
-            this._state = 2 /* Loaded */;
-            this._event.dispatchEvent(this);
         }
         createWebGLTexture() {
             let webglTex = QuickEngine.gl.createTexture();
@@ -5942,16 +6107,15 @@ var QuickEngine;
             QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_WRAP_T, QuickEngine.gl.CLAMP_TO_EDGE);
             this._webglTex = webglTex;
         }
-        getWebGLTexture() {
-            return this.webglTex;
-        }
     }
     Texture.Tid = 0;
     QuickEngine.Texture = Texture;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
-    QuickEngine.DEF_WHITE_TEX_NAME = "defWhiteTex";
+    var Type = QuickEngine.Reflection.Type;
+    QuickEngine.BUILTIN_DEF_WHITE_TEX_NAME = "__builtin_defWhiteTex";
+    QuickEngine.BUILTIN_DEF_BLACK_TEX_NAME = "__builtin_defBlackTex";
     class TextureManager {
         constructor() {
             this._textureList = [];
@@ -5959,51 +6123,28 @@ var QuickEngine;
             this._renderTargetList = [];
             this._defWhiteTex = undefined;
             this._defBlackTex = undefined;
-            this._emptyWhiteTex = undefined;
             TextureManager._sInstance = this;
-            this._defWhiteTex = this.loadRawData(QuickEngine.DEF_WHITE_TEX_NAME, (new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])).buffer, 2, 2, 0, 4 /* RGBA */, 1 /* STATIC */);
-            this._defBlackTex = this.loadRawData(QuickEngine.DEF_WHITE_TEX_NAME, (new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])).buffer, 2, 2, 0, 4 /* RGBA */, 1 /* STATIC */);
-            this._emptyWhiteTex = this.loadRawData(QuickEngine.DEF_WHITE_TEX_NAME, undefined, 2, 2, 0, 4 /* RGBA */, 1 /* STATIC */);
+            this._defWhiteTex = this.createManual(QuickEngine.BUILTIN_DEF_WHITE_TEX_NAME, 2, 2, 0, 4 /* RGBA */, 1 /* STATIC */);
+            this._defBlackTex = this.createManual(QuickEngine.BUILTIN_DEF_BLACK_TEX_NAME, 2, 2, 0, 4 /* RGBA */, 1 /* STATIC */);
         }
         static get instance() {
             console.assert(!!TextureManager._sInstance);
             return this._sInstance;
         }
-        // TODO: 目前ts插件存在bug，无法正确处理readonly关键字，先加上set函数。等bug修正后除去此函数
-        static set instance(val) {
-        }
         get whiteTex() {
             return this._defWhiteTex;
-        }
-        // TODO: 目前ts插件存在bug，无法正确处理readonly关键字，先加上set函数。等bug修正后除去此函数
-        set whiteTex(value) {
-            this._defWhiteTex = value;
         }
         get blackTex() {
             return this._defBlackTex;
         }
-        set blackTex(value) {
-            this._defBlackTex = value;
-        }
-        get emptyTex() {
-            return this._emptyWhiteTex;
-        }
-        set emptyTex(value) {
-            this._emptyWhiteTex = value;
-        }
-        create(name, mipmaps, format, usage) {
-            let tex = new QuickEngine.Texture(name);
-            tex.mipmaps = mipmaps;
-            tex.format = format;
-            tex.usage = usage;
-            this._textureList.push(tex);
-            this._textureDict[name] = tex;
-            return tex;
-        }
-        createManual(name, w, h, mipmaps, format, usage) {
-            let tex = this.getTexture(name);
+        createManual(path, w, h, mipmaps, format, usage) {
+            let tex = this.getTexture(path);
             if (!tex) {
-                tex = new QuickEngine.Texture(name);
+                let imgRes = QuickEngine.ResourceManager.instance.load(path, Type.typeOf(QuickEngine.ImageResource));
+                imgRes._loadedEvent.add(new class {
+                });
+                tex = new QuickEngine.Texture();
+                tex.name = path;
                 tex.width = w;
                 tex.height = h;
                 tex.mipmaps = mipmaps;
@@ -6011,51 +6152,29 @@ var QuickEngine;
                 tex.usage = usage;
             }
             this._textureList.push(tex);
-            this._textureDict[name] = tex;
-            tex.load();
+            this._textureDict[path] = tex;
             return tex;
         }
-        load(name, mipmaps, format, usage) {
-            if (!name || name == "") {
+        load(path, mipmaps, format, usage) {
+            if (!path || path == "") {
                 return null;
             }
-            let tex = this.getTexture(name);
+            let tex = this.getTexture(path);
             if (!tex) {
-                let tex = new QuickEngine.Texture(name);
+                let tex = new QuickEngine.Texture();
                 tex.mipmaps = mipmaps;
                 tex.format = format;
                 tex.usage = usage;
-                tex.load();
             }
             this._textureList.push(tex);
-            this._textureDict[name] = tex;
-            return tex;
-        }
-        loadImage(name, image, mipmaps, format, usage) {
-            let tex = new QuickEngine.Texture(name);
-            tex.mipmaps = mipmaps;
-            tex.format = format;
-            tex.usage = usage;
-            tex.loadImage(image);
-            this._textureList.push(tex);
-            this._textureDict[name] = tex;
-            return tex;
-        }
-        loadRawData(name, data, width, height, mipmaps, format, usage) {
-            let tex = new QuickEngine.Texture(name);
-            tex.mipmaps = mipmaps;
-            tex.format = format;
-            tex.usage = usage;
-            tex.loadRawData(data, width, height);
-            this._textureList.push(tex);
-            this._textureDict[name] = tex;
+            this._textureDict[path] = tex;
             return tex;
         }
         newRenderTexture(w, h, hasDepthBuffer, format) {
             let tex = new QuickEngine.RenderTarget();
             tex.width = w;
             tex.height = h;
-            tex.hasDepthBuffer = hasDepthBuffer;
+            tex._hasDepthBuffer = hasDepthBuffer;
             tex.format = format;
             tex.init();
             this._renderTargetList.push(tex);
@@ -6471,7 +6590,7 @@ var QuickEngine;
             let textures = QuickEngine.RenderSystem.instance.getCurrentTextures();
             for (let i = 0, len = samplers.length; i < len; i++) {
                 let sampler = samplers[i];
-                if (!sampler.samplerTex || !sampler.samplerTex.isComplete) {
+                if (!sampler.samplerTex || !sampler.samplerTex.getWebGLTexture()) {
                     continue;
                 }
                 QuickEngine.gl.uniform1i(sampler.location, sampler.index);
@@ -6779,7 +6898,8 @@ var QuickEngine;
             QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, renderTarget);
         }
         _setTexture(unit, enable, tex) {
-            if (tex.state !== 2 /* Loaded */) {
+            // 纹理未加载完成时,使用默认纹理
+            if (!tex.getWebGLTexture()) {
                 tex = QuickEngine.TextureManager.instance.whiteTex;
             }
             if (!tex.getWebGLTexture()) {
@@ -7093,130 +7213,140 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
-    let Reflection;
-    (function (Reflection) {
-        class Type {
-            constructor(cls) {
-                console.assert(!!cls, "类参数不能为空");
-                this._cls = cls;
-            }
-            /**
-             * 返回当前类型的上一层继承类型
-             *@return {Function}
-             */
-            get baseType() {
-                let proto = this._cls.prototype;
-                if (!proto) {
-                    return undefined;
-                }
-                let parentProto = Object.getPrototypeOf(proto);
-                if (parentProto) {
-                    return parentProto.constructor;
-                }
-                return undefined;
-            }
-            static getType(instance) {
-                return new Type(instance.constructor);
-            }
-            static typeOf(cls) {
-                return new Type(cls);
-            }
-            isSubClassOf(superClass) {
-                return superClass._cls.prototype.isPrototypeOf(this._cls);
-            }
-            equal(type) {
-                return this._cls == type._cls;
-            }
-        }
-        Reflection.Type = Type;
-    })(Reflection = QuickEngine.Reflection || (QuickEngine.Reflection = {}));
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    let UUID;
-    (function (UUID) {
-        // Private array of chars to use  
-        let CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
-        function uuid(len, radix) {
-            let chars = CHARS, uuid = [], i;
-            radix = radix || chars.length;
-            if (len) {
-                // Compact form  
-                for (i = 0; i < len; i++)
-                    uuid[i] = chars[0 | Math.random() * radix];
-            }
-            else {
-                // rfc4122, version 4 form  
-                let r;
-                // rfc4122 requires these characters  
-                uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
-                uuid[14] = '4';
-                // Fill in random data.  At i==19 set the high bits of clock sequence as  
-                // per rfc4122, sec. 4.1.5  
-                for (i = 0; i < 36; i++) {
-                    if (!uuid[i]) {
-                        r = 0 | Math.random() * 16;
-                        uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
-                    }
-                }
-            }
-            return uuid.join('');
-        }
-        ;
-        // A more performant, but slightly bulkier, RFC4122v4 solution.  We boost performance  
-        // by minimizing calls to random()  
-        function uuidFast() {
-            let chars = CHARS, uuid = new Array(36), rnd = 0, r;
-            for (let i = 0; i < 36; i++) {
-                if (i == 8 || i == 13 || i == 18 || i == 23) {
-                    uuid[i] = '-';
-                }
-                else if (i == 14) {
-                    uuid[i] = '4';
-                }
-                else {
-                    if (rnd <= 0x02)
-                        rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
-                    r = rnd & 0xf;
-                    rnd = rnd >> 4;
-                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
-                }
-            }
-            return uuid.join('');
-        }
-        ;
-        // A more compact, but less performant, RFC4122v4 solution:  
-        function newUuid() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-        UUID.newUuid = newUuid;
-        ;
-    })(UUID = QuickEngine.UUID || (QuickEngine.UUID = {}));
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    class ResourceManager {
-        constructor() {
-            this._resourceCacheMap = new QuickEngine.Dictionary();
-        }
-        load(url, type) {
-            let a = new type();
-            return a;
-        }
-    }
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
     class TextLoader {
-        constructor() {
-        }
-        load(url) {
-            QuickEngine.ResourceLoader.xhrload(url, function () {
+        static load(url, onLoaded, thisObj) {
+            QuickEngine.Http.get(url, null, null, function (err, data) {
+                onLoaded && onLoaded.call(thisObj, err, data);
             }, this, true);
         }
     }
+    QuickEngine.TextLoader = TextLoader;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    class TextResource extends QuickEngine.Resource {
+        constructor(name) {
+            super(name);
+        }
+        get data() {
+            return this._data;
+        }
+        clone() {
+            let obj = new TextResource(this._name);
+            obj._data = this._data;
+            return obj;
+        }
+        loadImpl() {
+            QuickEngine.TextLoader.load(this.name, (err, data) => {
+                if (err || !data) {
+                    console.error('load text failed: ' + this.name + ' error: ' + err);
+                    this._state = 2 /* Loaded */;
+                    this._data = '';
+                    this._onLoad();
+                    return;
+                }
+                this._data = data;
+                this._state = 2 /* Loaded */;
+                this._onLoad();
+            }, this);
+        }
+        unloadImpl() {
+            this._data = null;
+        }
+    }
+    QuickEngine.TextResource = TextResource;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    class ImageLoader {
+        static load(url, onLoaded, thisObj) {
+            let xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function (ev) {
+                if (xhr.readyState == 4 /* Loaded */) {
+                    if (xhr.status == 200) {
+                        ImageLoader.loadBlob(xhr.response, onLoaded, thisObj);
+                    }
+                }
+            };
+            xhr.onerror = function (ev) {
+            };
+            xhr.open("GET", url, true);
+            xhr.responseType = "blob";
+            xhr.send(null);
+        }
+        static loadBlob(blob, onLoaded, thisObj) {
+            let img = document.createElement("img");
+            if (window['createObjectURL'] != undefined) { // basic
+                img.src = window['createObjectURL'](blob);
+            }
+            else if (window['URL'] != undefined) { // mozilla(firefox)
+                img.src = window['URL'].createObjectURL(blob);
+            }
+            else if (window['webkitURL'] != undefined) { // webkit or chrome
+                img.src = window['webkitURL'].createObjectURL(blob);
+            }
+            else {
+                console.error("your browser don't support create image from arraybuffer!");
+                return;
+            }
+            img.onload = () => {
+                onLoaded && onLoaded.call(thisObj, null, img);
+            };
+        }
+    }
+    QuickEngine.ImageLoader = ImageLoader;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    class ImageResource extends QuickEngine.Resource {
+        constructor(name) {
+            super(name);
+            this._DefWhiteTex = new ImageData(new Uint8ClampedArray([255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]), 2, 2);
+            this._DefBlackTex = new ImageData(new Uint8ClampedArray([255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]), 2, 2);
+            this._DefRedTex = new ImageData(new Uint8ClampedArray([255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]), 2, 2);
+            this._width = 0;
+            this._height = 0;
+        }
+        get data() {
+            return this._data;
+        }
+        get width() {
+            return this._width;
+        }
+        set width(w) {
+            this._width = w;
+        }
+        get height() {
+            return this._height;
+        }
+        set height(h) {
+            this._height = h;
+        }
+        clone() {
+            let obj = new ImageResource(this._name);
+            obj._data = this._data;
+            return obj;
+        }
+        loadImpl() {
+            QuickEngine.ImageLoader.load(this.name, (err, data) => {
+                if (err || !data) {
+                    console.error('load text failed: ' + this.name + ' error: ' + err);
+                    this._data = this._DefWhiteTex;
+                    this._state = 2 /* Loaded */;
+                    this._onLoad();
+                    return;
+                }
+                this._data = data;
+                this._width = data.width;
+                this._height = data.height;
+                this._state = 2 /* Loaded */;
+                this._onLoad();
+            }, this);
+        }
+        unloadImpl() {
+            this._data = null;
+        }
+    }
+    QuickEngine.ImageResource = ImageResource;
 })(QuickEngine || (QuickEngine = {}));
 //# sourceMappingURL=quick.js.map

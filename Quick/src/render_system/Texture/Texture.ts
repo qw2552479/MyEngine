@@ -24,14 +24,23 @@
     *  gl.bindTexture(gl.TEXTURE_2D, webglTex);     // 绑定纹理对象, 绑定时, 会将之前绑定的纹理对象解除绑定
     *  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.imageData);//纹理真正第加载图像
     **/
-    export class Texture extends Resource {
+    export class Texture extends HashObject {
 
         private static Tid = 0;
 
-        private _tid: number = undefined;
+        private readonly _tid: number = undefined;
 
         public get id() {
             return this._tid;
+        }
+
+        private _name: string;
+        public get name(): string {
+            return this._name;
+        }
+
+        public set name(val: string) {
+            this._name = val;
         }
         
         protected _width: number;
@@ -63,6 +72,10 @@
             return this._webglTex;
         }
 
+		public getWebGLTexture(): WebGLTexture {
+			return this.webglTex;
+		}
+
         mipmaps: number;
 
         format: PixelFormat;
@@ -85,10 +98,9 @@
             return this._imageData;
         }     
 
-        constructor(name: string, group?: string) {
-            super(name, group);
-
-            this._tid = ++Texture.Tid;           
+        constructor() {
+            super();
+            this._tid = ++Texture.Tid;
         }       
 
         public copy(object: Texture) {
@@ -96,7 +108,7 @@
         }
 
         public clone(): Texture {
-            let m = new Texture(name);
+            let m = new Texture();
             m.copy(this);
             return m;
         }
@@ -105,13 +117,13 @@
             this._image = image;
             this._width = image.width;
             this._height = image.height;
-            this.onLoad();
+
+			this.createWebGLTexture();
         }
 
         public loadRawData(data: ArrayBuffer, width: number, height: number) {
-
             if (data == undefined) {
-                this.onLoad();
+				this.createWebGLTexture();
                 return;
             }
 
@@ -119,55 +131,16 @@
             this._height = height;
             this._imageData = new ImageData(new Uint8ClampedArray(data), width, height);
 
-            this.onLoad();
+            this.createWebGLTexture();
         }
 
-        public loadBlob(blob: Blob, width: number, height: number) {
-
-            let img = document.createElement("img");
-
-            if (window['createObjectURL'] != undefined) { // basic
-                img.src = window['createObjectURL'](blob);
-            } else if (window['URL'] != undefined) { // mozilla(firefox)
-                img.src = window['URL'].createObjectURL(blob);
-            } else if (window['webkitURL'] != undefined) { // webkit or chrome
-                img.src = window['webkitURL'].createObjectURL(blob);
-            } else {
-                console.error("your browser don't support create image from arraybuffer!");
-                return;
-            }
-
-            img.onload = () => {
-                this.onLoad();
-            };
-
-            this._image = img;
-        }
-
-        protected loadImpl() {
-
-            console.assert(!!this._name);
-
-            QuickEngine.ResourceLoader.xhrload(this._name, (status, data: Blob) => {
-                this.loadBlob(data, this.width, this.height);
-            });
-        }
-
-        protected unloadImpl() {
-
+        public destroy() {
             if (this._webglTex) {
                 gl.deleteTexture(this._webglTex);
                 this._webglTex = undefined;
             }
 
             this._image = undefined;
-
-        }
-
-        protected onLoad() {
-            this.createWebGLTexture();
-            this._state = ResState.Loaded;
-            this._loadedEvent.dispatchEvent(this);
         }
 
         protected createWebGLTexture() {
@@ -197,11 +170,5 @@
 
             this._webglTex = webglTex;
         }
-
-        public getWebGLTexture(): WebGLTexture {
-            return this.webglTex;
-        }
-
     }
-
 }

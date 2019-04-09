@@ -17,6 +17,7 @@
             div: div,
             debugMode: false,
         });
+		testTextLoader();
         // testEvent();
         // TestPerformenceArrayBufferAndArray.run();
         // TestGetSet.run();

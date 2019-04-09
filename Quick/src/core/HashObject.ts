@@ -35,8 +35,8 @@ namespace QuickEngine {
                 console.warn('重复调用destroy!');
                 return;
             }
+			this.onDestroy();
             this._isDestroyed = true;
-            this.onDestroy();
         }
 
         protected onDestroy() {

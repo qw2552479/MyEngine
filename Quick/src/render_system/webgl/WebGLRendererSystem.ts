@@ -94,8 +94,8 @@ namespace QuickEngine {
         }
 
         public _setTexture(unit: number, enable: boolean, tex: Texture) {
-
-            if (tex.state !== ResState.Loaded) {
+            // 纹理未加载完成时,使用默认纹理
+            if (!tex.getWebGLTexture()) {
                 tex = TextureManager.instance.whiteTex;
             } 
 

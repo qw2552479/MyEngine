@@ -1,6 +1,7 @@
 ﻿namespace QuickEngine {
-
-    export const DEF_WHITE_TEX_NAME: string = "defWhiteTex";
+    import Type = QuickEngine.Reflection.Type;
+	export const BUILTIN_DEF_WHITE_TEX_NAME: string = "__builtin_defWhiteTex";
+	export const BUILTIN_DEF_BLACK_TEX_NAME: string = "__builtin_defBlackTex";
 
     export class TextureManager {
 
@@ -25,38 +26,25 @@
             return this._defBlackTex;
         }
 
-        protected _emptyWhiteTex: Texture = undefined;
-        public get emptyTex(): Texture {
-            return this._emptyWhiteTex;
-        }
-
         public constructor() {
             TextureManager._sInstance = this; 
 
-            this._defWhiteTex = this.loadRawData(DEF_WHITE_TEX_NAME, (new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])).buffer, 2, 2, 0, PixelFormat.RGBA, TextureUsage.STATIC);
-            this._defBlackTex = this.loadRawData(DEF_WHITE_TEX_NAME, (new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])).buffer, 2, 2, 0, PixelFormat.RGBA, TextureUsage.STATIC);
-            this._emptyWhiteTex = this.loadRawData(DEF_WHITE_TEX_NAME, undefined, 2, 2, 0, PixelFormat.RGBA, TextureUsage.STATIC);
+            this._defWhiteTex = this.createManual(BUILTIN_DEF_WHITE_TEX_NAME, 2, 2, 0, PixelFormat.RGBA, TextureUsage.STATIC);
+            this._defBlackTex = this.createManual(BUILTIN_DEF_BLACK_TEX_NAME, 2, 2, 0, PixelFormat.RGBA, TextureUsage.STATIC);
         }
 
-        public create(name: string, mipmaps: number, format: PixelFormat, usage: TextureUsage) {
+        public createManual(path: string, w: number, h: number, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture {
 
-            let tex = new Texture(name);
-            tex.mipmaps = mipmaps;
-            tex.format = format;
-            tex.usage = usage;
-
-            this._textureList.push(tex);
-            this._textureDict[name] = tex;
-
-            return tex;
-        }
-
-        public createManual(name: string, w: number, h: number, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture {
-
-            let tex = this.getTexture(name);
+            let tex = this.getTexture(path);
 
             if (!tex) {
-                tex = new Texture(name);
+                let imgRes = ResourceManager.instance.load<ImageResource>(path, Type.typeOf(ImageResource));
+				imgRes._loadedEvent.add(new class implements IQuickListener1<Resource> {
+					_func: QuickEngine.Action1<QuickEngine.Resource>;
+					onCall: QuickEngine.Action1<QuickEngine.Resource>;
+				});
+                tex = new Texture();
+                tex.name = path;
                 tex.width = w;
                 tex.height = h;
                 tex.mipmaps = mipmaps;
@@ -65,59 +53,28 @@
             }
 
             this._textureList.push(tex);
-            this._textureDict[name] = tex;
-
-            tex.load();
+            this._textureDict[path] = tex;
 
             return tex;
         }
 
-        public load(name: string, mipmaps: number, format: PixelFormat, usage: TextureUsage) {
+        public load(path: string, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture {
 
-            if (!name || name == "") {
+            if (!path || path == "") {
                 return null;
             }
 
-            let tex = this.getTexture(name);
+            let tex = this.getTexture(path);
 
             if (!tex) {
-                let tex = new Texture(name);
+                let tex = new Texture();
                 tex.mipmaps = mipmaps;
                 tex.format = format;
                 tex.usage = usage;
-                tex.load();
             }
 
             this._textureList.push(tex);
-            this._textureDict[name] = tex;
-
-            return tex;
-        }
-
-        public loadImage(name: string, image: HTMLImageElement, mipmaps: number, format: PixelFormat, usage: TextureUsage) {
-
-            let tex = new Texture(name);
-            tex.mipmaps = mipmaps;
-            tex.format = format;
-            tex.usage = usage;
-            tex.loadImage(image);
-
-            this._textureList.push(tex);
-            this._textureDict[name] = tex;
-
-            return tex;
-        }
-
-        public loadRawData(name: string, data: ArrayBuffer, width: number, height: number, mipmaps: number, format: PixelFormat, usage: TextureUsage) {
-
-            let tex = new Texture(name);
-            tex.mipmaps = mipmaps;
-            tex.format = format;
-            tex.usage = usage;
-            tex.loadRawData(data, width, height);
-
-            this._textureList.push(tex);
-            this._textureDict[name] = tex;
+            this._textureDict[path] = tex;
 
             return tex;
         }
@@ -127,7 +84,7 @@
             let tex = new RenderTarget();
             tex.width = w;
             tex.height = h;
-            tex.hasDepthBuffer = hasDepthBuffer;
+            tex._hasDepthBuffer = hasDepthBuffer;
             tex.format = format;
             tex.init();
 
@@ -139,7 +96,5 @@
         public getTexture(name: string): Texture {
             return this._textureDict[name];
         }
-
     }
-
 }

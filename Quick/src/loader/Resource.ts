@@ -1,6 +1,22 @@
 ﻿///<reference path="../core/HashObject.ts" />
 ///<reference path="ResourceManager.ts" />
 namespace QuickEngine {
+	/**
+	 * 资源加载状态
+	 */
+	export const enum ResState {
+		// 未加载
+		UnLoaded,
+		// 正在加载
+		Loading,
+		// 加载完成
+		Loaded,
+		// 准备完成
+		Prepared,
+		// 正在准备
+		Preparing,
+	}
+
 	class ResourceDependence extends HashObject {
 
 		_mainRes: Resource;
@@ -23,8 +39,8 @@ namespace QuickEngine {
 			return this._subRes;
 		}
 
-		protected onDestroy() {
-			super.onDestroy();
+		public destroy() {
+			super.destroy();
 			this._subRes._loadedEvent.del(this._listener);
 			this._listener = null;
 			this._subRes = null;
@@ -40,15 +56,11 @@ namespace QuickEngine {
 	export abstract class Resource extends HashObject {
 		protected _group: string;
 		protected _isDisposed: boolean = false;
-		protected _dependenceFiles: INumberDictionary<ResourceDependence>;
+		protected _dependenceFiles: Array<ResourceDependence> = [];
 
 		protected _name: string;
 		public get name(): string {
 			return this._name;
-		}
-
-		public set name(val: string) {
-			this._name = val;
 		}
 
 		public _priority: number;
@@ -128,19 +140,20 @@ namespace QuickEngine {
 			this._loadedEvent.dispatchEvent(this);
 		}
 
-		public _addDependence(pSubResource: Resource) {
-			if (this._dependenceFiles[pSubResource.instanceId]) {
-				return;
-			}
-
-			let dep = new ResourceDependence(this, pSubResource);
-			this._dependenceFiles[pSubResource.instanceId] = dep;
+		public _addDependence(subResource: Resource) {
+			let dep = new ResourceDependence(this, subResource);
+			this._dependenceFiles.push(dep);
 		}
 
 		public _removeDependence(pSubResource: Resource) {
-			if (this._dependenceFiles[pSubResource.instanceId]) {
-				this._dependenceFiles[pSubResource.instanceId].destroy();
-				delete this._dependenceFiles[pSubResource.instanceId];
+			let deps = this._dependenceFiles;
+			for (let i = 0, len = deps.length; i < len; i++) {
+				let dep = deps[i];
+				if (dep.instanceId == pSubResource.instanceId) {
+					dep.destroy();
+					deps.splice(i, 1);
+					break;
+				}
 			}
 
 			if (this._state == ResState.Loading && !this._hasDependencies()) {
@@ -153,11 +166,11 @@ namespace QuickEngine {
 			for (let k in deps) {
 				deps[k].destroy();
 			}
-			this._dependenceFiles = {};
+			this._dependenceFiles.length = 0;
 		}
 
 		public _hasDependencies() {
-			return Object.keys(this._dependenceFiles).length > 0;
+			return this._dependenceFiles.length > 0;
 		}
 	}
 

@@ -49,7 +49,7 @@ namespace QuickEngine {
 				if (xhr.readyState == XHRState.Loaded) {
 					if (xhr.status == 200) {
 						if (callback) {
-							callback.call(thisObj, xhr.status, xhr.response);
+							callback.call(thisObj, null, xhr.response);
 						}
 					} else {
 
@@ -64,7 +64,6 @@ namespace QuickEngine {
 			};
 
 			xhr.open(method, url, isAsync);
-			xhr.responseType = 'blob';
 			xhr.send(body);
 
 			return xhr;
@@ -80,7 +79,7 @@ namespace QuickEngine {
 		 * @param isAsync
 		 */
 		public static get(url: string, data?: string | Object, header?: { [key: string]: string }, callback?: (status: number, data: Blob) => void, thisObj?: any, isAsync: boolean = true): XMLHttpRequest {
-			return this._send('GET', url, header, callback, thisObj, isAsync);
+			return this._send('GET', url, data, header, callback, thisObj, isAsync);
 		}
 
 		public static post(url: string, data?: string | Object, header?: { [key: string]: string }, callback?: (status: number, data: Blob) => void, thisObj?: any, isAsync: boolean = true): XMLHttpRequest {

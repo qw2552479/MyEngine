@@ -340,6 +340,25 @@ var UnitTest;
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
+    var ResourceManager = QuickEngine.ResourceManager;
+    var TextResource = QuickEngine.TextResource;
+    var Type = QuickEngine.Reflection.Type;
+    var QuickListener1 = QuickEngine.QuickListener1;
+    class TextAsset {
+        _onLoaded(textRes) {
+            console.log(textRes.data);
+        }
+    }
+    function testTextLoader() {
+        let res = ResourceManager.instance.load('assets/res/test.txt', Type.typeOf(TextResource));
+        let asset = new TextAsset();
+        let listener = new QuickListener1(this, TextAsset.prototype._onLoaded);
+        res._loadedEvent.add(listener);
+    }
+    UnitTest.testTextLoader = testTextLoader;
+})(UnitTest || (UnitTest = {}));
+var UnitTest;
+(function (UnitTest) {
     function initScene() {
         let mainScene = QuickEngine.SceneManager.instance.currentScene;
         let mainCamera = QuickEngine.Camera.MainCamera;
@@ -386,6 +405,7 @@ var UnitTest;
             div: div,
             debugMode: false,
         });
+        UnitTest.testTextLoader();
         // testEvent();
         // TestPerformenceArrayBufferAndArray.run();
         // TestGetSet.run();

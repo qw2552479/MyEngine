@@ -74,6 +74,12 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
+    interface IStringDictionary<TValue> {
+        [key: string]: TValue;
+    }
+    interface INumberDictionary<TValue> {
+        [key: string]: TValue;
+    }
     class Dictionary<TValue> {
         private data;
         private list;
@@ -245,49 +251,40 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
-    abstract class Resource extends HashObject {
-        protected _group: string;
-        protected _isDisposed: boolean;
-        protected _name: string;
-        name: string;
-        _priority: number;
-        priority: number;
-        protected _state: ResState;
-        readonly state: ResState;
-        readonly isComplete: boolean;
-        _event: QuickEvent1<Resource>;
-        protected constructor(name: string, group?: string);
-        isDestroyed(): boolean;
-        destroy(): void;
-        abstract clone(): HashObject;
-        copy(object: HashObject): void;
-        protected preloadImpl(): void;
-        protected postLoadImpl(): void;
-        protected abstract loadImpl(): any;
-        protected abstract unloadImpl(): any;
-        preload(): void;
-        load(): void;
-        unload(): void;
-        reload(): void;
-        _addDependence(pSubResource: Resource): void;
-        _removeDependence(pSubResource: Resource): void;
-        _removeAllDependence(): void;
-        _getDependencies(): any;
+    module UUID {
+        function newUuid(): string;
     }
 }
 declare namespace QuickEngine {
-    /**
-     * 资源类型枚举
-     * @enum {number}
-     */
-    const enum ResType {
-        Text = 0,
-        Json = 1,
-        Binary = 2,
-        Csv = 3,
-        Image = 4,
-        Sound = 5
+    module Reflection {
+        class Type {
+            private readonly _cls;
+            /**
+             * 返回当前类型的上一层继承类型
+             *@return {Function}
+             */
+            readonly baseType: Function;
+            getConstructor(): Function;
+            constructor(cls: Function);
+            static getType(instance: Object): Type;
+            static typeOf(cls: Function): Type;
+            isSubClassOf(superClass: Type): boolean;
+            equal(type: Type): boolean;
+        }
     }
+}
+declare namespace QuickEngine {
+    import Type = QuickEngine.Reflection.Type;
+    class ResourceManager {
+        private _resourceCacheMap;
+        static readonly instance: ResourceManager;
+        constructor();
+        load<T extends Resource>(path: string, type: Type): T;
+        reload<T extends Resource>(url: string, type: Type): T;
+        unload(url: string): void;
+    }
+}
+declare namespace QuickEngine {
     /**
      * 资源加载状态
      */
@@ -298,14 +295,49 @@ declare namespace QuickEngine {
         Prepared = 3,
         Preparing = 4
     }
+    class ResourceDependence extends HashObject {
+        _mainRes: Resource;
+        _subRes: Resource;
+        _listener: QuickListener<ResourceDependence>;
+        constructor(mainRes: any, subRes: any);
+        getMainRes(): Resource;
+        getSubRes(): Resource;
+        destroy(): void;
+        private _onLoaded;
+    }
+    abstract class Resource extends HashObject {
+        protected _group: string;
+        protected _isDisposed: boolean;
+        protected _dependenceFiles: Array<ResourceDependence>;
+        protected _name: string;
+        readonly name: string;
+        _priority: number;
+        priority: number;
+        protected _state: ResState;
+        readonly state: ResState;
+        readonly isComplete: boolean;
+        _loadedEvent: QuickEvent1<Resource>;
+        _unloadedEvent: QuickEvent1<Resource>;
+        protected constructor(name: string, group?: string);
+        isDestroyed(): boolean;
+        destroy(): void;
+        abstract clone(): HashObject;
+        copy(object: HashObject): void;
+        protected abstract loadImpl(data?: ArrayBuffer | Blob | string): any;
+        protected abstract unloadImpl(): any;
+        preload(): void;
+        load(data?: ArrayBuffer | Blob | string): void;
+        unload(): void;
+        reload(): void;
+        protected _onLoad(): void;
+        _addDependence(subResource: Resource): void;
+        _removeDependence(pSubResource: Resource): void;
+        _removeAllDependence(): void;
+        _hasDependencies(): boolean;
+    }
+}
+declare namespace QuickEngine {
     module ResourceLoader {
-        class ResItem {
-            name: string;
-            url: string;
-            type: ResType;
-            state: ResState;
-        }
-        function load(item: ResItem): void;
         function xhrload(url: string, callback?: (status: number, data: Blob) => void, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
         function xhrload2(url: string, callback?: (status: number, data: any) => void, thisObj?: any, isAsync?: boolean): void;
     }
@@ -1071,6 +1103,28 @@ declare namespace QuickEngine {
         Sent = 2,
         Receiving = 3,
         Loaded = 4
+    }
+    /**
+     * @class
+     * @static
+     */
+    class Http /** @lends QuickEngine.Http */ {
+        private static _send;
+        /**
+         *
+         * @param url
+         * @param data
+         * @param header
+         * @param callback
+         * @param thisObj
+         * @param isAsync
+         */
+        static get(url: string, data?: string | Object, header?: {
+            [key: string]: string;
+        }, callback?: (status: number, data: Blob) => void, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
+        static post(url: string, data?: string | Object, header?: {
+            [key: string]: string;
+        }, callback?: (status: number, data: Blob) => void, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
     }
 }
 declare namespace QuickEngine {
@@ -2090,22 +2144,22 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
-    class RenderTarget {
+    class RenderTarget extends HashObject {
         private static RdtId;
         protected _rid: number;
         protected _texture: Texture;
         width: number;
         height: number;
-        frameBuffer: WebGLFramebuffer;
-        depthBuffer: WebGLRenderbuffer;
-        hasDepthBuffer: boolean;
+        _frameBuffer: WebGLFramebuffer;
+        _depthBuffer: WebGLRenderbuffer;
+        _hasDepthBuffer: boolean;
+        private _format;
         format: PixelFormat;
         readonly id: number;
         getTexture(): Texture;
-        getWebGLTexture(): WebGLTexture;
         constructor();
         init(): void;
-        dispose(): void;
+        destroy(): void;
     }
 }
 declare namespace QuickEngine {
@@ -2122,10 +2176,12 @@ declare namespace QuickEngine {
         RENDERTARGET = 32,
         DEFAULT = 21
     }
-    class Texture extends Resource {
+    class Texture extends HashObject {
         private static Tid;
-        private _tid;
+        private readonly _tid;
         readonly id: number;
+        private _name;
+        name: string;
         protected _width: number;
         width: number;
         protected _height: number;
@@ -2134,6 +2190,7 @@ declare namespace QuickEngine {
         resolution: number;
         protected _webglTex: WebGLTexture;
         readonly webglTex: WebGLTexture;
+        getWebGLTexture(): WebGLTexture;
         mipmaps: number;
         format: PixelFormat;
         private _usage;
@@ -2142,39 +2199,31 @@ declare namespace QuickEngine {
         readonly image: HTMLImageElement;
         private _imageData;
         readonly imageData: ImageData;
-        constructor(name: string, group?: string);
+        constructor();
         copy(object: Texture): void;
         clone(): Texture;
         loadImage(image: HTMLImageElement): void;
         loadRawData(data: ArrayBuffer, width: number, height: number): void;
-        loadBlob(blob: Blob, width: number, height: number): void;
-        protected loadImpl(): void;
-        protected unloadImpl(): void;
-        protected onLoad(): void;
+        destroy(): void;
         protected createWebGLTexture(): void;
-        getWebGLTexture(): WebGLTexture;
     }
 }
 declare namespace QuickEngine {
-    const DEF_WHITE_TEX_NAME: string;
+    const BUILTIN_DEF_WHITE_TEX_NAME: string;
+    const BUILTIN_DEF_BLACK_TEX_NAME: string;
     class TextureManager {
         private static _sInstance;
-        static instance: TextureManager;
+        static readonly instance: TextureManager;
         private _textureList;
         private _textureDict;
         private _renderTargetList;
-        private _defWhiteTex;
-        whiteTex: Texture;
-        private _defBlackTex;
-        blackTex: Texture;
-        private _emptyWhiteTex;
-        emptyTex: Texture;
+        protected _defWhiteTex: Texture;
+        readonly whiteTex: Texture;
+        protected _defBlackTex: Texture;
+        readonly blackTex: Texture;
         constructor();
-        create(name: string, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture;
-        createManual(name: string, w: number, h: number, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture;
-        load(name: string, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture;
-        loadImage(name: string, image: HTMLImageElement, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture;
-        loadRawData(name: string, data: ArrayBuffer, width: number, height: number, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture;
+        createManual(path: string, w: number, h: number, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture;
+        load(path: string, mipmaps: number, format: PixelFormat, usage: TextureUsage): Texture;
         newRenderTexture(w: number, h: number, hasDepthBuffer: boolean, format: PixelFormat): RenderTarget;
         getTexture(name: string): Texture;
     }
@@ -2472,28 +2521,40 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
-    module Reflection {
-        class Type {
-            private readonly _cls;
-            /**
-             * 返回当前类型的上一层继承类型
-             *@return {Function}
-             */
-            readonly baseType: Function;
-            constructor(cls: Function);
-            static getType(instance: Object): Type;
-            static typeOf(cls: Function): Type;
-            isSubClassOf(superClass: Type): boolean;
-            equal(type: Type): boolean;
-        }
+    class TextLoader {
+        static load(url: string, onLoaded: (err: any, data: any) => void, thisObj?: Object): void;
     }
 }
 declare namespace QuickEngine {
-    module UUID {
-        function newUuid(): string;
+    class TextResource extends Resource {
+        private _data;
+        readonly data: string;
+        constructor(name: string);
+        clone(): HashObject;
+        protected loadImpl(): void;
+        protected unloadImpl(): void;
     }
 }
 declare namespace QuickEngine {
+    class ImageLoader {
+        static load(url: string, onLoaded: (err: any, data: any) => void, thisObj?: Object): void;
+        static loadBlob(blob: Blob, onLoaded: (err: any, data: any) => void, thisObj?: Object): void;
+    }
 }
 declare namespace QuickEngine {
+    class ImageResource extends Resource {
+        readonly _DefWhiteTex: ImageData;
+        readonly _DefBlackTex: ImageData;
+        readonly _DefRedTex: ImageData;
+        private _data;
+        readonly data: HTMLImageElement | ImageData;
+        private _width;
+        width: number;
+        private _height;
+        height: number;
+        constructor(name: string);
+        clone(): HashObject;
+        protected loadImpl(): void;
+        protected unloadImpl(): void;
+    }
 }
