@@ -8,9 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 var QuickEngine;
 (function (QuickEngine) {
-    QuickEngine.__EDITORMODE__ = false;
+    QuickEngine.__EDITOR_MODE__ = false;
     QuickEngine.__DEBUG__ = true;
-    QuickEngine.__USEWGL__ = true;
     QuickEngine.__PROFILER__ = true;
 })(QuickEngine || (QuickEngine = {}));
 //https://github.com/jsdoc3/jsdoc
@@ -20,8 +19,7 @@ var QuickEngine;
     function run(data) {
         new QuickEngine.WebGLBufferManager();
         new QuickEngine.WebGLRendererSystem(data.div);
-        let sceneManager = new QuickEngine.SceneManager();
-        sceneManager.currentScene = QuickEngine.SceneManager.createScene();
+        new QuickEngine.SceneManager();
         window.onresize = (ev) => {
             let w = window.innerWidth;
             let h = window.innerHeight;
@@ -129,14 +127,12 @@ var QuickEngine;
         get children() {
             return this._rootChildren;
         }
-        set children(val) {
-        }
         createNode(parent) {
             let node = new QuickEngine.Node();
-            let transfrom = node.addComponent(QuickEngine.Transform);
+            let transform = node.addComponent(QuickEngine.Transform);
             this._rootChildren.push(node);
             if (parent) {
-                transfrom.parent = parent;
+                transform.parent = parent;
             }
             return node;
         }
@@ -202,13 +198,15 @@ var QuickEngine;
     class SceneManager {
         constructor() {
             SceneManager._sInstance = this;
+            // 创建默认场景
+            this._currentScene = SceneManager.createScene();
         }
         static get instance() {
             console.assert(!!SceneManager._sInstance);
             return this._sInstance;
         }
-        static set instance(val) {
-            // TODO:
+        get currentScene() {
+            return this.currentScene;
         }
         static createScene() {
             return new QuickEngine.Scene3D();
@@ -4638,7 +4636,7 @@ var QuickEngine;
         }
         addKeyFrame(keyFrame, index) {
             // 检查KeyFrame类型是否一致
-            if (QuickEngine.__EDITORMODE__) {
+            if (QuickEngine.__EDITOR_MODE__) {
                 if (this._keyFrames.length > 0) {
                 }
             }
@@ -4650,7 +4648,7 @@ var QuickEngine;
         }
         addKeyFrameByValue(time, value, inTangent, outTangent, index) {
             // 检查KeyFrame类型是否一致
-            if (QuickEngine.__EDITORMODE__) {
+            if (QuickEngine.__EDITOR_MODE__) {
                 if (this._keyFrames.length > 0) {
                 }
             }
@@ -5653,8 +5651,8 @@ var QuickEngine;
     class SpriteRender extends QuickEngine.Renderable {
         constructor() {
             super();
-            let defmaterial = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
-            this._material = defmaterial;
+            let material = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
+            this._material = material;
             let renderOp = new QuickEngine.RenderOperation();
             renderOp.primCount = 6;
             renderOp.renderOpType = 3 /* TRIANGLE_LIST */;
@@ -5955,7 +5953,6 @@ var QuickEngine;
             }
             this._currentTextures = [];
             this._currentTextures.length = QuickEngine.MAX_NUM_SAMPLER;
-            this._currentShaderPass = undefined;
             this._shaderPassChanged = true;
         }
         static get instance() {
@@ -6054,26 +6051,22 @@ var QuickEngine;
             // ShaderPass
             let passes = shader.shaderPasses;
             for (let i = 0, len = passes.length; i < len; ++i) {
-                let shaderpass = passes[i];
-                let renderState = shaderpass.getRenderState();
+                let pass = passes[i];
+                let renderState = pass.getRenderState();
                 // 设置当前shader pass
-                this.setShaderPass(shaderpass);
+                this.setShaderPass(pass);
                 // 设置渲染状态
                 this.setRenderState(renderState.cullMode, renderState.blendMode, renderState.depthCheck, renderState.colorMask);
                 // 设置纹理
-                let samplers = shaderpass.getSamplers();
+                let samplers = pass.getSamplers();
                 for (let ii = 0, len2 = samplers; ii < samplers.length; ii++) {
                     let sampler = samplers[ii];
                     switch (sampler.bindType) {
                         case 10 /* SAMPLER */:
-                            {
-                                this._setTextureUnitSettings(ii, sampler.samplerTex);
-                            }
+                            this._setTextureUnitSettings(ii, sampler.samplerTex);
                             break;
                         default:
-                            {
-                                // this.setTexture(sampler.index, sampler.samplerTex);
-                            }
+                            // this.setTexture(sampler.index, sampler.samplerTex);
                             break;
                     }
                 }
@@ -6522,14 +6515,14 @@ var QuickEngine;
                 pass.setAttribute(1 /* POSITION */, QuickEngine.gl.getAttribLocation(program.webglProgram, "a_position"));
                 pass.setAttribute(5 /* DIFFUSE */, QuickEngine.gl.getAttribLocation(program.webglProgram, "a_color"));
                 pass.setAttribute(7 /* TEXTURE_COORDINATES */, QuickEngine.gl.getAttribLocation(program.webglProgram, "a_texCoord0"));
-                let sampelers = ["texture0"];
-                for (let i = 0, len = sampelers.length; i < len; i++) {
-                    let sname = sampelers[i];
+                let samplers = ["texture0"];
+                for (let i = 0, len = samplers.length; i < len; i++) {
+                    let samplerName = samplers[i];
                     let s = {
                         index: 0,
-                        name: sname,
+                        name: samplerName,
                         samplerTex: SpriteMaterial._defGLTex,
-                        location: QuickEngine.gl.getUniformLocation(program.webglProgram, sname),
+                        location: QuickEngine.gl.getUniformLocation(program.webglProgram, samplerName),
                         bindType: 10 /* SAMPLER */
                     };
                     pass.addSampler(s);

@@ -16,8 +16,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Quick/src/render_system/webgl/WebGLRendererSystem.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="399">
-              <caret line="21" column="32" lean-forward="true" selection-start-line="21" selection-start-column="32" selection-end-line="21" selection-end-column="32" />
+            <state relative-caret-position="174">
+              <caret line="208" column="21" selection-start-line="208" selection-start-column="21" selection-end-line="208" selection-end-column="21" />
             </state>
           </provider>
         </entry>
@@ -66,8 +66,17 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Quick/src/render_system/RenderSystem.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="334">
-              <caret line="259" column="23" lean-forward="true" selection-start-line="259" selection-start-column="23" selection-end-line="259" selection-end-column="23" />
+            <state relative-caret-position="324">
+              <caret line="274" lean-forward="true" selection-start-line="274" selection-end-line="274" />
+              <folding>
+                <element signature="n#!!block;n#setWorldMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+                <element signature="n#!!block;n#getWorldMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+                <element signature="n#!!block;n#setViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+                <element signature="n#!!block;n#getViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+                <element signature="n#!!block;n#setProjectionMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+                <element signature="n#!!block;n#getProjectionMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+                <element signature="n#!!block;n#getWorldViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -288,27 +297,27 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1555245065400</updated>
-      <workItem from="1555245066757" duration="7668000" />
+      <workItem from="1555245066757" duration="8103000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="7668000" />
+    <option name="totallyTimeSpent" value="8103000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1015" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Favorites" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.24973656" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24973656" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info anchor="bottom" id="TypeScript" weight="0.32905483" />
+      <window_info anchor="bottom" id="TypeScript" visible="true" weight="0.32905483" />
       <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" />
       <window_info anchor="bottom" id="Terminal" />
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info active="true" anchor="bottom" id="Find" order="1" visible="true" weight="0.32905483" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32905483" />
       <window_info anchor="bottom" id="Run" order="2" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3990665" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
@@ -581,13 +590,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Quick/src/render_system/webgl/WebGLRendererSystem.ts">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="21" column="32" lean-forward="true" selection-start-line="21" selection-start-column="32" selection-end-line="21" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/Utils.ts">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -650,10 +652,26 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Quick/src/render_system/webgl/WebGLRendererSystem.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="174">
+          <caret line="208" column="21" selection-start-line="208" selection-start-column="21" selection-end-line="208" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/render_system/RenderSystem.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="334">
-          <caret line="259" column="23" lean-forward="true" selection-start-line="259" selection-start-column="23" selection-end-line="259" selection-end-column="23" />
+        <state relative-caret-position="324">
+          <caret line="274" lean-forward="true" selection-start-line="274" selection-end-line="274" />
+          <folding>
+            <element signature="n#!!block;n#setWorldMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+            <element signature="n#!!block;n#getWorldMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+            <element signature="n#!!block;n#setViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+            <element signature="n#!!block;n#getViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+            <element signature="n#!!block;n#setProjectionMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+            <element signature="n#!!block;n#getProjectionMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+            <element signature="n#!!block;n#getWorldViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
+          </folding>
         </state>
       </provider>
     </entry>

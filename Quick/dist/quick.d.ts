@@ -1,7 +1,6 @@
 declare namespace QuickEngine {
-    let __EDITORMODE__: boolean;
+    let __EDITOR_MODE__: boolean;
     let __DEBUG__: boolean;
-    let __USEWGL__: boolean;
     let __PROFILER__: boolean;
 }
 declare namespace QuickEngine {
@@ -42,7 +41,7 @@ declare namespace QuickEngine {
         private _frameId;
         private _rootChildren;
         constructor();
-        children: Node[];
+        readonly children: Node[];
         createNode(parent?: Transform): Node;
         insertNode(node: Node, index?: number): void;
         removeNode(node: Node): void;
@@ -54,8 +53,9 @@ declare namespace QuickEngine {
 declare namespace QuickEngine {
     class SceneManager {
         private static _sInstance;
-        static instance: SceneManager;
-        currentScene: Scene3D;
+        static readonly instance: SceneManager;
+        protected _currentScene: Scene3D;
+        readonly currentScene: Scene3D;
         static createScene(): Scene3D;
         constructor();
     }
@@ -2136,7 +2136,7 @@ declare namespace QuickEngine {
         protected _time: Vector4;
         protected _clipPlane: Vector4;
         protected _userConst: Vector4[];
-        constructor();
+        protected constructor();
         private _clearState;
         onInit(): void;
         onShutdown(): void;
@@ -2475,7 +2475,7 @@ declare namespace QuickEngine {
     let gl: WebGLRenderingContext;
     function GL_CHECK_ERROR(): void;
     class WebGLRendererSystem extends RenderSystem {
-        private _canvas;
+        protected _canvas: HTMLCanvasElement;
         constructor(div?: HTMLElement);
         clear(mask: ClearMask, color: Number4, depth: number, stencil: number): void;
         setViewport(viewPort: Viewport): void;

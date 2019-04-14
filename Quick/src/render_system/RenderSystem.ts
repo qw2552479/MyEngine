@@ -20,8 +20,8 @@
         protected _textureChanged: boolean[]; // 纹理改变标记
         protected _currentTextures: Texture[]; // 当前使用纹理数组
 
-        protected _shaderPassChanged: boolean;
-        protected _currentShaderPass: WebGLShaderPass;
+        protected _shaderPassChanged: boolean; // shader pass改变标记。改变时，重新绑定GLProgram
+        protected _currentShaderPass: WebGLShaderPass; // 当前shaderPass
 
         protected _currentRenderTarget: RenderTarget;
 
@@ -75,8 +75,7 @@
 
         protected _userConst: Vector4[];
 
-        constructor() {
-
+        protected constructor() {
             this._currentRenderState = new RenderState();
             this._renderStatedChanged = true;
 
@@ -88,7 +87,6 @@
             this._currentTextures = [];
             this._currentTextures.length = MAX_NUM_SAMPLER;
 
-            this._currentShaderPass = undefined;
             this._shaderPassChanged = true;
         }
 
