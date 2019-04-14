@@ -43,7 +43,7 @@ namespace QuickEngine {
         public _23: number = 0;
         public _33: number = 1;
 
-        private _rawdata = new Float32Array(16);
+        private _rawData = new Float32Array(16);
 
         constructor() {
         }
@@ -379,13 +379,13 @@ namespace QuickEngine {
 
         // opengl是列向量矩阵
         public toArrayBuffer(): Float32Array {
-            this._rawdata.set([
+            this._rawData.set([
                 this._00, this._10, this._20, this._30,
                 this._01, this._11, this._21, this._31,
                 this._02, this._12, this._22, this._32,
                 this._03, this._13, this._23, this._33
             ]);
-            return this._rawdata;
+            return this._rawData;
         }
 
         public static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4 {

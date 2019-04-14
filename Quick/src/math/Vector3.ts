@@ -92,7 +92,7 @@ namespace QuickEngine {
         }
 
         /**
-         * Scalar Product 无向积
+         * Scalar Product 乘以标量
          * @param multiplier
          */
         public multiplyScalar(multiplier: number): Vector3 {
@@ -105,7 +105,7 @@ namespace QuickEngine {
         }
 
         /**
-         * 向量积
+         * 乘以向量
          * @param other
          */
         public multiplyVector3(other: Vector3): Vector3 {
@@ -167,6 +167,10 @@ namespace QuickEngine {
             return new Vector3(x, y, z);
         }
 
+        /**
+         * 除以标量
+         * @param val
+         */
         public divide(val: number): Vector3 {
 
             // 不做除0检查
@@ -180,6 +184,10 @@ namespace QuickEngine {
             return new Vector3(x, y, z);
         }
 
+        /**
+         * 除以向量
+         * @param other
+         */
         public divideVector(other: Vector3): Vector3 {
 
             console.assert(other.x > 0 && other.y > 0 && other.z > 0);
@@ -242,7 +250,7 @@ namespace QuickEngine {
          * @param v0
          * @param v1
          */
-        public static distanceSquare(v0: Vector3, v1: Vector3): number {
+        public static sqrDistance(v0: Vector3, v1: Vector3): number {
 
             let dx = v0.x - v1.x;
             let dy = v0.y - v1.y;
