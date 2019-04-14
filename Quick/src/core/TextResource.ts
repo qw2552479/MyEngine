@@ -16,9 +16,9 @@ namespace QuickEngine {
 		}
 
 		protected loadImpl() {
-			TextLoader.load(this.name, (err, data) => {
+			TextLoader.instance.load(this.name, (err, data) => {
 				if (err || !data) {
-					console.error('load text failed: ' + this.name + ' error: ' + err)
+					console.error('load text failed: ' + this.name + ' error: ' + err);
 
 					this._state = ResState.Loaded;
 					this._data = '';

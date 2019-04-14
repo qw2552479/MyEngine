@@ -8,7 +8,7 @@ namespace QuickEngine {
         public static getDefaultSpriteMaterial() {
 
             if (!SpriteMaterial._defGLTex) {
-                SpriteMaterial._defGLTex = TextureManager.instance.whiteTex;
+                SpriteMaterial._defGLTex = ResourceManager.instance.get<Texture>(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
             }
 
             let m = SpriteMaterial._shared;

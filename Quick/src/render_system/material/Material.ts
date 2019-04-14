@@ -139,7 +139,7 @@
         public static getDefaultCubeMaterial() {
 
             if (!Material._defMatGLTex) {
-                Material._defMatGLTex = TextureManager.instance.whiteTex;
+                Material._defMatGLTex = ResourceManager.instance.get<Texture>(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
             }
 
             let m = Material._defaultCubeMaterial;

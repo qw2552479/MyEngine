@@ -96,7 +96,7 @@ namespace QuickEngine {
         public _setTexture(unit: number, enable: boolean, tex: Texture) {
             // 纹理未加载完成时,使用默认纹理
             if (!tex.getWebGLTexture()) {
-                tex = TextureManager.instance.whiteTex;
+                tex = ResourceManager.instance.get<Texture>(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
             } 
 
             if (!tex.getWebGLTexture()) {

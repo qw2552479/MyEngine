@@ -18,17 +18,17 @@
 
         let mainScene: QuickEngine.Scene3D = QuickEngine.SceneManager.instance.currentScene;
 
-        for (let i = 0; i < 10; i++) {
-            let meshNode = mainScene.createNode();
-            let spriteRender = meshNode.addComponent<QuickEngine.SpriteRender>(QuickEngine.SpriteRender);
+        let i = 0;
+        let meshNode = mainScene.createNode();
+        let spriteRender = meshNode.addComponent<QuickEngine.SpriteRender>(QuickEngine.SpriteRender);
 
-            let material = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
-            spriteRender.setMaterial(material);
+        let material = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
+        spriteRender.setMaterial(material);
 
-            material.shader.shaderPasses[0].getSamplers()[0].samplerTex = QuickEngine.TextureManager.instance.load("assets/res/icon.png", 0, QuickEngine.PixelFormat.RGBA, QuickEngine.TextureUsage.STATIC);
+        let tex = QuickEngine.ResourceManager.instance.load<QuickEngine.Texture>("assets/res/icon.png",  QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
+        material.shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
 
-            meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, -11+i * 0.1);
-        }
+        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, -11+i * 0.1);
     }
 
 }

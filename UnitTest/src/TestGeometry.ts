@@ -60,11 +60,10 @@
         setInterval(function () {
             node2.transform.localRotation = rot.FromEulerAngle(new QuickEngine.Vector3(0, y2++, 0));
           //  node2.transform.localPosition = new QuickEngine.Vector3(-1.5 - (x2++)*0.01, 0, 0);
-        }, 100);  
+        }, 100);
 
-        let tex = QuickEngine.TextureManager.instance.load("assets/res/icon.png", 0, QuickEngine.PixelFormat.RGBA, QuickEngine.TextureUsage.STATIC);
+        let tex = QuickEngine.ResourceManager.instance.load<QuickEngine.Texture>("assets/res/icon.png",  QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
         sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
-
     }
 
 }

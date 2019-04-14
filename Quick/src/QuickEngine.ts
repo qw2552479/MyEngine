@@ -8,13 +8,13 @@ namespace QuickEngine {
         clearColor?: Color;
         debugMode?: boolean;
         frameRate?: number;
+        onEnginePrepared?: Function;
     }
 
     export function run(data: RunData) {
 
         new WebGLBufferManager();
         new WebGLRendererSystem(data.div);
-        new TextureManager();
         let sceneManager = new SceneManager();
         sceneManager.currentScene = SceneManager.createScene();
 
@@ -24,9 +24,14 @@ namespace QuickEngine {
             onResize(w, h);  
         };    
 
-        onResize(window.innerWidth, window.innerHeight); 
+        // 准备内置资源
+        ResourceManager.instance.makeBuiltinRes(function () {
+            onResize(window.innerWidth, window.innerHeight);
 
-        frameUpdate(0);
+            frameUpdate(0);
+
+            data.onEnginePrepared && data.onEnginePrepared();
+        })
     }
     
     function frameUpdate(deltaTime: number) {

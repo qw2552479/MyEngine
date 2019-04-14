@@ -29,7 +29,7 @@ var UnitTest;
         let sphereMeshRender = sphereNode.addComponent(QuickEngine.MeshRender);
         sphereMeshRender.mesh = sphereMesh;
         sphereMeshRender.setMaterial(QuickEngine.Material.getDefaultCubeMaterial());
-        let tex = QuickEngine.TextureManager.instance.load("assets/res/icon.png", 0, 4 /* RGBA */, 1 /* STATIC */);
+        let tex = QuickEngine.ResourceManager.instance.load("assets/res/icon.png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
         sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
         sphereNode.transform.localPosition = new QuickEngine.Vector3(1, 0, 0);
         sphereNode.transform.localScale = new QuickEngine.Vector3(0.5, 0.5, 0.5);
@@ -189,11 +189,12 @@ var UnitTest;
         cameraNode.localPosition = new Vector3(0, 0, -10);
         let modelName = "jianshi";
         //    let modelName = "chan";
-        QuickEngine.ResourceLoader.xhrload2("assets/res/model/" + modelName + "/" + modelName + ".mesh.json", function (status, jsondata) {
-            let tex = QuickEngine.TextureManager.instance.load("assets/res/model/" + modelName + "/" + modelName + ".png", 0, 4 /* RGBA */, 1 /* STATIC */);
+        let p = QuickEngine.ResourceManager.instance.loadAsync("assets/res/model/" + modelName + "/" + modelName + ".mesh.json", QuickEngine.Reflection.Type.typeOf(QuickEngine.TextResource));
+        p.then(function (res) {
+            let tex = QuickEngine.ResourceManager.instance.load("assets/res/model/" + modelName + "/" + modelName + ".png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
             Material.getDefaultCubeMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
             let rootNode = mainScene.createNode();
-            let model = QuickEngine.MeshSerializer.loadModel(JSON.parse(jsondata));
+            let model = QuickEngine.MeshSerializer.loadModel(JSON.parse(res.data));
             let transform = model.transform;
             transform.localPosition = new Vector3(0, -1, 0);
             transform.localScale = new Vector3(1, 1, 1);
@@ -253,7 +254,7 @@ var UnitTest;
             node2.transform.localRotation = rot.FromEulerAngle(new QuickEngine.Vector3(0, y2++, 0));
             //  node2.transform.localPosition = new QuickEngine.Vector3(-1.5 - (x2++)*0.01, 0, 0);
         }, 100);
-        let tex = QuickEngine.TextureManager.instance.load("assets/res/icon.png", 0, 4 /* RGBA */, 1 /* STATIC */);
+        let tex = QuickEngine.ResourceManager.instance.load("assets/res/icon.png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
         sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
     }
     UnitTest.testGeometry = testGeometry;
@@ -340,20 +341,13 @@ var UnitTest;
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
-    var ResourceManager = QuickEngine.ResourceManager;
     var TextResource = QuickEngine.TextResource;
     var Type = QuickEngine.Reflection.Type;
-    var QuickListener1 = QuickEngine.QuickListener1;
-    class TextAsset {
-        _onLoaded(textRes) {
-            console.log(textRes.data);
-        }
-    }
     function testTextLoader() {
-        let res = ResourceManager.instance.load('assets/res/test.txt', Type.typeOf(TextResource));
-        let asset = new TextAsset();
-        let listener = new QuickListener1(this, TextAsset.prototype._onLoaded);
-        res._loadedEvent.add(listener);
+        let p = QuickEngine.ResourceManager.instance.loadAsync('assets/res/test.txt', Type.typeOf(TextResource));
+        p.then(function (textRes) {
+            console.log(textRes.data);
+        });
     }
     UnitTest.testTextLoader = testTextLoader;
 })(UnitTest || (UnitTest = {}));
@@ -369,14 +363,14 @@ var UnitTest;
     function testSprite() {
         initScene();
         let mainScene = QuickEngine.SceneManager.instance.currentScene;
-        for (let i = 0; i < 10; i++) {
-            let meshNode = mainScene.createNode();
-            let spriteRender = meshNode.addComponent(QuickEngine.SpriteRender);
-            let material = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
-            spriteRender.setMaterial(material);
-            material.shader.shaderPasses[0].getSamplers()[0].samplerTex = QuickEngine.TextureManager.instance.load("assets/res/icon.png", 0, 4 /* RGBA */, 1 /* STATIC */);
-            meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, -11 + i * 0.1);
-        }
+        let i = 0;
+        let meshNode = mainScene.createNode();
+        let spriteRender = meshNode.addComponent(QuickEngine.SpriteRender);
+        let material = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
+        spriteRender.setMaterial(material);
+        let tex = QuickEngine.ResourceManager.instance.load("assets/res/icon.png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
+        material.shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
+        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, -11 + i * 0.1);
     }
     UnitTest.testSprite = testSprite;
 })(UnitTest || (UnitTest = {}));
@@ -398,23 +392,25 @@ var UnitTest;
 (function (UnitTest) {
     // TODO: 重构测试框架
     function run() {
-        let div = document.getElementById("gameDiv");
+        let div = document.getElementById('gameDiv');
         QuickEngine.run({
             width: 720,
             height: 1280,
             div: div,
             debugMode: false,
+            onEnginePrepared: function () {
+                // testTextLoader();
+                // testEvent();
+                // TestPerformenceArrayBufferAndArray.run();
+                // TestGetSet.run();
+                // testMinHeap();
+                //  UnitTest.TestMatrix.run();
+                UnitTest.testSprite();
+                // testAnimation();
+                // testGeometry();
+                // testFbxModel();
+            }
         });
-        UnitTest.testTextLoader();
-        // testEvent();
-        // TestPerformenceArrayBufferAndArray.run();
-        // TestGetSet.run();
-        // testMinHeap();
-        //  UnitTest.TestMatrix.run();
-        //  testSprite();
-        // testAnimation();
-        // testGeometry();
-        // testFbxModel();
     }
     UnitTest.run = run;
 })(UnitTest || (UnitTest = {}));
@@ -428,14 +424,14 @@ function dumpSceneHierarchy() {
     for (let i = 0; i < currScene.children.length; i++) {
         let rootChild = currScene.children[i];
         let childObj = obj[rootChild.name] = {};
-        childObj["pos"] = [rootChild.transform.localPosition.x, rootChild.transform.localPosition.y, rootChild.transform.localPosition.z];
+        childObj['pos'] = [rootChild.transform.localPosition.x, rootChild.transform.localPosition.y, rootChild.transform.localPosition.z];
         animator = rootChild.getComponent(QuickEngine.Animator);
         function searchChild(rootNode, dict) {
             for (let ii = 0; ii < rootNode.childCount; ii++) {
                 let subChild = rootNode.getChildByIndex(ii);
                 let subChildObj = dict[subChild.node.name] = {};
-                subChildObj["node"] = subChild.node;
-                subChildObj["pos"] = [subChild.localPosition.x, subChild.localPosition.y, subChild.localPosition.z];
+                subChildObj['node'] = subChild.node;
+                subChildObj['pos'] = [subChild.localPosition.x, subChild.localPosition.y, subChild.localPosition.z];
                 searchChild(subChild, subChildObj);
             }
         }

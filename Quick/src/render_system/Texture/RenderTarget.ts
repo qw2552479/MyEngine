@@ -1,6 +1,6 @@
 ﻿namespace QuickEngine {
 
-    export class RenderTarget extends HashObject{
+    export class RenderTarget extends HashObject {
         private static RdtId = 0;
         protected _rid: number = -1;
         protected _texture: Texture;
@@ -38,8 +38,13 @@
             let w = this.width, h = this.height;
             console.assert(w > 0 && h > 0);
 
-            let texture = TextureManager.instance.createManual("RenderTarget" + this._rid, w, h, 0, this.format, TextureUsage.STATIC);
-            this._texture = texture; 
+            let texture = new Texture('RenderTarget' + this._rid);
+            texture.width = w;
+            texture.height = h;
+            texture.mipmaps = 0;
+            texture.format = this.format;
+            texture.usage = TextureUsage.STATIC;
+            this._texture = texture;
 
             let webglTex = texture.getWebGLTexture();
 
@@ -75,18 +80,23 @@
                 if (__DEBUG__) {
                     // TODO: 打印状态描述
                     switch (status) {
-                        case gl.FRAMEBUFFER_UNSUPPORTED: break;
-                        case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT: break;
-                        case gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: break;
-                        case gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS: break;
-                        default: break;
+                        case gl.FRAMEBUFFER_UNSUPPORTED:
+                            break;
+                        case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                            break;
+                        case gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                            break;
+                        case gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                            break;
+                        default:
+                            break;
                     }
                 }
 
-                console.log("Error: Create RenderTarget Failed, format: " + this.format + ".");
+                console.log('Error: Create RenderTarget Failed, format: ' + this.format + '.');
 
                 this.destroy();
-            } 
+            }
 
             // 用完临时解除绑定
             gl.bindFramebuffer(gl.FRAMEBUFFER, undefined);

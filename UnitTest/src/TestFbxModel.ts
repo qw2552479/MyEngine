@@ -22,20 +22,20 @@
 
         let modelName = "jianshi";
     //    let modelName = "chan";
-        QuickEngine.ResourceLoader.xhrload2("assets/res/model/" + modelName + "/" + modelName + ".mesh.json", function (status, jsondata: string) {
-
-            let tex = QuickEngine.TextureManager.instance.load("assets/res/model/" + modelName + "/" + modelName + ".png", 0, QuickEngine.PixelFormat.RGBA, QuickEngine.TextureUsage.STATIC);
+        let p = QuickEngine.ResourceManager.instance.loadAsync<QuickEngine.TextResource>("assets/res/model/" + modelName + "/" + modelName + ".mesh.json", QuickEngine.Reflection.Type.typeOf(QuickEngine.TextResource));
+        p.then(function (res: QuickEngine.TextResource) {
+            let tex = QuickEngine.ResourceManager.instance.load<QuickEngine.Texture>("assets/res/model/" + modelName + "/" + modelName + ".png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
             Material.getDefaultCubeMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
 
             let rootNode = mainScene.createNode();
 
-            let model = QuickEngine.MeshSerializer.loadModel(JSON.parse(jsondata));
+            let model = QuickEngine.MeshSerializer.loadModel(JSON.parse(res.data));
             let transform = model.transform;
             transform.localPosition = new Vector3(0, -1, 0);
             transform.localScale = new Vector3(1, 1, 1);
 
             rootNode.transform.parent = model.transform;
-            
+
             let eulerAngle = new QuickEngine.Vector3(0, 0, 0);
             rootNode.transform.localRotation = rootNode.transform.localRotation.FromEulerAngle(eulerAngle, rootNode.transform.localRotation);
         });

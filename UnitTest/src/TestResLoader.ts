@@ -5,19 +5,11 @@ module UnitTest {
 	import Type = QuickEngine.Reflection.Type;
 	import QuickListener1 = QuickEngine.QuickListener1;
 
-    class TextAsset {
-		_onLoaded(textRes: TextResource) {
-			console.log(textRes.data);
-		}
-	}
-
 	export function testTextLoader() {
-		let res = ResourceManager.instance.load<TextResource>('assets/res/test.txt', Type.typeOf(TextResource));
-
-		let asset = new TextAsset();
-
-		let listener = new QuickListener1<TextAsset, TextResource>(this, TextAsset.prototype._onLoaded);
-		res._loadedEvent.add(listener);
+        let p = QuickEngine.ResourceManager.instance.loadAsync<QuickEngine.TextResource>('assets/res/test.txt', Type.typeOf(TextResource));
+        p.then(function (textRes: TextResource) {
+            console.log(textRes.data);
+        })
 	}
 
 }

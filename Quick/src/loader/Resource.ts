@@ -17,6 +17,36 @@ namespace QuickEngine {
 		Preparing,
 	}
 
+	export class RefObj extends HashObject {
+
+        private _retainCount: number = 1;
+        public get retainCount(): number {
+            return this._retainCount;
+        }
+
+        constructor() {
+			super();
+		}
+
+        public retain() {
+            this._retainCount++;
+        }
+
+        public release() {
+
+            console.assert(this._retainCount > 0, "retain count must greater than 0");
+
+            this._retainCount--;
+            if (this._retainCount == 0) {
+                this.dispose();
+            }
+        }
+
+        public dispose() {
+
+        }
+    }
+
 	class ResourceDependence extends HashObject {
 
 		_mainRes: Resource;
@@ -53,7 +83,7 @@ namespace QuickEngine {
 	}
 
 	// Font,Shader,Material,Mesh,Skeleton,Texture,Audio,Video
-	export abstract class Resource extends HashObject {
+	export abstract class Resource extends RefObj {
 		protected _group: string;
 		protected _isDisposed: boolean = false;
 		protected _dependenceFiles: Array<ResourceDependence> = [];
@@ -62,6 +92,10 @@ namespace QuickEngine {
 		public get name(): string {
 			return this._name;
 		}
+
+        public set name(name: string) {
+            this._name = name;
+        }
 
 		public _priority: number;
 		public get priority(): number {
@@ -84,7 +118,7 @@ namespace QuickEngine {
 		public _loadedEvent: QuickEvent1<Resource> = new QuickEvent1<Resource>();
 		public _unloadedEvent: QuickEvent1<Resource> = new QuickEvent1<Resource>();
 
-		protected constructor(name: string, group?: string) {
+		protected constructor(name?: string, group?: string) {
 			super();
 			this._name = name;
 			this._group = group;
@@ -107,10 +141,6 @@ namespace QuickEngine {
 		protected abstract loadImpl(data?: ArrayBuffer | Blob | string);
 
 		protected abstract unloadImpl();
-
-		public preload() {
-
-		}
 
 		public load(data?: ArrayBuffer | Blob | string) {
 			// 已经加载

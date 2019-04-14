@@ -45,9 +45,8 @@
         sphereMeshRender.mesh = sphereMesh;
         sphereMeshRender.setMaterial(QuickEngine.Material.getDefaultCubeMaterial());
 
-        let tex = QuickEngine.TextureManager.instance.load("assets/res/icon.png", 0, QuickEngine.PixelFormat.RGBA, QuickEngine.TextureUsage.STATIC);
+        let tex = QuickEngine.ResourceManager.instance.load<QuickEngine.Texture>("assets/res/icon.png",  QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
         sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
-
 
         sphereNode.transform.localPosition = new QuickEngine.Vector3(1, 0, 0);
         sphereNode.transform.localScale = new QuickEngine.Vector3(0.5,0.5,0.5);

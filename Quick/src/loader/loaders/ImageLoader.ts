@@ -1,42 +1,32 @@
 namespace QuickEngine {
-	export class ImageLoader {
-		public static load(url: string, onLoaded: (err, data) => void, thisObj?: Object): void {
-			let xhr: XMLHttpRequest = new XMLHttpRequest();
-			xhr.onreadystatechange = function (ev: ProgressEvent) {
-				if (xhr.readyState == XHRState.Loaded) {
-					if (xhr.status == 200) {
-						ImageLoader.loadBlob(xhr.response, onLoaded, thisObj);
-					}
-				}
-			};
+	export class ImageLoader implements IResLoader<HTMLImageElement> {
 
-			xhr.onerror = function (ev: Event) {
+        public static readonly instance: ImageLoader = new ImageLoader();
 
-			};
+        load(path: string, onLoaded: (err: string, data: HTMLImageElement) => void, thisObj?: Object): void {
+            this.loadAsync(path).then(function (data: HTMLImageElement) {
+                onLoaded && onLoaded.call(thisObj, null, data);
+            }).catch(function (err: string) {
+                onLoaded && onLoaded.call(thisObj, err);
+            });
+        }
 
-			xhr.open("GET", url, true);
-			xhr.responseType = "blob";
-			xhr.send(null);
-		}
+        loadAsync(path: string): Promise<HTMLImageElement> {
+            let promise = new Promise<HTMLImageElement>(function (resolve, reject) {
+                let image = new Image();
 
-		public static loadBlob(blob: Blob, onLoaded: (err, data) => void, thisObj?: Object) {
+                image.onload = function () {
+                    resolve(image);
+                };
 
-			let img = document.createElement("img");
+                image.onerror = function () {
+                    reject('load image failed: ' + path);
+                };
 
-			if (window['createObjectURL'] != undefined) { // basic
-				img.src = window['createObjectURL'](blob);
-			} else if (window['URL'] != undefined) { // mozilla(firefox)
-				img.src = window['URL'].createObjectURL(blob);
-			} else if (window['webkitURL'] != undefined) { // webkit or chrome
-				img.src = window['webkitURL'].createObjectURL(blob);
-			} else {
-				console.error("your browser don't support create image from arraybuffer!");
-				return;
-			}
+                image.src = path;
+            });
 
-			img.onload = () => {
-				onLoaded && onLoaded.call(thisObj, null, img);
-			};
-		}
+            return promise;
+        }
 	}
 }
