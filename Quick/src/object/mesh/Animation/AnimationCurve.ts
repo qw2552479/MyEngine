@@ -56,7 +56,7 @@
 
         public addKeyFrame(keyFrame: KeyFrame, index?: number) {
             // 检查KeyFrame类型是否一致
-            if (__EDITORMODE__) {
+            if (__EDITOR_MODE__) {
                 if (this._keyFrames.length > 0) {
                 }
             }
@@ -71,7 +71,7 @@
 
         public addKeyFrameByValue(time: number, value: number, inTangent?: number, outTangent?: number, index?: number) {
             // 检查KeyFrame类型是否一致
-            if (__EDITORMODE__) {
+            if (__EDITOR_MODE__) {
                 if (this._keyFrames.length > 0) {
                 }
             }

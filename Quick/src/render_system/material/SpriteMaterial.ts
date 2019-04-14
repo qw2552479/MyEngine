@@ -37,14 +37,14 @@ namespace QuickEngine {
                 pass.setAttribute(VertexElementSemantic.DIFFUSE, gl.getAttribLocation(program.webglProgram, "a_color"));
                 pass.setAttribute(VertexElementSemantic.TEXTURE_COORDINATES, gl.getAttribLocation(program.webglProgram, "a_texCoord0"));
 
-                let sampelers = ["texture0"];
-                for (let i = 0, len = sampelers.length; i < len; i++) {
-                    let sname = sampelers[i];
+                let samplers = ["texture0"];
+                for (let i = 0, len = samplers.length; i < len; i++) {
+                    let samplerName = samplers[i];
                     let s: TextureSampler = {
                         index: 0,
-                        name: sname,
+                        name: samplerName,
                         samplerTex: SpriteMaterial._defGLTex,
-                        location: gl.getUniformLocation(program.webglProgram, sname),
+                        location: gl.getUniformLocation(program.webglProgram, samplerName),
                         bindType: SamplerBindType.SAMPLER
                     }
                     pass.addSampler(s);

@@ -11,7 +11,7 @@ namespace QuickEngine {
 
     export class WebGLRendererSystem extends RenderSystem {
 
-        private _canvas: HTMLCanvasElement;
+        protected _canvas: HTMLCanvasElement;
 
         public constructor(div?: HTMLElement) {
             super();

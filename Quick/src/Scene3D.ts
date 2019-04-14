@@ -29,18 +29,14 @@ namespace QuickEngine {
             return this._rootChildren;
         }
 
-        public set children(val: Node[])  {
-
-        }
-
         public createNode(parent?: Transform): Node {
             let node: Node = new Node();
-            let transfrom = node.addComponent<Transform>(Transform);
+            let transform = node.addComponent<Transform>(Transform);
 
             this._rootChildren.push(node);
 
             if (parent) {
-                transfrom.parent = parent;
+                transform.parent = parent;
             } 
             
             return node;

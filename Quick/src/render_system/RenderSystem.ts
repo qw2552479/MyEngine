@@ -10,6 +10,7 @@
     export abstract class RenderSystem {
 
         protected static _sInstance: RenderSystem;
+
         public static get instance(): RenderSystem {
             return RenderSystem._sInstance;
         }
@@ -58,7 +59,7 @@
         // direction: 规范化的点方向向量
         // exponent: 用于计算点截止因子的聚光灯指数
         // cutoffAngle: 聚光灯截止角度, 以度数表示
-        protected _lightSpotParam: Vector4; 
+        protected _lightSpotParam: Vector4;
 
         protected _ambient: Vector4; // 环境
         protected _diffuse: Vector4; // 漫反射
@@ -75,7 +76,7 @@
         protected _userConst: Vector4[];
 
         constructor() {
-        
+
             this._currentRenderState = new RenderState();
             this._renderStatedChanged = true;
 
@@ -131,8 +132,8 @@
         public abstract onResize(w: number, h: number): void;
 
         public setWorldMatrix(worldMatrix: Matrix4): void {
-            this._worldMatrix = worldMatrix;    
-            this._isTransformDirty = true;       
+            this._worldMatrix = worldMatrix;
+            this._isTransformDirty = true;
         }
 
         public getWorldMatrix(): Matrix4 {
@@ -141,7 +142,7 @@
 
         public setViewMatrix(viewMatrix: Matrix4): void {
             this._viewMatrix = viewMatrix;
-            this._isTransformDirty = true;       
+            this._isTransformDirty = true;
         }
 
         public getViewMatrix(): Matrix4 {
@@ -150,7 +151,7 @@
 
         public setProjectionMatrix(projectionMatrix: Matrix4): void {
             this._projectionMatrix = projectionMatrix;
-            this._isTransformDirty = true;       
+            this._isTransformDirty = true;
         }
 
         public getProjectionMatrix(): Matrix4 {
@@ -239,7 +240,7 @@
             let renderOp = renderable.getRenderOperation();
 
             this.setMaterial(material);
-           
+
             let worldMatrix = renderable.getWorldTransforms();
             let tempWM = new Matrix4();
             tempWM.copyFrom(worldMatrix);
@@ -247,37 +248,36 @@
 
             // ShaderPass
             let passes = shader.shaderPasses;
-            for (let i = 0, len = passes.length; i < len; ++i)
-            {
-                let shaderpass = passes[i];
-                let renderState = shaderpass.getRenderState();
-               
+            for (let i = 0, len = passes.length; i < len; ++i) {
+                let pass = passes[i];
+                let renderState = pass.getRenderState();
+
                 // 设置当前shader pass
-                this.setShaderPass(shaderpass);
+                this.setShaderPass(pass);
                 // 设置渲染状态
                 this.setRenderState(renderState.cullMode, renderState.blendMode, renderState.depthCheck, renderState.colorMask);
 
                 // 设置纹理
-                let samplers = shaderpass.getSamplers();
+                let samplers = pass.getSamplers();
                 for (let ii = 0, len2 = samplers; ii < samplers.length; ii++) {
                     let sampler = samplers[ii];
                     switch (sampler.bindType) {
-                        case SamplerBindType.SAMPLER: {
+                        case SamplerBindType.SAMPLER:
                             this._setTextureUnitSettings(ii, sampler.samplerTex);
-                        } break;
-                        default: {
+                            break;
+                        default:
                             // this.setTexture(sampler.index, sampler.samplerTex);
-                        } break;
+                            break;
                     }
                 }
 
-                this.renderOperation(renderOp);                
+                this.renderOperation(renderOp);
             }
-        }        
+        }
 
         public readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView) {
 
         }
     }
-          
+
 }

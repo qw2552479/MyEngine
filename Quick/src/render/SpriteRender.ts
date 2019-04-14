@@ -11,8 +11,8 @@
         public constructor() {
             super();    
 
-            let defmaterial = SpriteMaterial.getDefaultSpriteMaterial();
-            this._material = defmaterial;
+            let material = SpriteMaterial.getDefaultSpriteMaterial();
+            this._material = material;
 
             let renderOp = new RenderOperation();
             renderOp.primCount = 6;

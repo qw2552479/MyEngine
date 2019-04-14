@@ -15,8 +15,7 @@ namespace QuickEngine {
 
         new WebGLBufferManager();
         new WebGLRendererSystem(data.div);
-        let sceneManager = new SceneManager();
-        sceneManager.currentScene = SceneManager.createScene();
+        new SceneManager();
 
         window.onresize = (ev: UIEvent) => {
             let w = window.innerWidth;
