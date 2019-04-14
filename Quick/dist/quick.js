@@ -206,7 +206,7 @@ var QuickEngine;
             return this._sInstance;
         }
         get currentScene() {
-            return this.currentScene;
+            return this._currentScene;
         }
         static createScene() {
             return new QuickEngine.Scene3D();

@@ -169,7 +169,7 @@
                             location: gl.getUniformLocation(program.webglProgram, uname)
                         };
                     } else {
-                        let u: GLUniform = {
+                        u = {
                             name: uname,
                             type: UniformType.DIFFUSE,
                             location: gl.getUniformLocation(program.webglProgram, uname)

@@ -28,7 +28,7 @@
         let tex = QuickEngine.ResourceManager.instance.load<QuickEngine.Texture>("assets/res/icon.png",  QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
         material.shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
 
-        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, -11+i * 0.1);
+        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, i * 0.1);
     }
 
 }

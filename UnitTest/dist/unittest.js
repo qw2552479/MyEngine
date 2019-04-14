@@ -370,7 +370,7 @@ var UnitTest;
         spriteRender.setMaterial(material);
         let tex = QuickEngine.ResourceManager.instance.load("assets/res/icon.png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
         material.shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
-        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, -11 + i * 0.1);
+        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, i * 0.1);
     }
     UnitTest.testSprite = testSprite;
 })(UnitTest || (UnitTest = {}));
@@ -405,9 +405,9 @@ var UnitTest;
                 // TestGetSet.run();
                 // testMinHeap();
                 //  UnitTest.TestMatrix.run();
-                UnitTest.testSprite();
+                // testSprite();
                 // testAnimation();
-                // testGeometry();
+                UnitTest.testGeometry();
                 // testFbxModel();
             }
         });

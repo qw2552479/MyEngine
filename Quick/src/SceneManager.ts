@@ -10,7 +10,7 @@
 
         protected _currentScene: Scene3D;
         public get currentScene(): Scene3D {
-            return this.currentScene;
+            return this._currentScene;
         }
 
         public static createScene(): Scene3D {
