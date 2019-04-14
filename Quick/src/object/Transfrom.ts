@@ -123,7 +123,7 @@ namespace QuickEngine {
                 val = localMat.transfromVector3(val);
             }
 
-            this._localPosition.copyFrom(val);
+            this._localPosition.copy(val);
 
             this.needUpdate(false);
         }
@@ -139,7 +139,7 @@ namespace QuickEngine {
          * 设置本地坐标
         */
         public set localPosition(val: Vector3) {
-            this._localPosition.copyFrom(val);
+            this._localPosition.copy(val);
             this.needUpdate(false);
         }
 
@@ -200,7 +200,7 @@ namespace QuickEngine {
          * 设置本地欧拉角
         */
         public set eulerAngle(e: Vector3) {
-            this._eulerAngle.copyFrom(e);
+            this._eulerAngle.copy(e);
             let tempQuat = new Quaternion();
             this.rotation = tempQuat.FromEulerAngle(e);
             this.needUpdate(false);
@@ -222,7 +222,7 @@ namespace QuickEngine {
          * 设置本地欧拉角
         */
         public set localEulerAngle(e: Vector3) {
-            this._localEulerAngle.copyFrom(e);
+            this._localEulerAngle.copy(e);
             this.localRotation = this._localRotation.FromEulerAngle(e);
             this.needUpdate(false);
         }
@@ -238,7 +238,7 @@ namespace QuickEngine {
          * 设置世界缩放
         */
         public set scale(s: Vector3) {
-            this._scale.copyFrom(s);
+            this._scale.copy(s);
             // TODO:
             this.needUpdate(false);
         }
@@ -254,7 +254,7 @@ namespace QuickEngine {
          * 设置本地缩放
         */
         public set localScale(s: Vector3) {
-            this._localScale.copyFrom(s);
+            this._localScale.copy(s);
             this.needUpdate(false);
         }
 
@@ -434,9 +434,9 @@ namespace QuickEngine {
                 // Add altered position vector to parents
                 this._position = tempPos.add(parent.position);
             } else {
-                this._position.copyFrom(this._localPosition);
+                this._position.copy(this._localPosition);
                 this._rotation.copyFrom(this._localRotation);
-                this._scale.copyFrom(this._localScale);
+                this._scale.copy(this._localScale);
             }
 
             Matrix4.makeTransform(this._position, this._rotation, this._scale, this._localToWorldMatrix);

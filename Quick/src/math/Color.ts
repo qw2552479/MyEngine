@@ -5,11 +5,11 @@ namespace QuickEngine {
      */
 	export class Color {
 
-        public static white: Color = new Color();
-        public static black: Color = new Color(0, 0, 0, 255);
-        public static red: Color = new Color(255, 0, 0, 255);
-        public static green: Color = new Color(0, 255, 0, 255);
-        public static blue: Color = new Color(0, 0, 255, 255);
+        public static White: Color = new Color();
+        public static Black: Color = new Color(0, 0, 0, 255);
+        public static Red: Color = new Color(255, 0, 0, 255);
+        public static Green: Color = new Color(0, 255, 0, 255);
+        public static Blue: Color = new Color(0, 0, 255, 255);
 
     	public r: number;
     	public g: number;

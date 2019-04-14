@@ -313,7 +313,7 @@
     //            } break;
     //            case InterpolationMode.Constant: {
     //                // 常数的话,直接使用k1的属性           
-    //                ret = ret.copyFrom(k1.value);
+    //                ret = ret.copy(k1.value);
 
     //            } break;
     //            default: {

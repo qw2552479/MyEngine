@@ -81,7 +81,7 @@
          * 
          * @param m
          */
-        public transfrom(m: Matrix4) {
+        public transform(m: Matrix4) {
 
         }
 

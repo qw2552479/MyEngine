@@ -32,7 +32,7 @@ namespace QuickEngine {
          * 
          * @param other
          */
-        public copyFrom(other: Vector3): Vector3 {
+        public copy(other: Vector3): Vector3 {
             this.x = other.x;
             this.y = other.y;
             this.z = other.z;

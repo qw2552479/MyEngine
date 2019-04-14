@@ -6432,7 +6432,7 @@ var QuickEngine;
                         };
                     }
                     else {
-                        let u = {
+                        u = {
                             name: uname,
                             type: 18 /* DIFFUSE */,
                             location: QuickEngine.gl.getUniformLocation(program.webglProgram, uname)

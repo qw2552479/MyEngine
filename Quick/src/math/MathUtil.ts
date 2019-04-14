@@ -21,7 +21,6 @@ namespace QuickEngine {
         export const RAW_DATA_CONTAINER: Float32Array = new Float32Array(16);
 
         /**
-        * @language zh_CN
         * 把一个值固定在一个范围之内
         * @param value 当前判定的值
         * @param min_inclusive 最小取值
