@@ -5751,25 +5751,6 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
-    // 渲染状态
-    class RenderState {
-        constructor() {
-            this.cullMode = 2 /* BACK */;
-            this.blendMode = 0 /* Normal */;
-            this.depthCheck = 2 /* CHECK_WRITE */;
-            this.colorMask = 15 /* ALL */;
-        }
-    }
-    QuickEngine.RenderState = RenderState;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
     class RenderContext {
         constructor(camera, name) {
             this._clearMode = 7 /* ALL */; // 清除缓冲类型
@@ -5944,31 +5925,6 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
-    class RenderQueue {
-        constructor() {
-            this.solidObjects = [];
-            this.alphaObjects = [];
-        }
-        addRenderable(renderable) {
-            // 不透明对象
-            //TODO:添加不透明对象判断
-            let mat = renderable.getMaterial();
-            if (mat.opacity >= 1) {
-                this.solidObjects.unshift(renderable);
-            }
-            else {
-                this.alphaObjects.push(renderable);
-            }
-        }
-        clear() {
-            this.solidObjects = [];
-            this.alphaObjects = [];
-        }
-    }
-    QuickEngine.RenderQueue = RenderQueue;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
     QuickEngine.MAX_NUM_UNIFORM = 32;
     QuickEngine.MAX_NUM_SAMPLER = 8;
     QuickEngine.MAX_NUM_VELEMENT = 16;
@@ -6112,232 +6068,6 @@ var QuickEngine;
         }
     }
     QuickEngine.RenderSystem = RenderSystem;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    class RenderTarget extends QuickEngine.HashObject {
-        constructor() {
-            super();
-            this._rid = -1;
-            this._rid = RenderTarget.RdtId++;
-        }
-        get format() {
-            return this._format;
-        }
-        set format(v) {
-            this._format = v;
-        }
-        get id() {
-            return this._rid;
-        }
-        getTexture() {
-            return this._texture;
-        }
-        init() {
-            let w = this.width, h = this.height;
-            console.assert(w > 0 && h > 0);
-            let texture = new QuickEngine.Texture('RenderTarget' + this._rid);
-            texture.width = w;
-            texture.height = h;
-            texture.mipmaps = 0;
-            texture.format = this.format;
-            texture.usage = 1 /* STATIC */;
-            this._texture = texture;
-            let webglTex = texture.getWebGLTexture();
-            // 创建帧缓冲
-            let frameBuffer = QuickEngine.gl.createFramebuffer();
-            // 绑定帧缓冲
-            QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, frameBuffer);
-            // 连接创建的2d纹理作为帧缓冲区附着
-            QuickEngine.gl.framebufferTexture2D(QuickEngine.gl.FRAMEBUFFER, QuickEngine.gl.COLOR_ATTACHMENT0, QuickEngine.gl.TEXTURE_2D, webglTex, 0);
-            // 用完临时解除绑定
-            QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, undefined);
-            this._frameBuffer = frameBuffer;
-            if (this._hasDepthBuffer) {
-                // 创建深度渲染缓冲对象
-                let renderBuffer = QuickEngine.gl.createRenderbuffer();
-                // 绑定深度渲染缓冲对象
-                QuickEngine.gl.bindRenderbuffer(QuickEngine.gl.RENDERBUFFER, renderBuffer);
-                // 指定保存在渲染缓冲区的图像大小和格式, 格式参数参考OPengl3.0 第12章 12.4.2渲染缓冲区格式
-                QuickEngine.gl.renderbufferStorage(QuickEngine.gl.RENDERBUFFER, QuickEngine.gl.DEPTH_COMPONENT16, w, h);
-                // 连接渲染缓冲区作为帧缓冲区附着
-                QuickEngine.gl.framebufferRenderbuffer(QuickEngine.gl.FRAMEBUFFER, QuickEngine.gl.DEPTH_ATTACHMENT, QuickEngine.gl.RENDERBUFFER, renderBuffer);
-                // 用完临时解除绑定
-                QuickEngine.gl.bindRenderbuffer(QuickEngine.gl.RENDERBUFFER, undefined);
-                this._depthBuffer = renderBuffer;
-            }
-            // 检查帧缓冲区完整性, 状态参数参考12.5.4
-            let status = QuickEngine.gl.checkFramebufferStatus(QuickEngine.gl.FRAMEBUFFER);
-            if (status != QuickEngine.gl.FRAMEBUFFER_COMPLETE) {
-                if (QuickEngine.__DEBUG__) {
-                    // TODO: 打印状态描述
-                    switch (status) {
-                        case QuickEngine.gl.FRAMEBUFFER_UNSUPPORTED:
-                            break;
-                        case QuickEngine.gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-                            break;
-                        case QuickEngine.gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-                            break;
-                        case QuickEngine.gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                console.log('Error: Create RenderTarget Failed, format: ' + this.format + '.');
-                this.destroy();
-            }
-            // 用完临时解除绑定
-            QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, undefined);
-            QuickEngine.GL_CHECK_ERROR();
-        }
-        destroy() {
-            super.destroy();
-            if (this._depthBuffer) {
-                QuickEngine.gl.deleteRenderbuffer(this._depthBuffer);
-                this._depthBuffer = undefined;
-            }
-            if (this._frameBuffer) {
-                QuickEngine.gl.deleteFramebuffer(this._frameBuffer);
-                this._frameBuffer = undefined;
-            }
-            if (this._texture) {
-                this._texture.destroy();
-                this._texture = undefined;
-            }
-        }
-    }
-    RenderTarget.RdtId = 0;
-    QuickEngine.RenderTarget = RenderTarget;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    ;
-    // 每个顶点都有一个纹理坐标.2D纹理坐标用2d坐标(s, t)表示,也称作(u, v)
-    // 纹理图像的左下角由st坐标(0.0, 0.0)指定, 右上角st坐标(1.0, 1.0)指定. 坐标区间为[0.0, 1.0], 区间外坐标也是允许的.
-    // 纹理绑定步骤:
-    /*
-    *  let webglTex = gl.createTexture();           // 生成gl纹理对象
-    *  gl.bindTexture(gl.TEXTURE_2D, webglTex);     // 绑定纹理对象, 绑定时, 会将之前绑定的纹理对象解除绑定
-    *  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.imageData);//纹理真正第加载图像
-    **/
-    class Texture extends QuickEngine.Resource {
-        constructor(name) {
-            super(name);
-            this._tid = undefined;
-            this._tid = ++Texture.Tid;
-        }
-        get id() {
-            return this._tid;
-        }
-        get width() {
-            return this._width;
-        }
-        set width(width) {
-            this._width = width;
-        }
-        get height() {
-            return this._height;
-        }
-        set height(height) {
-            this._height = height;
-        }
-        get resolution() {
-            return this._resolution;
-        }
-        set resolution(resolution) {
-            this._resolution = resolution;
-        }
-        get webglTex() {
-            return this._webglTex;
-        }
-        getWebGLTexture() {
-            return this.webglTex;
-        }
-        get usage() {
-            return this._usage;
-        }
-        set usage(usage) {
-            this._usage = usage;
-        }
-        get image() {
-            return this._image;
-        }
-        get imageData() {
-            return this._imageData;
-        }
-        copy(object) {
-            super.copy(object);
-        }
-        clone() {
-            let m = new Texture();
-            m.copy(this);
-            return m;
-        }
-        loadImage(image) {
-            this._image = image;
-            this._width = image.width;
-            this._height = image.height;
-            this.createWebGLTexture();
-        }
-        loadRawData(data, width, height) {
-            if (data == undefined) {
-                this.createWebGLTexture();
-                return;
-            }
-            this._width = width;
-            this._height = height;
-            this._imageData = new ImageData(new Uint8ClampedArray(data), width, height);
-            this.createWebGLTexture();
-        }
-        destroy() {
-            if (this._webglTex) {
-                QuickEngine.gl.deleteTexture(this._webglTex);
-                this._webglTex = undefined;
-            }
-            this._image = undefined;
-        }
-        createWebGLTexture() {
-            let webglTex = QuickEngine.gl.createTexture();
-            QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, webglTex);
-            // 参数介绍,OpenGLES3.0编程指南,第九章纹理
-            // opengl纹理左下角为起点, 纹理坐标是右上角为起点
-            QuickEngine.gl.pixelStorei(QuickEngine.gl.UNPACK_FLIP_Y_WEBGL, 1);
-            QuickEngine.gl.pixelStorei(QuickEngine.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
-            QuickEngine.GL_CHECK_ERROR();
-            if (this._image) {
-                QuickEngine.gl.texImage2D(QuickEngine.gl.TEXTURE_2D, 0, QuickEngine.gl.RGBA, QuickEngine.gl.RGBA, QuickEngine.gl.UNSIGNED_BYTE, this._image);
-            }
-            else if (this._imageData) {
-                QuickEngine.gl.texImage2D(QuickEngine.gl.TEXTURE_2D, 0, QuickEngine.gl.RGBA, QuickEngine.gl.RGBA, QuickEngine.gl.UNSIGNED_BYTE, this._imageData);
-            }
-            //texImage2D(target: number, level: number, internalformat: number, format: number, type: number, pixels: ImageData): void;
-            //texImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: ArrayBufferView): void;
-            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_MIN_FILTER, QuickEngine.gl.LINEAR);
-            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_MAG_FILTER, QuickEngine.gl.LINEAR);
-            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_WRAP_S, QuickEngine.gl.CLAMP_TO_EDGE);
-            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_WRAP_T, QuickEngine.gl.CLAMP_TO_EDGE);
-            this._webglTex = webglTex;
-        }
-        loadImpl() {
-            let self = this;
-            QuickEngine.ImageLoader.instance.loadAsync(this.name).then(function (data) {
-                self._image = data;
-                self._width = data.width;
-                self._height = data.height;
-                self._state = 2 /* Loaded */;
-                self._onLoad();
-            }).catch(function (err) {
-                console.error('load text failed: ' + this.name + ' error: ' + err);
-                self._state = 2 /* Loaded */;
-                self._onLoad();
-            });
-        }
-        unloadImpl() {
-        }
-    }
-    Texture.Tid = 0;
-    QuickEngine.Texture = Texture;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
@@ -6821,163 +6551,327 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
-    var ShaderChunks;
-    (function (ShaderChunks) {
-        // json
-        /*
-        {
-            attributes: [
-                type,
-            ],
-            unifroms: [
-                {
-                    name:"xxx",
-                    type:"xxx",
-                    default:"xxx",
-                }
-            ],
-            vsCode: string,
-            fsCode: string,
-    
-            pass: [
-                
-            ]
+    QuickEngine.ResponseType_Default = ""; //""(空字符串)	字符串(默认值)
+    QuickEngine.ResponseType_ArrayBuffer = "arraybuffer"; //"arraybuffer"	ArrayBuffer
+    QuickEngine.ResponseType_Blob = "blob"; //"blob"	    Blob
+    QuickEngine.ResponseType_Document = "document"; //"document"	Document
+    QuickEngine.ResponseType_Json = "json"; //"json"	    JavaScript 对象，解析自服务器传递回来的JSON 字符串。
+    QuickEngine.ResponseType_Text = "text"; //"text"	    字符串
+    let DownloadHelper;
+    (function (DownloadHelper) {
+        const MaxDownloadCount = 4;
+        let _downloadQueue = [];
+        let _taskCount = 0;
+        function download(task) {
+            _downloadQueue.push(task);
+            _download();
         }
-        */
-        ShaderChunks.defaultSpriteShadervs = `
-        attribute vec3 a_position;
-        attribute vec4 a_color;
-        attribute vec2 a_texCoord0;
-        uniform mat4 mvpMatrix;
-        varying vec4 v_color;
-        varying vec2 v_texCoord0;
-        void main(void){
-            v_color = a_color;
-            v_texCoord0 = a_texCoord0;
-	        gl_Position = mvpMatrix * vec4(a_position, 1.0);
-        }`;
-        ShaderChunks.defaultSpriteShaderfs = `
-        precision mediump float;
-        uniform sampler2D texture0; 
-        varying vec4 v_color;
-        varying vec2 v_texCoord0;
-        void main(void) {
-            vec4 col = texture2D(texture0, v_texCoord0);
-	        gl_FragColor = col * v_color;
-        }`;
-        ShaderChunks.BaseMeshShadervs = `
-        attribute vec3 a_position;
-        attribute vec4 a_color;
-        attribute vec2 a_texCoord0;
-        attribute vec3 a_normal;
-        uniform vec3 u_lightColor;
-        uniform vec3 u_lightDirection;
-        uniform mat4 mvpMatrix;
-        varying vec2 v_texCoord0;
-        varying vec4 v_color;
-        void main(void){
-            v_texCoord0 = a_texCoord0;
-	        gl_Position = mvpMatrix * vec4(a_position, 1.0);
-            vec3 normal = normalize(vec3(mvpMatrix * vec4(a_normal, 1.0)));
-            float nDotL = max(dot(u_lightDirection, normal), 0.0);
-            vec3 diffuse = u_lightColor * a_color.rgb * nDotL;
-            vec3 ambient = vec3(0.2, 0.2, 0.2) * a_color.rgb;
-         //   v_color = vec4(diffuse + ambient, a_color.a);
-        //    v_color = vec4(diffuse, a_color.a);
-            v_color = a_color;
-        }`;
-        ShaderChunks.BaseMeshShaderfs = `
-        precision mediump float;
-        uniform sampler2D texture0; 
-        varying vec4 v_color;
-        varying vec2 v_texCoord0;
-        void main(void) {
-            vec4 col = texture2D(texture0, v_texCoord0);
-	        //gl_FragColor = v_color;
-            gl_FragColor = col * v_color;
-        }`;
-    })(ShaderChunks = QuickEngine.ShaderChunks || (QuickEngine.ShaderChunks = {}));
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    class WebGLBufferManager {
-        constructor() {
-            WebGLBufferManager._sInstance = this;
-            this._indexBuffers = [];
-            this._vertexBuffers = [];
-        }
-        static get instance() {
-            console.assert(!!WebGLBufferManager._sInstance);
-            return this._sInstance;
-        }
-        static set instance(value) {
-        }
-        createIndexBuffer(numIndexes, usage, useShadowBuffer) {
-            let buf = new QuickEngine.WebGLIndexBuffer(numIndexes, usage, useShadowBuffer);
-            this._indexBuffers.push(buf);
-            return buf;
-        }
-        createVertexBuffer(stride, count, normalize, usage) {
-            let buf = new QuickEngine.WebGLVertexBuffer(stride, count, normalize, usage);
-            this._vertexBuffers.push(buf);
-            return buf;
-        }
-        static getGLUsage(usage) {
-            switch (usage) {
-                case 1 /* STATIC */: return QuickEngine.gl.STATIC_DRAW;
-                case 2 /* DYNAMIC */: return QuickEngine.gl.DYNAMIC_DRAW;
-                case 8 /* DISCARDABLE */: return QuickEngine.gl.STREAM_DRAW;
-                default: return QuickEngine.gl.DYNAMIC_DRAW;
-            }
-        }
-    }
-    QuickEngine.WebGLBufferManager = WebGLBufferManager;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    class WebGLIndexBuffer {
-        constructor(numIndexes, usage, useShadowBuffer) {
-            this._data = new Uint16Array(numIndexes);
-            this._count = numIndexes;
-            this._usage = usage;
-            this.createBuffer();
-        }
-        get count() {
-            return this._count;
-        }
-        set count(val) {
-        }
-        createBuffer() {
-            let buffer = QuickEngine.gl.createBuffer();
-            if (!buffer) {
-                throw new Error("Failed to create buffer");
-            }
-            this._buffer = buffer;
-        }
-        getGLIndexBuffer() {
-            return this._buffer;
-        }
-        dispose() {
-            if (this._buffer) {
-                QuickEngine.gl.deleteBuffer(this._buffer);
-                this._buffer = undefined;
-            }
-            if (this._data) {
-                this._data = undefined;
-            }
-        }
-        writeData(data) {
-            this._data.set(data);
-        }
-        bindBuffer() {
-            if (!this._buffer || !this._data) {
+        DownloadHelper.download = download;
+        function _download() {
+            if (_taskCount >= MaxDownloadCount || _downloadQueue.length == 0) {
                 return;
             }
-            QuickEngine.gl.bindBuffer(QuickEngine.gl.ELEMENT_ARRAY_BUFFER, this._buffer);
-            QuickEngine.gl.bufferData(QuickEngine.gl.ELEMENT_ARRAY_BUFFER, this._data, QuickEngine.WebGLBufferManager.getGLUsage(this._usage));
+            _taskCount++;
+            let task = _downloadQueue.pop();
+            let request = new XMLHttpRequest();
+            request.responseType = !!!task.responseType ? QuickEngine.ResponseType_Default : task.responseType;
+            request.open('GET', task.url, true);
+            request.onload = function (event) {
+                let response = request.response;
+                if (request.status === 200 || request.status === 0) {
+                    if (task.callback && task.callback.onSuccess) {
+                        task.callback.onSuccess(response);
+                    }
+                }
+                else {
+                    if (task.callback && task.callback.onFail) {
+                        task.callback.onFail(request.status, request.statusText);
+                    }
+                }
+                _taskCount--;
+                _download();
+                task = undefined;
+            };
+            request.onerror = function () {
+                if (task.callback && task.callback.onFail) {
+                    task.callback.onFail(request.status, request.statusText);
+                }
+                _taskCount--;
+                _download();
+                task = undefined;
+            };
+        }
+    })(DownloadHelper = QuickEngine.DownloadHelper || (QuickEngine.DownloadHelper = {}));
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    ;
+    // 每个顶点都有一个纹理坐标.2D纹理坐标用2d坐标(s, t)表示,也称作(u, v)
+    // 纹理图像的左下角由st坐标(0.0, 0.0)指定, 右上角st坐标(1.0, 1.0)指定. 坐标区间为[0.0, 1.0], 区间外坐标也是允许的.
+    // 纹理绑定步骤:
+    /*
+    *  let webglTex = gl.createTexture();           // 生成gl纹理对象
+    *  gl.bindTexture(gl.TEXTURE_2D, webglTex);     // 绑定纹理对象, 绑定时, 会将之前绑定的纹理对象解除绑定
+    *  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.imageData);//纹理真正第加载图像
+    **/
+    class Texture extends QuickEngine.Resource {
+        constructor(name) {
+            super(name);
+            this._tid = undefined;
+            this._tid = ++Texture.Tid;
+        }
+        get id() {
+            return this._tid;
+        }
+        get width() {
+            return this._width;
+        }
+        set width(width) {
+            this._width = width;
+        }
+        get height() {
+            return this._height;
+        }
+        set height(height) {
+            this._height = height;
+        }
+        get resolution() {
+            return this._resolution;
+        }
+        set resolution(resolution) {
+            this._resolution = resolution;
+        }
+        get webglTex() {
+            return this._webglTex;
+        }
+        getWebGLTexture() {
+            return this.webglTex;
+        }
+        get usage() {
+            return this._usage;
+        }
+        set usage(usage) {
+            this._usage = usage;
+        }
+        get image() {
+            return this._image;
+        }
+        get imageData() {
+            return this._imageData;
+        }
+        copy(object) {
+            super.copy(object);
+        }
+        clone() {
+            let m = new Texture();
+            m.copy(this);
+            return m;
+        }
+        loadImage(image) {
+            this._image = image;
+            this._width = image.width;
+            this._height = image.height;
+            this.createWebGLTexture();
+        }
+        loadRawData(data, width, height) {
+            if (data == undefined) {
+                this.createWebGLTexture();
+                return;
+            }
+            this._width = width;
+            this._height = height;
+            this._imageData = new ImageData(new Uint8ClampedArray(data), width, height);
+            this.createWebGLTexture();
+        }
+        destroy() {
+            if (this._webglTex) {
+                QuickEngine.gl.deleteTexture(this._webglTex);
+                this._webglTex = undefined;
+            }
+            this._image = undefined;
+        }
+        createWebGLTexture() {
+            let webglTex = QuickEngine.gl.createTexture();
+            QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, webglTex);
+            // 参数介绍,OpenGLES3.0编程指南,第九章纹理
+            // opengl纹理左下角为起点, 纹理坐标是右上角为起点
+            QuickEngine.gl.pixelStorei(QuickEngine.gl.UNPACK_FLIP_Y_WEBGL, 1);
+            QuickEngine.gl.pixelStorei(QuickEngine.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+            QuickEngine.GL_CHECK_ERROR();
+            if (this._image) {
+                QuickEngine.gl.texImage2D(QuickEngine.gl.TEXTURE_2D, 0, QuickEngine.gl.RGBA, QuickEngine.gl.RGBA, QuickEngine.gl.UNSIGNED_BYTE, this._image);
+            }
+            else if (this._imageData) {
+                QuickEngine.gl.texImage2D(QuickEngine.gl.TEXTURE_2D, 0, QuickEngine.gl.RGBA, QuickEngine.gl.RGBA, QuickEngine.gl.UNSIGNED_BYTE, this._imageData);
+            }
+            //texImage2D(target: number, level: number, internalformat: number, format: number, type: number, pixels: ImageData): void;
+            //texImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: ArrayBufferView): void;
+            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_MIN_FILTER, QuickEngine.gl.LINEAR);
+            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_MAG_FILTER, QuickEngine.gl.LINEAR);
+            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_WRAP_S, QuickEngine.gl.CLAMP_TO_EDGE);
+            QuickEngine.gl.texParameteri(QuickEngine.gl.TEXTURE_2D, QuickEngine.gl.TEXTURE_WRAP_T, QuickEngine.gl.CLAMP_TO_EDGE);
+            this._webglTex = webglTex;
+        }
+        loadImpl() {
+            let self = this;
+            QuickEngine.ImageLoader.instance.loadAsync(this.name).then(function (data) {
+                self._image = data;
+                self._width = data.width;
+                self._height = data.height;
+                self._state = 2 /* Loaded */;
+                self._onLoad();
+            }).catch(function (err) {
+                console.error('load text failed: ' + this.name + ' error: ' + err);
+                self._state = 2 /* Loaded */;
+                self._onLoad();
+            });
+        }
+        unloadImpl() {
         }
     }
-    QuickEngine.WebGLIndexBuffer = WebGLIndexBuffer;
+    Texture.Tid = 0;
+    QuickEngine.Texture = Texture;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    ;
+    ;
+    ;
+    ;
+    ;
+    ;
+    // 渲染状态
+    class RenderState {
+        constructor() {
+            this.cullMode = 2 /* BACK */;
+            this.blendMode = 0 /* Normal */;
+            this.depthCheck = 2 /* CHECK_WRITE */;
+            this.colorMask = 15 /* ALL */;
+        }
+    }
+    QuickEngine.RenderState = RenderState;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    class RenderQueue {
+        constructor() {
+            this.solidObjects = [];
+            this.alphaObjects = [];
+        }
+        addRenderable(renderable) {
+            // 不透明对象
+            //TODO:添加不透明对象判断
+            let mat = renderable.getMaterial();
+            if (mat.opacity >= 1) {
+                this.solidObjects.unshift(renderable);
+            }
+            else {
+                this.alphaObjects.push(renderable);
+            }
+        }
+        clear() {
+            this.solidObjects = [];
+            this.alphaObjects = [];
+        }
+    }
+    QuickEngine.RenderQueue = RenderQueue;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    class RenderTarget extends QuickEngine.HashObject {
+        constructor() {
+            super();
+            this._rid = -1;
+            this._rid = RenderTarget.RdtId++;
+        }
+        get format() {
+            return this._format;
+        }
+        set format(v) {
+            this._format = v;
+        }
+        get id() {
+            return this._rid;
+        }
+        getTexture() {
+            return this._texture;
+        }
+        init() {
+            let w = this.width, h = this.height;
+            console.assert(w > 0 && h > 0);
+            let texture = new QuickEngine.Texture('RenderTarget' + this._rid);
+            texture.width = w;
+            texture.height = h;
+            texture.mipmaps = 0;
+            texture.format = this.format;
+            texture.usage = 1 /* STATIC */;
+            this._texture = texture;
+            let webglTex = texture.getWebGLTexture();
+            // 创建帧缓冲
+            let frameBuffer = QuickEngine.gl.createFramebuffer();
+            // 绑定帧缓冲
+            QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, frameBuffer);
+            // 连接创建的2d纹理作为帧缓冲区附着
+            QuickEngine.gl.framebufferTexture2D(QuickEngine.gl.FRAMEBUFFER, QuickEngine.gl.COLOR_ATTACHMENT0, QuickEngine.gl.TEXTURE_2D, webglTex, 0);
+            // 用完临时解除绑定
+            QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, undefined);
+            this._frameBuffer = frameBuffer;
+            if (this._hasDepthBuffer) {
+                // 创建深度渲染缓冲对象
+                let renderBuffer = QuickEngine.gl.createRenderbuffer();
+                // 绑定深度渲染缓冲对象
+                QuickEngine.gl.bindRenderbuffer(QuickEngine.gl.RENDERBUFFER, renderBuffer);
+                // 指定保存在渲染缓冲区的图像大小和格式, 格式参数参考OPengl3.0 第12章 12.4.2渲染缓冲区格式
+                QuickEngine.gl.renderbufferStorage(QuickEngine.gl.RENDERBUFFER, QuickEngine.gl.DEPTH_COMPONENT16, w, h);
+                // 连接渲染缓冲区作为帧缓冲区附着
+                QuickEngine.gl.framebufferRenderbuffer(QuickEngine.gl.FRAMEBUFFER, QuickEngine.gl.DEPTH_ATTACHMENT, QuickEngine.gl.RENDERBUFFER, renderBuffer);
+                // 用完临时解除绑定
+                QuickEngine.gl.bindRenderbuffer(QuickEngine.gl.RENDERBUFFER, undefined);
+                this._depthBuffer = renderBuffer;
+            }
+            // 检查帧缓冲区完整性, 状态参数参考12.5.4
+            let status = QuickEngine.gl.checkFramebufferStatus(QuickEngine.gl.FRAMEBUFFER);
+            if (status != QuickEngine.gl.FRAMEBUFFER_COMPLETE) {
+                if (QuickEngine.__DEBUG__) {
+                    // TODO: 打印状态描述
+                    switch (status) {
+                        case QuickEngine.gl.FRAMEBUFFER_UNSUPPORTED:
+                            break;
+                        case QuickEngine.gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                            break;
+                        case QuickEngine.gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                            break;
+                        case QuickEngine.gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                console.log('Error: Create RenderTarget Failed, format: ' + this.format + '.');
+                this.destroy();
+            }
+            // 用完临时解除绑定
+            QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, undefined);
+            QuickEngine.GL_CHECK_ERROR();
+        }
+        destroy() {
+            super.destroy();
+            if (this._depthBuffer) {
+                QuickEngine.gl.deleteRenderbuffer(this._depthBuffer);
+                this._depthBuffer = undefined;
+            }
+            if (this._frameBuffer) {
+                QuickEngine.gl.deleteFramebuffer(this._frameBuffer);
+                this._frameBuffer = undefined;
+            }
+            if (this._texture) {
+                this._texture.destroy();
+                this._texture = undefined;
+            }
+        }
+    }
+    RenderTarget.RdtId = 0;
+    QuickEngine.RenderTarget = RenderTarget;
 })(QuickEngine || (QuickEngine = {}));
 ///<reference path="../RenderSystem.ts" />
 var QuickEngine;
@@ -7258,6 +7152,166 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
+    var ShaderChunks;
+    (function (ShaderChunks) {
+        // json
+        /*
+        {
+            attributes: [
+                type,
+            ],
+            unifroms: [
+                {
+                    name:"xxx",
+                    type:"xxx",
+                    default:"xxx",
+                }
+            ],
+            vsCode: string,
+            fsCode: string,
+    
+            pass: [
+                
+            ]
+        }
+        */
+        ShaderChunks.defaultSpriteShadervs = `
+        attribute vec3 a_position;
+        attribute vec4 a_color;
+        attribute vec2 a_texCoord0;
+        uniform mat4 mvpMatrix;
+        varying vec4 v_color;
+        varying vec2 v_texCoord0;
+        void main(void){
+            v_color = a_color;
+            v_texCoord0 = a_texCoord0;
+	        gl_Position = mvpMatrix * vec4(a_position, 1.0);
+        }`;
+        ShaderChunks.defaultSpriteShaderfs = `
+        precision mediump float;
+        uniform sampler2D texture0; 
+        varying vec4 v_color;
+        varying vec2 v_texCoord0;
+        void main(void) {
+            vec4 col = texture2D(texture0, v_texCoord0);
+	        gl_FragColor = col * v_color;
+        }`;
+        ShaderChunks.BaseMeshShadervs = `
+        attribute vec3 a_position;
+        attribute vec4 a_color;
+        attribute vec2 a_texCoord0;
+        attribute vec3 a_normal;
+        uniform vec3 u_lightColor;
+        uniform vec3 u_lightDirection;
+        uniform mat4 mvpMatrix;
+        varying vec2 v_texCoord0;
+        varying vec4 v_color;
+        void main(void){
+            v_texCoord0 = a_texCoord0;
+	        gl_Position = mvpMatrix * vec4(a_position, 1.0);
+            vec3 normal = normalize(vec3(mvpMatrix * vec4(a_normal, 1.0)));
+            float nDotL = max(dot(u_lightDirection, normal), 0.0);
+            vec3 diffuse = u_lightColor * a_color.rgb * nDotL;
+            vec3 ambient = vec3(0.2, 0.2, 0.2) * a_color.rgb;
+         //   v_color = vec4(diffuse + ambient, a_color.a);
+        //    v_color = vec4(diffuse, a_color.a);
+            v_color = a_color;
+        }`;
+        ShaderChunks.BaseMeshShaderfs = `
+        precision mediump float;
+        uniform sampler2D texture0; 
+        varying vec4 v_color;
+        varying vec2 v_texCoord0;
+        void main(void) {
+            vec4 col = texture2D(texture0, v_texCoord0);
+	        //gl_FragColor = v_color;
+            gl_FragColor = col * v_color;
+        }`;
+    })(ShaderChunks = QuickEngine.ShaderChunks || (QuickEngine.ShaderChunks = {}));
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    class WebGLBufferManager {
+        constructor() {
+            WebGLBufferManager._sInstance = this;
+            this._indexBuffers = [];
+            this._vertexBuffers = [];
+        }
+        static get instance() {
+            console.assert(!!WebGLBufferManager._sInstance);
+            return this._sInstance;
+        }
+        static set instance(value) {
+        }
+        createIndexBuffer(numIndexes, usage, useShadowBuffer) {
+            let buf = new QuickEngine.WebGLIndexBuffer(numIndexes, usage, useShadowBuffer);
+            this._indexBuffers.push(buf);
+            return buf;
+        }
+        createVertexBuffer(stride, count, normalize, usage) {
+            let buf = new QuickEngine.WebGLVertexBuffer(stride, count, normalize, usage);
+            this._vertexBuffers.push(buf);
+            return buf;
+        }
+        static getGLUsage(usage) {
+            switch (usage) {
+                case 1 /* STATIC */: return QuickEngine.gl.STATIC_DRAW;
+                case 2 /* DYNAMIC */: return QuickEngine.gl.DYNAMIC_DRAW;
+                case 8 /* DISCARDABLE */: return QuickEngine.gl.STREAM_DRAW;
+                default: return QuickEngine.gl.DYNAMIC_DRAW;
+            }
+        }
+    }
+    QuickEngine.WebGLBufferManager = WebGLBufferManager;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    class WebGLIndexBuffer {
+        constructor(numIndexes, usage, useShadowBuffer) {
+            this._data = new Uint16Array(numIndexes);
+            this._count = numIndexes;
+            this._usage = usage;
+            this.createBuffer();
+        }
+        get count() {
+            return this._count;
+        }
+        set count(val) {
+        }
+        createBuffer() {
+            let buffer = QuickEngine.gl.createBuffer();
+            if (!buffer) {
+                throw new Error("Failed to create buffer");
+            }
+            this._buffer = buffer;
+        }
+        getGLIndexBuffer() {
+            return this._buffer;
+        }
+        dispose() {
+            if (this._buffer) {
+                QuickEngine.gl.deleteBuffer(this._buffer);
+                this._buffer = undefined;
+            }
+            if (this._data) {
+                this._data = undefined;
+            }
+        }
+        writeData(data) {
+            this._data.set(data);
+        }
+        bindBuffer() {
+            if (!this._buffer || !this._data) {
+                return;
+            }
+            QuickEngine.gl.bindBuffer(QuickEngine.gl.ELEMENT_ARRAY_BUFFER, this._buffer);
+            QuickEngine.gl.bufferData(QuickEngine.gl.ELEMENT_ARRAY_BUFFER, this._data, QuickEngine.WebGLBufferManager.getGLUsage(this._usage));
+        }
+    }
+    QuickEngine.WebGLIndexBuffer = WebGLIndexBuffer;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
     class WebGLVertexBuffer {
         /**
          *
@@ -7309,59 +7363,5 @@ var QuickEngine;
         }
     }
     QuickEngine.WebGLVertexBuffer = WebGLVertexBuffer;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    QuickEngine.ResponseType_Default = ""; //""(空字符串)	字符串(默认值)
-    QuickEngine.ResponseType_ArrayBuffer = "arraybuffer"; //"arraybuffer"	ArrayBuffer
-    QuickEngine.ResponseType_Blob = "blob"; //"blob"	    Blob
-    QuickEngine.ResponseType_Document = "document"; //"document"	Document
-    QuickEngine.ResponseType_Json = "json"; //"json"	    JavaScript 对象，解析自服务器传递回来的JSON 字符串。
-    QuickEngine.ResponseType_Text = "text"; //"text"	    字符串
-    let DownloadHelper;
-    (function (DownloadHelper) {
-        const MaxDownloadCount = 4;
-        let _downloadQueue = [];
-        let _taskCount = 0;
-        function download(task) {
-            _downloadQueue.push(task);
-            _download();
-        }
-        DownloadHelper.download = download;
-        function _download() {
-            if (_taskCount >= MaxDownloadCount || _downloadQueue.length == 0) {
-                return;
-            }
-            _taskCount++;
-            let task = _downloadQueue.pop();
-            let request = new XMLHttpRequest();
-            request.responseType = !!!task.responseType ? QuickEngine.ResponseType_Default : task.responseType;
-            request.open('GET', task.url, true);
-            request.onload = function (event) {
-                let response = request.response;
-                if (request.status === 200 || request.status === 0) {
-                    if (task.callback && task.callback.onSuccess) {
-                        task.callback.onSuccess(response);
-                    }
-                }
-                else {
-                    if (task.callback && task.callback.onFail) {
-                        task.callback.onFail(request.status, request.statusText);
-                    }
-                }
-                _taskCount--;
-                _download();
-                task = undefined;
-            };
-            request.onerror = function () {
-                if (task.callback && task.callback.onFail) {
-                    task.callback.onFail(request.status, request.statusText);
-                }
-                _taskCount--;
-                _download();
-                task = undefined;
-            };
-        }
-    })(DownloadHelper = QuickEngine.DownloadHelper || (QuickEngine.DownloadHelper = {}));
 })(QuickEngine || (QuickEngine = {}));
 //# sourceMappingURL=quick.js.map

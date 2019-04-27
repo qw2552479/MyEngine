@@ -1924,168 +1924,6 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
-    const enum VertexElementSemantic {
-        POSITION = 1,
-        BLEND_WEIGHTS = 2,
-        BLEND_INDICES = 3,
-        NORMAL = 4,
-        DIFFUSE = 5,
-        SPECULAR = 6,
-        TEXTURE_COORDINATES = 7,
-        BINORMAL = 8,
-        TANGENT = 9,
-        COUNT = 9
-    }
-    const enum VertexElementType {
-        FLOAT1 = 0,
-        FLOAT2 = 1,
-        FLOAT3 = 2,
-        FLOAT4 = 3,
-        COLOUR = 4,
-        SHORT1 = 5,
-        SHORT2 = 6,
-        SHORT3 = 7,
-        SHORT4 = 8,
-        UBYTE4 = 9,
-        COLOUR_ARGB = 10,
-        COLOUR_ABGR = 11,
-        DOUBLE1 = 12,
-        DOUBLE2 = 13,
-        DOUBLE3 = 14,
-        DOUBLE4 = 15,
-        USHORT1 = 16,
-        USHORT2 = 17,
-        USHORT3 = 18,
-        USHORT4 = 19,
-        INT1 = 20,
-        INT2 = 21,
-        INT3 = 22,
-        INT4 = 23,
-        UINT1 = 24,
-        UINT2 = 25,
-        UINT3 = 26,
-        UINT4 = 27
-    }
-    const enum TextureType {
-        TEXTURE_2D = 0,
-        TEXTURE_2D_ARRAY = 1,
-        TEXTURE_3D = 2,
-        TEXTURE_CUBE_MAP = 3
-    }
-    const enum FilterMode {
-        Point = 0,
-        Bilinear = 1,
-        Trilinear = 2
-    }
-    const enum WrapMode {
-        Clamp = 0,
-        Repeat = 1
-    }
-    const enum PixelFormat {
-        UNKNOWN = 0,
-        RED = 1,
-        RG = 2,
-        RGB = 3,
-        RGBA = 4,
-        LUMINANCE = 5,
-        LUMINANCE_ALPHA = 6,
-        ALPHA = 7,
-        DEPTH_COMPONENT = 8,
-        DEPTH_STENCIL = 9,
-        RED_INTEGER = 10,
-        RG_INTEGER = 11,
-        RGB_INTEGER = 12,
-        RGBA_INTEGER = 13
-    }
-    const enum DataType {
-        GL_UNSIGNED_BYTE = 0,
-        GL_BYTE = 1,
-        GL_UNSIGNED_SHORT = 2,
-        GL_SHORT = 3,
-        GL_UNSIGNED_INT = 4,
-        GL_INT = 5,
-        GL_HALF_FLOAT = 6,
-        GL_FLOAT = 7,
-        GL_UNSIGNED_SHORT_5_6_5 = 8
-    }
-    const enum PixelUnpackType {
-        UNPACK_ALIGNMENT = 0,
-        UNPACK_COLORSPACE_CONVERSION_WEBGL = 1,
-        UNPACK_FLIP_Y_WEBGL = 2,
-        UNPACK_PREMULTIPLY_ALPHA_WEBGL = 3
-    }
-    const enum PixelPackType {
-        PACK_ALIGNMENT = 0
-    }
-    const enum BufferUsage {
-        STATIC = 1,
-        DYNAMIC = 2,
-        WRITE_ONLY = 4,
-        DISCARDABLE = 8,
-        STATIC_WRITE_ONLY = 5,
-        DYNAMIC_WRITE_ONLY = 6,
-        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14
-    }
-    const enum ShaderType {
-        Vertex = 0,
-        Fragment = 1
-    }
-    const enum CullMode {
-        NONE = 0,
-        FRONT = 1,
-        BACK = 2,
-        OVERLAPPED = 3
-    }
-    const enum FillMode {
-        POINT = 0,
-        FRAME = 1,
-        SOLID = 2
-    }
-    const enum BlendMode {
-        Normal = 0,
-        OPACITY = 1,
-        ALPHA_TEST = 2,
-        ALPHA_BLEND = 3,
-        ADD = 4,
-        MUL = 5,
-        OVERLAPPED = 6
-    }
-    const enum DepthCheck {
-        NONE = 0,
-        CHECK_ONLY = 1,
-        CHECK_WRITE = 2,
-        OVERLAPPED = 3
-    }
-    const enum ColorMask {
-        NONE = 0,
-        RED = 1,
-        GREEN = 2,
-        BLUE = 4,
-        ALPHA = 8,
-        ALL = 15
-    }
-    const enum ClearMask {
-        None = 0,
-        COLOR_BUFFER_BIT = 1,
-        DEPTH_BUFFER_BIT = 2,
-        STENCIL_BUFFER_BIT = 4,
-        ALL = 7
-    }
-    class RenderState {
-        cullMode: CullMode;
-        blendMode: BlendMode;
-        depthCheck: DepthCheck;
-        colorMask: ColorMask;
-        constructor();
-    }
-    interface Viewport {
-        x: number;
-        y: number;
-        w: number;
-        h: number;
-    }
-}
-declare namespace QuickEngine {
     class RenderContext {
         private _name;
         private _isEnable;
@@ -2125,15 +1963,6 @@ declare namespace QuickEngine {
         constructor();
         doRender(renderContext: RenderContext): void;
         doLighting(): void;
-    }
-}
-declare namespace QuickEngine {
-    class RenderQueue {
-        solidObjects: Renderable[];
-        alphaObjects: Renderable[];
-        constructor();
-        addRenderable(renderable: Renderable): void;
-        clear(): void;
     }
 }
 declare namespace QuickEngine {
@@ -2229,71 +2058,6 @@ declare namespace QuickEngine {
         end(): void;
         render(shader: Shader, renderable: Renderable): void;
         readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
-    }
-}
-declare namespace QuickEngine {
-    class RenderTarget extends HashObject {
-        private static RdtId;
-        protected _rid: number;
-        protected _texture: Texture;
-        width: number;
-        height: number;
-        _frameBuffer: WebGLFramebuffer;
-        _depthBuffer: WebGLRenderbuffer;
-        _hasDepthBuffer: boolean;
-        private _format;
-        format: PixelFormat;
-        readonly id: number;
-        getTexture(): Texture;
-        constructor();
-        init(): void;
-        destroy(): void;
-    }
-}
-declare namespace QuickEngine {
-    const enum TextureUsage {
-        STATIC = 1,
-        DYNAMIC = 2,
-        WRITE_ONLY = 4,
-        STATIC_WRITE_ONLY = 5,
-        DYNAMIC_WRITE_ONLY = 6,
-        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14,
-        AUTOMIPMAP = 16,
-        /** This texture will be a render target, i.e. used as a target for render to texture
-         setting this flag will ignore all other texture usages except TU_AUTOMIPMAP */
-        RENDERTARGET = 32,
-        DEFAULT = 21
-    }
-    class Texture extends Resource {
-        private static Tid;
-        private readonly _tid;
-        readonly id: number;
-        protected _width: number;
-        width: number;
-        protected _height: number;
-        height: number;
-        protected _resolution: number;
-        resolution: number;
-        protected _webglTex: WebGLTexture;
-        readonly webglTex: WebGLTexture;
-        getWebGLTexture(): WebGLTexture;
-        mipmaps: number;
-        format: PixelFormat;
-        private _usage;
-        usage: TextureUsage;
-        private _image;
-        readonly image: HTMLImageElement;
-        private _imageData;
-        readonly imageData: ImageData;
-        constructor(name?: string);
-        copy(object: Texture): void;
-        clone(): Texture;
-        loadImage(image: HTMLImageElement): void;
-        loadRawData(data: ArrayBuffer, width: number, height: number): void;
-        destroy(): void;
-        protected createWebGLTexture(): void;
-        protected loadImpl(): void;
-        protected unloadImpl(): void;
     }
 }
 declare namespace QuickEngine {
@@ -2482,6 +2246,282 @@ declare namespace QuickEngine {
         addPass(pass: WebGLShaderPass): void;
     }
 }
+declare namespace QuickEngine {
+    interface AsyncCallback {
+        onSuccess?: (data: any) => any;
+        onFail?: (error: number, data: any) => any;
+    }
+    const ResponseType_Default: string;
+    const ResponseType_ArrayBuffer = "arraybuffer";
+    const ResponseType_Blob = "blob";
+    const ResponseType_Document = "document";
+    const ResponseType_Json = "json";
+    const ResponseType_Text = "text";
+    module DownloadHelper {
+        interface DownloadTask {
+            url: string;
+            responseType?: string;
+            callback?: AsyncCallback;
+        }
+        function download(task: DownloadTask): void;
+    }
+}
+declare namespace QuickEngine {
+    const enum TextureUsage {
+        STATIC = 1,
+        DYNAMIC = 2,
+        WRITE_ONLY = 4,
+        STATIC_WRITE_ONLY = 5,
+        DYNAMIC_WRITE_ONLY = 6,
+        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14,
+        AUTOMIPMAP = 16,
+        /** This texture will be a render target, i.e. used as a target for render to texture
+         setting this flag will ignore all other texture usages except TU_AUTOMIPMAP */
+        RENDERTARGET = 32,
+        DEFAULT = 21
+    }
+    class Texture extends Resource {
+        private static Tid;
+        private readonly _tid;
+        readonly id: number;
+        protected _width: number;
+        width: number;
+        protected _height: number;
+        height: number;
+        protected _resolution: number;
+        resolution: number;
+        protected _webglTex: WebGLTexture;
+        readonly webglTex: WebGLTexture;
+        getWebGLTexture(): WebGLTexture;
+        mipmaps: number;
+        format: PixelFormat;
+        private _usage;
+        usage: TextureUsage;
+        private _image;
+        readonly image: HTMLImageElement;
+        private _imageData;
+        readonly imageData: ImageData;
+        constructor(name?: string);
+        copy(object: Texture): void;
+        clone(): Texture;
+        loadImage(image: HTMLImageElement): void;
+        loadRawData(data: ArrayBuffer, width: number, height: number): void;
+        destroy(): void;
+        protected createWebGLTexture(): void;
+        protected loadImpl(): void;
+        protected unloadImpl(): void;
+    }
+}
+declare namespace QuickEngine {
+    const enum VertexElementSemantic {
+        POSITION = 1,
+        BLEND_WEIGHTS = 2,
+        BLEND_INDICES = 3,
+        NORMAL = 4,
+        DIFFUSE = 5,
+        SPECULAR = 6,
+        TEXTURE_COORDINATES = 7,
+        BINORMAL = 8,
+        TANGENT = 9,
+        COUNT = 9
+    }
+    const enum VertexElementType {
+        FLOAT1 = 0,
+        FLOAT2 = 1,
+        FLOAT3 = 2,
+        FLOAT4 = 3,
+        COLOUR = 4,
+        SHORT1 = 5,
+        SHORT2 = 6,
+        SHORT3 = 7,
+        SHORT4 = 8,
+        UBYTE4 = 9,
+        COLOUR_ARGB = 10,
+        COLOUR_ABGR = 11,
+        DOUBLE1 = 12,
+        DOUBLE2 = 13,
+        DOUBLE3 = 14,
+        DOUBLE4 = 15,
+        USHORT1 = 16,
+        USHORT2 = 17,
+        USHORT3 = 18,
+        USHORT4 = 19,
+        INT1 = 20,
+        INT2 = 21,
+        INT3 = 22,
+        INT4 = 23,
+        UINT1 = 24,
+        UINT2 = 25,
+        UINT3 = 26,
+        UINT4 = 27
+    }
+    const enum TextureType {
+        TEXTURE_2D = 0,
+        TEXTURE_2D_ARRAY = 1,
+        TEXTURE_3D = 2,
+        TEXTURE_CUBE_MAP = 3
+    }
+    const enum FilterMode {
+        Point = 0,
+        Bilinear = 1,
+        Trilinear = 2
+    }
+    const enum WrapMode {
+        Clamp = 0,
+        Repeat = 1
+    }
+    const enum PixelFormat {
+        UNKNOWN = 0,
+        RED = 1,
+        RG = 2,
+        RGB = 3,
+        RGBA = 4,
+        LUMINANCE = 5,
+        LUMINANCE_ALPHA = 6,
+        ALPHA = 7,
+        DEPTH_COMPONENT = 8,
+        DEPTH_STENCIL = 9,
+        RED_INTEGER = 10,
+        RG_INTEGER = 11,
+        RGB_INTEGER = 12,
+        RGBA_INTEGER = 13
+    }
+    const enum DataType {
+        GL_UNSIGNED_BYTE = 0,
+        GL_BYTE = 1,
+        GL_UNSIGNED_SHORT = 2,
+        GL_SHORT = 3,
+        GL_UNSIGNED_INT = 4,
+        GL_INT = 5,
+        GL_HALF_FLOAT = 6,
+        GL_FLOAT = 7,
+        GL_UNSIGNED_SHORT_5_6_5 = 8
+    }
+    const enum PixelUnpackType {
+        UNPACK_ALIGNMENT = 0,
+        UNPACK_COLORSPACE_CONVERSION_WEBGL = 1,
+        UNPACK_FLIP_Y_WEBGL = 2,
+        UNPACK_PREMULTIPLY_ALPHA_WEBGL = 3
+    }
+    const enum PixelPackType {
+        PACK_ALIGNMENT = 0
+    }
+    const enum BufferUsage {
+        STATIC = 1,
+        DYNAMIC = 2,
+        WRITE_ONLY = 4,
+        DISCARDABLE = 8,
+        STATIC_WRITE_ONLY = 5,
+        DYNAMIC_WRITE_ONLY = 6,
+        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14
+    }
+    const enum ShaderType {
+        Vertex = 0,
+        Fragment = 1
+    }
+    const enum CullMode {
+        NONE = 0,
+        FRONT = 1,
+        BACK = 2,
+        OVERLAPPED = 3
+    }
+    const enum FillMode {
+        POINT = 0,
+        FRAME = 1,
+        SOLID = 2
+    }
+    const enum BlendMode {
+        Normal = 0,
+        OPACITY = 1,
+        ALPHA_TEST = 2,
+        ALPHA_BLEND = 3,
+        ADD = 4,
+        MUL = 5,
+        OVERLAPPED = 6
+    }
+    const enum DepthCheck {
+        NONE = 0,
+        CHECK_ONLY = 1,
+        CHECK_WRITE = 2,
+        OVERLAPPED = 3
+    }
+    const enum ColorMask {
+        NONE = 0,
+        RED = 1,
+        GREEN = 2,
+        BLUE = 4,
+        ALPHA = 8,
+        ALL = 15
+    }
+    const enum ClearMask {
+        None = 0,
+        COLOR_BUFFER_BIT = 1,
+        DEPTH_BUFFER_BIT = 2,
+        STENCIL_BUFFER_BIT = 4,
+        ALL = 7
+    }
+    class RenderState {
+        cullMode: CullMode;
+        blendMode: BlendMode;
+        depthCheck: DepthCheck;
+        colorMask: ColorMask;
+        constructor();
+    }
+    interface Viewport {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }
+}
+declare namespace QuickEngine {
+    class RenderQueue {
+        solidObjects: Renderable[];
+        alphaObjects: Renderable[];
+        constructor();
+        addRenderable(renderable: Renderable): void;
+        clear(): void;
+    }
+}
+declare namespace QuickEngine {
+    class RenderTarget extends HashObject {
+        private static RdtId;
+        protected _rid: number;
+        protected _texture: Texture;
+        width: number;
+        height: number;
+        _frameBuffer: WebGLFramebuffer;
+        _depthBuffer: WebGLRenderbuffer;
+        _hasDepthBuffer: boolean;
+        private _format;
+        format: PixelFormat;
+        readonly id: number;
+        getTexture(): Texture;
+        constructor();
+        init(): void;
+        destroy(): void;
+    }
+}
+declare namespace QuickEngine {
+    let gl: WebGLRenderingContext;
+    function GL_CHECK_ERROR(): void;
+    class WebGLRendererSystem extends RenderSystem {
+        protected _canvas: HTMLCanvasElement;
+        constructor(div?: HTMLElement);
+        clear(mask: ClearMask, color: Number4, depth: number, stencil: number): void;
+        setViewport(viewPort: Viewport): void;
+        setRenderTarget(renderTarget: RenderTarget): void;
+        _setTexture(unit: number, enable: boolean, tex: Texture): void;
+        private _bindRenderState;
+        bindGpuProgram(gpuProgram: GLShaderProgram): void;
+        private _bindVertexElement;
+        renderOperation(renderOp: RenderOperation): void;
+        static getGLDrawCount(type: RenderOperationType, primCount: number): number;
+        beginScene(): void;
+        endScene(): void;
+        onResize(w: number, h: number): void;
+    }
+}
 declare namespace QuickEngine.ShaderChunks {
     interface ShaderData {
         attributes: string[];
@@ -2523,26 +2563,6 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
-    let gl: WebGLRenderingContext;
-    function GL_CHECK_ERROR(): void;
-    class WebGLRendererSystem extends RenderSystem {
-        protected _canvas: HTMLCanvasElement;
-        constructor(div?: HTMLElement);
-        clear(mask: ClearMask, color: Number4, depth: number, stencil: number): void;
-        setViewport(viewPort: Viewport): void;
-        setRenderTarget(renderTarget: RenderTarget): void;
-        _setTexture(unit: number, enable: boolean, tex: Texture): void;
-        private _bindRenderState;
-        bindGpuProgram(gpuProgram: GLShaderProgram): void;
-        private _bindVertexElement;
-        renderOperation(renderOp: RenderOperation): void;
-        static getGLDrawCount(type: RenderOperationType, primCount: number): number;
-        beginScene(): void;
-        endScene(): void;
-        onResize(w: number, h: number): void;
-    }
-}
-declare namespace QuickEngine {
     class WebGLVertexBuffer {
         webGLBuffer: WebGLBuffer;
         _size: number;
@@ -2566,25 +2586,5 @@ declare namespace QuickEngine {
         protected destroyBuffer(): void;
         writeData(data: ArrayBuffer): void;
         bindBuffer(): void;
-    }
-}
-declare namespace QuickEngine {
-    interface AsyncCallback {
-        onSuccess?: (data: any) => any;
-        onFail?: (error: number, data: any) => any;
-    }
-    const ResponseType_Default: string;
-    const ResponseType_ArrayBuffer = "arraybuffer";
-    const ResponseType_Blob = "blob";
-    const ResponseType_Document = "document";
-    const ResponseType_Json = "json";
-    const ResponseType_Text = "text";
-    module DownloadHelper {
-        interface DownloadTask {
-            url: string;
-            responseType?: string;
-            callback?: AsyncCallback;
-        }
-        function download(task: DownloadTask): void;
     }
 }
