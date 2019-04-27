@@ -182,7 +182,7 @@ namespace QuickEngine {
                 let uniform = uniforms[i];
                 switch (uniform.type) {
                     case UniformType.WORLD_MATRIX: {   
-                        gl.uniformMatrix4fv(uniform.location, false, mvpMat.toArrayBuffer());                   
+                        gl.uniformMatrix4fv(uniform.location, false, mvpMat.toArrayBuffer());
                     }; break;
                     case UniformType.LIGHT_DIRECTION: {
                         gl.uniform3f(uniform.location, 0.5, 3.0, 4.0);

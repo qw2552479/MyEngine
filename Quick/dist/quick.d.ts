@@ -2,6 +2,7 @@ declare namespace QuickEngine {
     let __EDITOR_MODE__: boolean;
     let __DEBUG__: boolean;
     let __PROFILER__: boolean;
+    let __USE_COLUMN_MATRIX__: boolean;
 }
 declare namespace QuickEngine {
     interface RunData {
@@ -73,6 +74,9 @@ declare namespace QuickEngine {
         static dpi: number;
         static fullScreen: boolean;
     }
+}
+declare namespace QuickEngine {
+    function assert(cond: any, msg: any): void;
 }
 declare namespace QuickEngine {
     interface IStringDictionary<TValue> {
@@ -198,6 +202,15 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
+    class Log {
+        static D(...args: any[]): void;
+        static I(...args: any[]): void;
+        static W(...args: any[]): void;
+        static E(...args: any[]): void;
+        static F(...args: any[]): void;
+    }
+}
+declare namespace QuickEngine {
     type MinHeapComparer<T> = (x: T, y: T) => number;
     /**
      * 最小堆
@@ -230,30 +243,6 @@ declare namespace QuickEngine {
         clear(): void;
         protected filterDown(start: number, end: number): void;
         protected filterUp(start: number): void;
-    }
-}
-declare namespace QuickEngine {
-    module Timer {
-        /**
-         * 添加一个定时器
-         * @param callback 回调函数
-         * @param delay    延迟时间, 单位毫秒
-         * @param repeat   重复次数, 默认为0, 不重复
-         * @param interval 重复间隔时间, 单位毫秒
-         * @return 定时器id
-         */
-        function addTimer(callback: (dt: number) => void, delay: number, repeat?: number, interval?: number): number;
-        /**
-         * 删除一个定时器
-         * @param timerId 定时器id
-         */
-        function killTimer(timerId: number): void;
-        function update(dt: number): void;
-    }
-}
-declare namespace QuickEngine {
-    module UUID {
-        function newUuid(): string;
     }
 }
 declare namespace QuickEngine {
@@ -353,6 +342,46 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
+    class TextResource extends Resource {
+        private _data;
+        readonly data: string;
+        constructor(name: string);
+        clone(): HashObject;
+        protected loadImpl(): void;
+        protected unloadImpl(): void;
+    }
+}
+declare namespace QuickEngine {
+    module Timer {
+        /**
+         * 添加一个定时器
+         * @param callback 回调函数
+         * @param delay    延迟时间, 单位毫秒
+         * @param repeat   重复次数, 默认为0, 不重复
+         * @param interval 重复间隔时间, 单位毫秒
+         * @return 定时器id
+         */
+        function addTimer(callback: (dt: number) => void, delay: number, repeat?: number, interval?: number): number;
+        /**
+         * 删除一个定时器
+         * @param timerId 定时器id
+         */
+        function killTimer(timerId: number): void;
+        function update(dt: number): void;
+    }
+}
+declare namespace QuickEngine {
+    module UUID {
+        function newUuid(): string;
+    }
+}
+declare namespace QuickEngine {
+    interface IResLoader<T> {
+        load(path: string, onLoaded: (err: any, data: T) => void, thisObj?: Object): void;
+        loadAsync(path: string): Promise<T>;
+    }
+}
+declare namespace QuickEngine {
     class ImageLoader implements IResLoader<HTMLImageElement> {
         static readonly instance: ImageLoader;
         load(path: string, onLoaded: (err: string, data: HTMLImageElement) => void, thisObj?: Object): void;
@@ -379,11 +408,11 @@ declare namespace QuickEngine {
      * ��ɫ
      */
     class Color {
-        static white: Color;
-        static black: Color;
-        static red: Color;
-        static green: Color;
-        static blue: Color;
+        static White: Color;
+        static Black: Color;
+        static Red: Color;
+        static Green: Color;
+        static Blue: Color;
         r: number;
         g: number;
         b: number;
@@ -472,7 +501,6 @@ declare namespace QuickEngine {
         */
         const RAW_DATA_CONTAINER: Float32Array;
         /**
-        * @language zh_CN
         * 把一个值固定在一个范围之内
         * @param value 当前判定的值
         * @param min_inclusive 最小取值
@@ -490,10 +518,13 @@ declare namespace QuickEngine {
      * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
      * 线性代数课本
      * 矩阵是列向量矩阵
-    | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
-    | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
-                | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
-                                | 3 7 11 15 |      | 30 31 32 33 |
+     | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
+     | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
+     | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
+     | 3 7 11 15 |      | 30 31 32 33 |
+     */
+    /**
+     * TODO: 矩阵数据使用array buffer, 数组计算更缓存友好
      */
     class Matrix4 {
         static ClassName: string;
@@ -513,34 +544,34 @@ declare namespace QuickEngine {
         _13: number;
         _23: number;
         _33: number;
-        private _rawdata;
+        private _rawData;
         constructor();
         static create(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
         set(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
         copyFrom(other: Matrix4): Matrix4;
         clone(): Matrix4;
         /**
-        * 矩阵相乘
-       a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
-       a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
-       a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
-       a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
-        */
+         * 矩阵相乘
+         a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
+         a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
+         a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
+         a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
+         */
         multiply(v: Matrix4, out?: Matrix4): Matrix4;
         static multiply(v1: Matrix4, v2: Matrix4, out?: Matrix4): Matrix4;
         /**
          * 矩阵向量相乘, 列向量应该右乘矩阵
          * @param vec
-        a00 a01 a02 a03    x
-        a10 a11 a12 a13 *  y
-        a20 a21 a22 a23    z
-        a30 a31 a32 a33    w=0
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
          */
-        transfromVector3(v: Vector3): Vector3;
+        transformVector3(v: Vector3): Vector3;
         /**
          * 单位矩阵
          */
-        identity(): void;
+        identity(): Matrix4;
         static identity(): Matrix4;
         /**
          * 矩阵求逆
@@ -548,9 +579,9 @@ declare namespace QuickEngine {
         inverse(): Matrix4;
         /**
          * 矩阵转置
-        每一列变成每一行
-        | a b |  T   | a c |
-        | c d | ===> | b d |
+         每一列变成每一行
+         | a b |  T   | a c |
+         | c d | ===> | b d |
          */
         transpose(): Matrix4;
         static transpose(target: Matrix4): Matrix4;
@@ -630,24 +661,46 @@ declare namespace QuickEngine {
          */
         static roll(a: number, out?: Matrix4): Matrix4;
         /**
-        * 生成左手视图矩阵
-        * @param position
-        * @param orientation
-        * @param reflectMatrix
-        * @param viewMatrix
-        */
+         * 生成左手视图矩阵
+         * @param position
+         * @param orientation
+         * @param reflectMatrix
+         * @param viewMatrix
+         */
         static makeViewMatrixLH(position: Vector3, orientation: Quaternion, reflectMatrix?: Matrix4, viewMatrix?: Matrix4): Matrix4;
         /**
-        * 构造左手正交视图矩阵
-        * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
-        * @param w
-        * @param h
-        * @param zn
-        * @param zf
-        * @param target
-        */
+         * 构造左手正交视图矩阵
+         * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         * @example
+         * |2 / (right - left), 0,                  0,                -(right + left) / (right - left) |
+         * |0,                  2 / (top - bottom), 0,                -(top + bottom) / (top - bottom) |
+         * |0,                  0,                  2 / (far - near), -(far + near) / (far - near)     |
+         * |0,                  0,                  0,                1                                |
+         */
         static makeOrthoLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * TODO:
+         * @param w
+         * @param h
+         * @param near
+         * @param far
+         * @param target
+         */
         static makeOrthoFovLH(w: number, h: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 生成正交视图矩阵
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         */
+        static makeOrthoRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
         /**
          * 构造左手投影矩阵
          * @param left
@@ -668,15 +721,6 @@ declare namespace QuickEngine {
          * @param target
          */
         static makePerspectiveFovLH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 生成正交视图矩阵
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         */
-        static makeOrthoRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
         /**
          * 构造右手投影矩阵
          * @param left
@@ -734,7 +778,7 @@ declare namespace QuickEngine {
          *
          * @param m
          */
-        transfrom(m: Matrix4): void;
+        transform(m: Matrix4): void;
         /**
          * 3点构造平面, 3点不能共线, 否则有无数个面
          * @param p1
@@ -757,8 +801,8 @@ declare namespace QuickEngine {
 }
 declare namespace QuickEngine {
     /**
-     * ��Ԫ�� [w, x, y, z]
-     * ������Ƕ�(n, ��): ��nָ������ת��Ƚ�, �� q = [cos(�� / 2), sin(�� / 2) * nx, sin(�� / 2) * ny, sin(�� / 2) * nz]
+     * 四元数 [w, x, y, z]
+     * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
      */
     class Quaternion {
         static ClassName: string;
@@ -772,27 +816,27 @@ declare namespace QuickEngine {
         copyFrom(q: Quaternion): Quaternion;
         clone(): Quaternion;
         /**
-         * �ӷ�
+         * 加法
          * @param q
          */
         add(q: Quaternion): Quaternion;
         /**
-         * ����
+         * 减法
          * @param q
          */
         minus(q: Quaternion): Quaternion;
         /**
-         * ���
+         * 点乘
          * @param q
          */
         dot(q: Quaternion): number;
         /**
-         * ���
+         * 叉乘
          * @param q
          */
         multiply(q: Quaternion): Quaternion;
         /**
-         * ����һ������
+         * 乘以一个标量
          * @param s
          */
         multiplyScalar(s: number): Quaternion;
@@ -800,91 +844,90 @@ declare namespace QuickEngine {
         multiplyVector(vector: Vector3): Quaternion;
         rotateVector3(v: Vector3): Vector3;
         /**
-         * ����. ��ʽ: log(q) = [0, ��N], N Ϊ��λ����
+         * 对数. 公式: log(q) = [0, αN], N 为单位向量
          */
         log(): Quaternion;
         /**
-         * ָ��. ��ʽ: exp(p) = [cos() ]
+         * 指数. 公式: exp(p) = [cos() ]
          */
         exp(): Quaternion;
         /**
-         * ������Ԫ��, ��Ԫ����q-1 = ���Ĺ������ģ��
+         * 共轭四元数, 四元数逆q-1 = 它的共轭除以模长
          */
         conjugate(): Quaternion;
         /**
-         * ��Ԫ������
+         * 四元数的逆
          */
         inverse(): Quaternion;
         /**
-         * ��λ��Ԫ������, �����ǵ�λ��Ԫ�����ܵ��ô˷���
+         * 单位四元数求逆, 必须是单位四元数才能调用此方法
          */
         unitInverse(): Quaternion;
         /**
-         * ģ��
+         * 模长
          */
         readonly magnitude: number;
         /**
-         * ģ��ƽ��
+         * 模长平方
          */
         readonly sqrMagnitude: number;
         /**
-         * ����
+         * 正则化
          */
         normalize(): Quaternion;
         /**
-         * �Ƚ�������Ԫ���Ƿ����
+         * 比较两个四元素是否相等
          * @param other
          */
         equal(q: Quaternion): boolean;
         /**
-         * ���Բ�ֵ(Linear Interpolation)
+         * 线性插值(Linear Interpolation)
          * @param lhs
          * @param rhs
          * @param t
          */
         lerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion;
         /**
-         * �������Բ�ֵ(Spherical Linear Interpolation)
+         * 球面线性插值(Spherical Linear Interpolation)
          * @param lhs
          * @param rhs
          * @param t
          */
         slerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion;
         /**
-         * ��Ԫ������ squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
+         * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
          */
         private static _TempQuat0;
         private static _TempQuat1;
         squad(q0: any, q1: any, s0: any, s1: any, t: any): Quaternion;
-        static s_iNext: Number3;
         /**
-         * ͨ����ת��������Ԫ��
+         * 通过旋转矩阵构造四元数
          * @param rotMat
          */
         FromRotationMatrix(rotMat: Matrix4): Quaternion;
         ToRotationMatrix(rotMat?: Matrix4): Matrix4;
         /**
-         * ����һ����axis��Ϊ������תrads���ȵ���Ԫ��
+         * 创建一个以axis轴为中心旋转rads弧度的四元数
          * @param axis
-         * @param degrees
+         * @param rads
          */
-        FromAngleAxis(axis: Vector3, degrees: Degree): void;
+        FromAngleAxis(axis: Vector3, rads: Radian): void;
         /**
-         * ������Ԫ�������ĺͽǶ�
-         * @param axis ��ת��
-         * @returns ����
+         * 返回四元数绕轴心和角度
+         * @param axis 旋转轴
+         * @returns 弧度
          */
         ToAngleAxis(axis: Vector3): Radian;
         /**
-         * ŷ����ת��Ԫ��
-         * @param eulerAngle ŷ����
-         * @param refQuaternion ŷ�������ã������Ϊ�գ�����ı䴫�����Ԫ���������ش������Ԫ��
-         * @return Quaternion ��Ԫ��
+         * 欧拉角转四元数
+         * @param eulerAngle 欧拉角
+         * @param refQuaternion 欧拉角引用，如果不为空，将会改变传入的四元数，并返回传入的四元数
+         * @return Quaternion 四元数
          */
         FromEulerAngle(eulerAngle: Vector3, refQuaternion?: Quaternion): Quaternion;
         FromEulerAngleScalar(x: number, y: number, z: number, refQuaternion?: Quaternion): Quaternion;
         /**
-         * ��Ԫ��תŷ����
+         * 四元数转欧拉角
          */
         ToEulerAngle(refEulerAngle?: Vector3): Vector3;
         getRightVector(): Vector3;
@@ -1013,7 +1056,7 @@ declare namespace QuickEngine {
          *
          * @param other
          */
-        copyFrom(other: Vector3): Vector3;
+        copy(other: Vector3): Vector3;
         /**
          * 复制一个自己,返回一个新的vector3
          */
@@ -1039,12 +1082,12 @@ declare namespace QuickEngine {
          */
         sub(other: Vector3): Vector3;
         /**
-         * Scalar Product 无向积
+         * Scalar Product 乘以标量
          * @param multiplier
          */
         multiplyScalar(multiplier: number): Vector3;
         /**
-         * 向量积
+         * 乘以向量
          * @param other
          */
         multiplyVector3(other: Vector3): Vector3;
@@ -1070,7 +1113,15 @@ declare namespace QuickEngine {
          * @param rhs
          */
         static cross(lhs: Vector3, rhs: Vector3): Vector3;
+        /**
+         * 除以标量
+         * @param val
+         */
         divide(val: number): Vector3;
+        /**
+         * 除以向量
+         * @param other
+         */
         divideVector(other: Vector3): Vector3;
         /**
          * 向量归一化
@@ -1095,7 +1146,7 @@ declare namespace QuickEngine {
          * @param v0
          * @param v1
          */
-        static distanceSquare(v0: Vector3, v1: Vector3): number;
+        static sqrDistance(v0: Vector3, v1: Vector3): number;
         lerp(v0: Vector3, v1: Vector3, t: number): Vector3;
     }
 }
@@ -2535,33 +2586,5 @@ declare namespace QuickEngine {
             callback?: AsyncCallback;
         }
         function download(task: DownloadTask): void;
-    }
-}
-declare namespace QuickEngine {
-    function assert(cond: any, msg: any): void;
-}
-declare namespace QuickEngine {
-    class Log {
-        static D(...args: any[]): void;
-        static I(...args: any[]): void;
-        static W(...args: any[]): void;
-        static E(...args: any[]): void;
-        static F(...args: any[]): void;
-    }
-}
-declare namespace QuickEngine {
-    interface IResLoader<T> {
-        load(path: string, onLoaded: (err: any, data: T) => void, thisObj?: Object): void;
-        loadAsync(path: string): Promise<T>;
-    }
-}
-declare namespace QuickEngine {
-    class TextResource extends Resource {
-        private _data;
-        readonly data: string;
-        constructor(name: string);
-        clone(): HashObject;
-        protected loadImpl(): void;
-        protected unloadImpl(): void;
     }
 }

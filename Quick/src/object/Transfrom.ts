@@ -120,7 +120,7 @@ namespace QuickEngine {
             if (this._parent) {
                 let localMat = this.worldToLocalMatrix;
                 // 世界坐标转换到本地坐标系
-                val = localMat.transfromVector3(val);
+                val = localMat.transformVector3(val);
             }
 
             this._localPosition.copy(val);

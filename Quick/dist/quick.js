@@ -11,6 +11,7 @@ var QuickEngine;
     QuickEngine.__EDITOR_MODE__ = false;
     QuickEngine.__DEBUG__ = true;
     QuickEngine.__PROFILER__ = true;
+    QuickEngine.__USE_COLUMN_MATRIX__ = true;
 })(QuickEngine || (QuickEngine = {}));
 //https://github.com/jsdoc3/jsdoc
 var QuickEngine;
@@ -221,6 +222,12 @@ var QuickEngine;
     Screen.screenWidth = 0;
     Screen.screenHeight = 0;
     QuickEngine.Screen = Screen;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    function assert(cond, msg) {
+    }
+    QuickEngine.assert = assert;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
@@ -444,6 +451,27 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
+    class Log {
+        static D(...args) {
+            console.log.apply(this, arguments);
+        }
+        static I(...args) {
+            console.info.apply(this, arguments);
+        }
+        static W(...args) {
+            console.warn.apply(this, arguments);
+        }
+        static E(...args) {
+            console.error.apply(this, arguments);
+        }
+        static F(...args) {
+            console.error.apply(this, arguments);
+        }
+    }
+    QuickEngine.Log = Log;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
     /**
      * 最小堆
      */
@@ -563,155 +591,6 @@ var QuickEngine;
         }
     }
     QuickEngine.MinHeap = MinHeap;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    let Timer;
-    (function (Timer) {
-        class TimerHeap extends QuickEngine.MinHeap {
-            remove(timerId) {
-                let heap = this._heap;
-                let len = this._length;
-                for (let i = 0; i < len; i++) {
-                    let data = heap[i];
-                    if (data.id == timerId) {
-                        heap[i] = heap[this._length - 1];
-                        this._length--;
-                        this.filterDown(i, this._length - 1); //调整新的根节点
-                        break;
-                    }
-                }
-            }
-        }
-        function _TimerDataComparer(x, y) {
-            return x.endTick - y.endTick;
-        }
-        let _timerHeap = new TimerHeap(_TimerDataComparer);
-        let _timerId = 0;
-        let _tick = 0;
-        /**
-         * 添加一个定时器
-         * @param callback 回调函数
-         * @param delay    延迟时间, 单位毫秒
-         * @param repeat   重复次数, 默认为0, 不重复
-         * @param interval 重复间隔时间, 单位毫秒
-         * @return 定时器id
-         */
-        function addTimer(callback, delay, repeat = 0, interval = 0) {
-            let newTimerId = _timerId++;
-            let timerData = {
-                id: newTimerId,
-                callback: callback,
-                delay: delay,
-                repeat: repeat,
-                interval: interval,
-                endTick: _tick + Date.now()
-            };
-            _timerHeap.enqueue(timerData);
-            return timerData.id;
-        }
-        Timer.addTimer = addTimer;
-        /**
-         * 删除一个定时器
-         * @param timerId 定时器id
-         */
-        function killTimer(timerId) {
-            _timerHeap.remove(timerId);
-        }
-        Timer.killTimer = killTimer;
-        function update(dt) {
-            _tick += dt;
-            while (_timerHeap.count() > 0) {
-                let timerData = _timerHeap.peek();
-                if (_tick < timerData.endTick) {
-                    break;
-                }
-                _timerHeap.dequeue();
-                let repeatCount = timerData.repeat;
-                if (repeatCount == 0) {
-                    timerData.callback(dt);
-                }
-                else if (repeatCount == -1) {
-                    // 无限定时器
-                    timerData.callback(dt);
-                    timerData.endTick = _tick + timerData.interval;
-                    _timerHeap.enqueue(timerData);
-                }
-                else {
-                    timerData.callback(dt);
-                    timerData.repeat = repeatCount--;
-                    timerData.endTick = _tick + timerData.interval;
-                    _timerHeap.enqueue(timerData);
-                }
-            }
-        }
-        Timer.update = update;
-    })(Timer = QuickEngine.Timer || (QuickEngine.Timer = {}));
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    let UUID;
-    (function (UUID) {
-        // Private array of chars to use  
-        let CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
-        function uuid(len, radix) {
-            let chars = CHARS, uuid = [], i;
-            radix = radix || chars.length;
-            if (len) {
-                // Compact form  
-                for (i = 0; i < len; i++)
-                    uuid[i] = chars[0 | Math.random() * radix];
-            }
-            else {
-                // rfc4122, version 4 form  
-                let r;
-                // rfc4122 requires these characters  
-                uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
-                uuid[14] = '4';
-                // Fill in random data.  At i==19 set the high bits of clock sequence as  
-                // per rfc4122, sec. 4.1.5  
-                for (i = 0; i < 36; i++) {
-                    if (!uuid[i]) {
-                        r = 0 | Math.random() * 16;
-                        uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
-                    }
-                }
-            }
-            return uuid.join('');
-        }
-        ;
-        // A more performant, but slightly bulkier, RFC4122v4 solution.  We boost performance  
-        // by minimizing calls to random()  
-        function uuidFast() {
-            let chars = CHARS, uuid = new Array(36), rnd = 0, r;
-            for (let i = 0; i < 36; i++) {
-                if (i == 8 || i == 13 || i == 18 || i == 23) {
-                    uuid[i] = '-';
-                }
-                else if (i == 14) {
-                    uuid[i] = '4';
-                }
-                else {
-                    if (rnd <= 0x02)
-                        rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
-                    r = rnd & 0xf;
-                    rnd = rnd >> 4;
-                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
-                }
-            }
-            return uuid.join('');
-        }
-        ;
-        // A more compact, but less performant, RFC4122v4 solution:  
-        function newUuid() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-        UUID.newUuid = newUuid;
-        ;
-    })(UUID = QuickEngine.UUID || (QuickEngine.UUID = {}));
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
@@ -975,6 +854,191 @@ var QuickEngine;
     }
     QuickEngine.Resource = Resource;
 })(QuickEngine || (QuickEngine = {}));
+///<reference path="../loader/Resource.ts"/>
+var QuickEngine;
+///<reference path="../loader/Resource.ts"/>
+(function (QuickEngine) {
+    class TextResource extends QuickEngine.Resource {
+        constructor(name) {
+            super(name);
+        }
+        get data() {
+            return this._data;
+        }
+        clone() {
+            let obj = new TextResource(this._name);
+            obj._data = this._data;
+            return obj;
+        }
+        loadImpl() {
+            QuickEngine.TextLoader.instance.load(this.name, (err, data) => {
+                if (err || !data) {
+                    console.error('load text failed: ' + this.name + ' error: ' + err);
+                    this._state = 2 /* Loaded */;
+                    this._data = '';
+                    this._onLoad();
+                    return;
+                }
+                this._data = data;
+                this._state = 2 /* Loaded */;
+                this._onLoad();
+            }, this);
+        }
+        unloadImpl() {
+            this._data = null;
+        }
+    }
+    QuickEngine.TextResource = TextResource;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    let Timer;
+    (function (Timer) {
+        class TimerHeap extends QuickEngine.MinHeap {
+            remove(timerId) {
+                let heap = this._heap;
+                let len = this._length;
+                for (let i = 0; i < len; i++) {
+                    let data = heap[i];
+                    if (data.id == timerId) {
+                        heap[i] = heap[this._length - 1];
+                        this._length--;
+                        this.filterDown(i, this._length - 1); //调整新的根节点
+                        break;
+                    }
+                }
+            }
+        }
+        function _TimerDataComparer(x, y) {
+            return x.endTick - y.endTick;
+        }
+        let _timerHeap = new TimerHeap(_TimerDataComparer);
+        let _timerId = 0;
+        let _tick = 0;
+        /**
+         * 添加一个定时器
+         * @param callback 回调函数
+         * @param delay    延迟时间, 单位毫秒
+         * @param repeat   重复次数, 默认为0, 不重复
+         * @param interval 重复间隔时间, 单位毫秒
+         * @return 定时器id
+         */
+        function addTimer(callback, delay, repeat = 0, interval = 0) {
+            let newTimerId = _timerId++;
+            let timerData = {
+                id: newTimerId,
+                callback: callback,
+                delay: delay,
+                repeat: repeat,
+                interval: interval,
+                endTick: _tick + Date.now()
+            };
+            _timerHeap.enqueue(timerData);
+            return timerData.id;
+        }
+        Timer.addTimer = addTimer;
+        /**
+         * 删除一个定时器
+         * @param timerId 定时器id
+         */
+        function killTimer(timerId) {
+            _timerHeap.remove(timerId);
+        }
+        Timer.killTimer = killTimer;
+        function update(dt) {
+            _tick += dt;
+            while (_timerHeap.count() > 0) {
+                let timerData = _timerHeap.peek();
+                if (_tick < timerData.endTick) {
+                    break;
+                }
+                _timerHeap.dequeue();
+                let repeatCount = timerData.repeat;
+                if (repeatCount == 0) {
+                    timerData.callback(dt);
+                }
+                else if (repeatCount == -1) {
+                    // 无限定时器
+                    timerData.callback(dt);
+                    timerData.endTick = _tick + timerData.interval;
+                    _timerHeap.enqueue(timerData);
+                }
+                else {
+                    timerData.callback(dt);
+                    timerData.repeat = repeatCount--;
+                    timerData.endTick = _tick + timerData.interval;
+                    _timerHeap.enqueue(timerData);
+                }
+            }
+        }
+        Timer.update = update;
+    })(Timer = QuickEngine.Timer || (QuickEngine.Timer = {}));
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    let UUID;
+    (function (UUID) {
+        // Private array of chars to use  
+        let CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+        function uuid(len, radix) {
+            let chars = CHARS, uuid = [], i;
+            radix = radix || chars.length;
+            if (len) {
+                // Compact form  
+                for (i = 0; i < len; i++)
+                    uuid[i] = chars[0 | Math.random() * radix];
+            }
+            else {
+                // rfc4122, version 4 form  
+                let r;
+                // rfc4122 requires these characters  
+                uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+                uuid[14] = '4';
+                // Fill in random data.  At i==19 set the high bits of clock sequence as  
+                // per rfc4122, sec. 4.1.5  
+                for (i = 0; i < 36; i++) {
+                    if (!uuid[i]) {
+                        r = 0 | Math.random() * 16;
+                        uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                    }
+                }
+            }
+            return uuid.join('');
+        }
+        ;
+        // A more performant, but slightly bulkier, RFC4122v4 solution.  We boost performance  
+        // by minimizing calls to random()  
+        function uuidFast() {
+            let chars = CHARS, uuid = new Array(36), rnd = 0, r;
+            for (let i = 0; i < 36; i++) {
+                if (i == 8 || i == 13 || i == 18 || i == 23) {
+                    uuid[i] = '-';
+                }
+                else if (i == 14) {
+                    uuid[i] = '4';
+                }
+                else {
+                    if (rnd <= 0x02)
+                        rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
+                    r = rnd & 0xf;
+                    rnd = rnd >> 4;
+                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                }
+            }
+            return uuid.join('');
+        }
+        ;
+        // A more compact, but less performant, RFC4122v4 solution:  
+        function newUuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        UUID.newUuid = newUuid;
+        ;
+    })(UUID = QuickEngine.UUID || (QuickEngine.UUID = {}));
+})(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
     class ImageLoader {
@@ -1074,11 +1138,11 @@ var QuickEngine;
             return new Color(hex >> 16 & 0xff, hex >> 8 & 0xff, hex & 0xff);
         }
     }
-    Color.white = new Color();
-    Color.black = new Color(0, 0, 0, 255);
-    Color.red = new Color(255, 0, 0, 255);
-    Color.green = new Color(0, 255, 0, 255);
-    Color.blue = new Color(0, 0, 255, 255);
+    Color.White = new Color();
+    Color.Black = new Color(0, 0, 0, 255);
+    Color.Red = new Color(255, 0, 0, 255);
+    Color.Green = new Color(0, 255, 0, 255);
+    Color.Blue = new Color(0, 0, 255, 255);
     QuickEngine.Color = Color;
 })(QuickEngine || (QuickEngine = {}));
 ///<reference path="../core/HashObject.ts" />
@@ -1328,7 +1392,6 @@ var QuickEngine;
         */
         MathUtil.RAW_DATA_CONTAINER = new Float32Array(16);
         /**
-        * @language zh_CN
         * 把一个值固定在一个范围之内
         * @param value 当前判定的值
         * @param min_inclusive 最小取值
@@ -1365,10 +1428,13 @@ var QuickEngine;
      * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
      * 线性代数课本
      * 矩阵是列向量矩阵
-    | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
-    | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
-                | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
-                                | 3 7 11 15 |      | 30 31 32 33 |
+     | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
+     | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
+     | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
+     | 3 7 11 15 |      | 30 31 32 33 |
+     */
+    /**
+     * TODO: 矩阵数据使用array buffer, 数组计算更缓存友好
      */
     class Matrix4 {
         constructor() {
@@ -1388,7 +1454,7 @@ var QuickEngine;
             this._13 = 0;
             this._23 = 0;
             this._33 = 1;
-            this._rawdata = new Float32Array(16);
+            this._rawData = new Float32Array(16);
         }
         static create(_00, _01, _02, _03, _10, _11, _12, _13, _20, _21, _22, _23, _30, _31, _32, _33) {
             let matrix = new Matrix4();
@@ -1421,12 +1487,12 @@ var QuickEngine;
             return matrix;
         }
         /**
-        * 矩阵相乘
-       a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
-       a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
-       a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
-       a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
-        */
+         * 矩阵相乘
+         a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
+         a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
+         a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
+         a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
+         */
         multiply(v, out) {
             if (!out) {
                 out = new Matrix4();
@@ -1498,12 +1564,12 @@ var QuickEngine;
         /**
          * 矩阵向量相乘, 列向量应该右乘矩阵
          * @param vec
-        a00 a01 a02 a03    x
-        a10 a11 a12 a13 *  y
-        a20 a21 a22 a23    z
-        a30 a31 a32 a33    w=0
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
          */
-        transfromVector3(v) {
+        transformVector3(v) {
             let x = this._00 * v.x + this._01 * v.y + this._02 * v.z;
             let y = this._10 * v.x + this._11 * v.y + this._12 * v.z;
             let z = this._20 * v.x + this._21 * v.y + this._22 * v.z;
@@ -1517,6 +1583,7 @@ var QuickEngine;
             this._10 = 0, this._11 = 1, this._12 = 0, this._20 = 0;
             this._20 = 0, this._21 = 0, this._22 = 1, this._23 = 0;
             this._30 = 0, this._31 = 0, this._32 = 0, this._33 = 1;
+            return this;
         }
         static identity() {
             return new Matrix4();
@@ -1572,9 +1639,9 @@ var QuickEngine;
         }
         /**
          * 矩阵转置
-        每一列变成每一行
-        | a b |  T   | a c |
-        | c d | ===> | b d |
+         每一列变成每一行
+         | a b |  T   | a c |
+         | c d | ===> | b d |
          */
         transpose() {
             let newMat = new Matrix4();
@@ -1658,15 +1725,25 @@ var QuickEngine;
             let position, scale, orientation;
             console.assert(this.isAffine());
         }
-        // opengl是列向量矩阵
+        // openGL是列向量矩阵
         toArrayBuffer() {
-            this._rawdata.set([
-                this._00, this._10, this._20, this._30,
-                this._01, this._11, this._21, this._31,
-                this._02, this._12, this._22, this._32,
-                this._03, this._13, this._23, this._33
-            ]);
-            return this._rawdata;
+            if (QuickEngine.__USE_COLUMN_MATRIX__) {
+                this._rawData.set([
+                    this._00, this._10, this._20, this._30,
+                    this._01, this._11, this._21, this._31,
+                    this._02, this._12, this._22, this._32,
+                    this._03, this._13, this._23, this._33
+                ]);
+            }
+            else {
+                this._rawData.set([
+                    this._00, this._01, this._02, this._03,
+                    this._10, this._11, this._12, this._13,
+                    this._20, this._21, this._22, this._23,
+                    this._30, this._31, this._32, this._33
+                ]);
+            }
+            return this._rawData;
         }
         static makeTransform(position, rotation, scale, out) {
             if (!out) {
@@ -1681,21 +1758,21 @@ var QuickEngine;
             let rot4x4 = rotation.ToRotationMatrix();
             let scale4x4 = Matrix4.makeScale(scale.x, scale.y, scale.z);
             /**
-            * 矩阵相乘
-           r00 r01 r02 r03     s00 0   0   0       r00*s00+r01*s10+r02*s20+r03*s30 r00*s01+r01*s11+r02*s21+r03*s31 r00*s02+r01*s12+r02*s22+r03*s32 r00*s03+r01*s13+r02*s23+r03*s33
-           r10 r11 r12 r13  *  0   s11 0   0   =   r10*s00+r11*s10+r12*s20+r13*s30 r10*s01+r11*s11+r12*s21+r13*s31 r10*s02+r11*s12+r12*s22+r13*s32 r10*s03+r11*s13+r12*s23+r13*s33
-           r20 r21 r22 r23     0   0   s22 0       r20*s00+r21*s10+r22*s20+r23*s30 r20*s01+r21*s11+r22*s21+r23*s31 r20*s02+r21*s12+r22*s22+r23*s32 r20*s03+r21*s13+r22*s23+r23*s33
-           r30 r31 r32 r33     0   0   0   s33     r30*s00+r31*s10+r32*s20+r33*s30 r30*s01+r31*s11+r32*s21+r33*s31 r30*s02+r31*s12+r32*s22+r33*s32 r30*s03+r31*s13+r32*s23+r33*s33
-                                                   r00*s00                                 r01*s11                                 r02*s22                                 r03*s33
-                                               =   r10*s00                                 r11*s11                                 r12*s22                                 r13*s33
-                                                   r20*s00                                 r21*s11                                 r22*s22                                 r23*s33
-                                                   r30*s00                                 r31*s11                                 r32*s22                                 r33*s33
-                                                   r00*s00 r01*s11 r02*s22 r03*s33
-                                               =   r10*s00 r11*s11 r12*s22 r13*s33
-                                                   r20*s00 r21*s11 r22*s22 r23*s33
-                                                   r30*s00 r31*s11 r32*s22 r33*s33
-   
-                */
+             * 矩阵相乘
+             r00 r01 r02 r03     s00 0   0   0       r00*s00+r01*s10+r02*s20+r03*s30 r00*s01+r01*s11+r02*s21+r03*s31 r00*s02+r01*s12+r02*s22+r03*s32 r00*s03+r01*s13+r02*s23+r03*s33
+             r10 r11 r12 r13  *  0   s11 0   0   =   r10*s00+r11*s10+r12*s20+r13*s30 r10*s01+r11*s11+r12*s21+r13*s31 r10*s02+r11*s12+r12*s22+r13*s32 r10*s03+r11*s13+r12*s23+r13*s33
+             r20 r21 r22 r23     0   0   s22 0       r20*s00+r21*s10+r22*s20+r23*s30 r20*s01+r21*s11+r22*s21+r23*s31 r20*s02+r21*s12+r22*s22+r23*s32 r20*s03+r21*s13+r22*s23+r23*s33
+             r30 r31 r32 r33     0   0   0   s33     r30*s00+r31*s10+r32*s20+r33*s30 r30*s01+r31*s11+r32*s21+r33*s31 r30*s02+r31*s12+r32*s22+r33*s32 r30*s03+r31*s13+r32*s23+r33*s33
+             r00*s00                                 r01*s11                                 r02*s22                                 r03*s33
+             =   r10*s00                                 r11*s11                                 r12*s22                                 r13*s33
+             r20*s00                                 r21*s11                                 r22*s22                                 r23*s33
+             r30*s00                                 r31*s11                                 r32*s22                                 r33*s33
+             r00*s00 r01*s11 r02*s22 r03*s33
+             =   r10*s00 r11*s11 r12*s22 r13*s33
+             r20*s00 r21*s11 r22*s22 r23*s33
+             r30*s00 r31*s11 r32*s22 r33*s33
+
+             */
             out._00 = rot4x4._00 * scale.x;
             out._01 = rot4x4._01 * scale.y;
             out._02 = rot4x4._02 * scale.z;
@@ -1881,12 +1958,12 @@ var QuickEngine;
             return out;
         }
         /**
-        * 生成左手视图矩阵
-        * @param position
-        * @param orientation
-        * @param reflectMatrix
-        * @param viewMatrix
-        */
+         * 生成左手视图矩阵
+         * @param position
+         * @param orientation
+         * @param reflectMatrix
+         * @param viewMatrix
+         */
         static makeViewMatrixLH(position, orientation, reflectMatrix, viewMatrix) {
             if (!viewMatrix) {
                 viewMatrix = new Matrix4();
@@ -1902,15 +1979,68 @@ var QuickEngine;
             return viewMatrix;
         }
         /**
-        * 构造左手正交视图矩阵
-        * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
-        * @param w
-        * @param h
-        * @param zn
-        * @param zf
-        * @param target
-        */
+         * 构造左手正交视图矩阵
+         * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         * @example
+         * |2 / (right - left), 0,                  0,                -(right + left) / (right - left) |
+         * |0,                  2 / (top - bottom), 0,                -(top + bottom) / (top - bottom) |
+         * |0,                  0,                  2 / (far - near), -(far + near) / (far - near)     |
+         * |0,                  0,                  0,                1                                |
+         */
         static makeOrthoLH(left, right, top, bottom, near, far, target) {
+            target = target ? target.identity() : new Matrix4();
+            let w = right - left;
+            let h = top - bottom;
+            let d = far - near;
+            let inv_d = 1 / d;
+            let x = (right + left) / w;
+            let y = (top + bottom) / h;
+            let z = (far + near) / d;
+            target._00 = 2 / w;
+            target._03 = -x;
+            target._11 = 2 / h;
+            target._13 = -y;
+            target._22 = -2 / d;
+            target._23 = -z;
+            return target;
+        }
+        /**
+         * TODO:
+         * @param w
+         * @param h
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makeOrthoFovLH(w, h, near, far, target) {
+            if (!target) {
+                target = new Matrix4();
+            }
+            else {
+                target.identity();
+            }
+            let inv = 1.0 / (far - near);
+            target._00 = 2.0 / w;
+            target._11 = 2.0 / h;
+            target._22 = inv;
+            //  target._23 = -near * inv;
+            target._33 = 1.0;
+            return target;
+        }
+        /**
+         * 生成正交视图矩阵
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         */
+        static makeOrthoRH(left, right, top, bottom, near, far, target) {
             if (!target) {
                 target = new Matrix4();
             }
@@ -1930,22 +2060,6 @@ var QuickEngine;
             target._13 = -y;
             target._22 = -2 / d;
             target._23 = -z;
-            target._33 = 1;
-            return target;
-        }
-        static makeOrthoFovLH(w, h, near, far, target) {
-            if (!target) {
-                target = new Matrix4();
-            }
-            else {
-                target.identity();
-            }
-            let inv = 1.0 / (far - near);
-            target._00 = 2.0 / w;
-            target._11 = 2.0 / h;
-            target._22 = inv;
-            //  target._23 = -near * inv;
-            target._33 = 1.0;
             return target;
         }
         /**
@@ -2008,36 +2122,6 @@ var QuickEngine;
             return Matrix4.makePerspectiveLH(xmin, xmax, ymax, ymin, near, far, target);
         }
         /**
-         * 生成正交视图矩阵
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         */
-        static makeOrthoRH(left, right, top, bottom, near, far, target) {
-            if (!target) {
-                target = new Matrix4();
-            }
-            else {
-                target.identity();
-            }
-            let inv_d = 1 / (far - near);
-            let w = right - left;
-            let h = top - bottom;
-            let d = far - near;
-            let x = (right + left) / w;
-            let y = (top + bottom) / h;
-            let z = (far + near) / d;
-            target._00 = 2 / w;
-            target._03 = -x;
-            target._11 = 2 / h;
-            target._13 = -y;
-            target._22 = -2 / d;
-            target._23 = -z;
-            return target;
-        }
-        /**
          * 构造右手投影矩阵
          * @param left
          * @param right
@@ -2064,8 +2148,8 @@ var QuickEngine;
             let q, qn;
             if (far == 0) {
                 // Infinite far plane
-                q = 0.00001 - 1;
-                qn = near * (0.00001 - 2);
+                q = Number.EPSILON - 1;
+                qn = near * (Number.EPSILON - 2);
             }
             else {
                 q = -(far + near) * inv_d;
@@ -2097,7 +2181,7 @@ var QuickEngine;
             return Matrix4.makePerspectiveRH(xmin, xmax, ymax, ymin, near, far, target);
         }
     }
-    Matrix4.ClassName = "Matrix4";
+    Matrix4.ClassName = 'Matrix4';
     QuickEngine.Matrix4 = Matrix4;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
@@ -2161,7 +2245,7 @@ var QuickEngine;
          *
          * @param m
          */
-        transfrom(m) {
+        transform(m) {
         }
         /**
          * 3点构造平面, 3点不能共线, 否则有无数个面
@@ -2222,8 +2306,8 @@ var QuickEngine;
 (function (QuickEngine) {
     const s_epsilon = 1e-03;
     /**
-     * ��Ԫ�� [w, x, y, z]
-     * ������Ƕ�(n, ��): ��nָ������ת��Ƚ�, �� q = [cos(�� / 2), sin(�� / 2) * nx, sin(�� / 2) * ny, sin(�� / 2) * nz]
+     * 四元数 [w, x, y, z]
+     * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
      */
     class Quaternion {
         constructor(w = 1, x = 0, y = 0, z = 0) {
@@ -2242,39 +2326,38 @@ var QuickEngine;
         clone() {
             return new Quaternion(this.w, this.x, this.y, this.z);
         }
-        //----------------------------------��������-------------------------------------
+        //----------------------------------基本计算-------------------------------------
         /**
-         * �ӷ�
+         * 加法
          * @param q
          */
         add(q) {
             return new Quaternion(this.w + q.w, this.x + q.x, this.y + q.y, this.z + q.z);
         }
         /**
-         * ����
+         * 减法
          * @param q
          */
         minus(q) {
             return new Quaternion(this.w - q.w, this.x - q.x, this.y - q.y, this.z - q.z);
         }
         /**
-         * ���
+         * 点乘
          * @param q
          */
         dot(q) {
             return this.w * q.w + this.x * q.x + this.y * q.y + this.z * q.z;
         }
         /**
-         * ���
+         * 叉乘
          * @param q
          */
         multiply(q) {
-            let w1 = this.w, x1 = this.x, y1 = this.y, z1 = this.z;
-            let w2 = q.w, x2 = q.x, y2 = q.y, z2 = q.z;
-            return new Quaternion(w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2, w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2, w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2, w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2);
+            var w = this.w, x = this.x, y = this.y, z = this.z;
+            return new Quaternion(w * q.w - x * q.x - y * q.y - z * q.z, w * q.x + x * q.w + z * q.y - y * q.z, w * q.y + y * q.w + x * q.z - z * q.x, w * q.z + z * q.w + y * q.x - x * q.y);
         }
         /**
-         * ����һ������
+         * 乘以一个标量
          * @param s
          */
         multiplyScalar(s) {
@@ -2284,45 +2367,45 @@ var QuickEngine;
             return new Quaternion(q.w * s, q.x * s, q.y * s, q.z * s);
         }
         multiplyVector(vector) {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let x2 = vector.x;
-            let y2 = vector.y;
-            let z2 = vector.z;
+            var w = this.w, x = this.x, y = this.y, z = this.z;
+            var x2 = vector.x;
+            var y2 = vector.y;
+            var z2 = vector.z;
             return new Quaternion(-x * x2 - y * y2 - z * z2, w * x2 + y * z2 - z * y2, w * y2 - x * z2 + z * x2, w * z2 + x * y2 - y * x2);
         }
         rotateVector3(v) {
-            //let qvec = new Vector3(this.x, this.y, this.z);
-            //let uv = qvec.cross(v);
-            //let uuv = qvec.cross(uv);
-            //uv = uv.multiplyScalar(2.0 * this.w);
-            //uuv = uuv.multiplyScalar(2.0);
-            //return new Vector3(v.x + uv.x + uuv.x, v.y + uv.y + uuv.y, v.z + uv.z + uuv.z);
-            let out = new QuickEngine.Vector3();
-            let src = this;
-            let vector = v;
-            let x1, y1, z1, w1;
-            let x2 = vector.x, y2 = vector.y, z2 = vector.z;
-            w1 = -src.x * x2 - src.y * y2 - src.z * z2;
-            x1 = src.w * x2 + src.y * z2 - src.z * y2;
-            y1 = src.w * y2 - src.x * z2 + src.z * x2;
-            z1 = src.w * z2 + src.x * y2 - src.y * x2;
-            out.x = -w1 * src.x + x1 * src.w - y1 * src.z + z1 * src.y;
-            out.y = -w1 * src.y + x1 * src.z + y1 * src.w - z1 * src.x;
-            out.z = -w1 * src.z - x1 * src.y + y1 * src.x + z1 * src.w;
-            return out;
+            var qvec = new QuickEngine.Vector3(this.x, this.y, this.z);
+            var uv = qvec.cross(v);
+            var uuv = qvec.cross(uv);
+            uv = uv.multiplyScalar(2.0 * this.w);
+            uuv = uuv.multiplyScalar(2.0);
+            return new QuickEngine.Vector3(v.x + uv.x + uuv.x, v.y + uv.y + uuv.y, v.z + uv.z + uuv.z);
+            //var out = new Vector3();
+            //var src = this;
+            //var vector = v;
+            //let x1: number, y1: number, z1: number, w1: number;
+            //let x2: number = vector.x, y2: number = vector.y, z2: number = vector.z;
+            //w1 = -src.x * x2 - src.y * y2 - src.z * z2;
+            //x1 = src.w * x2 + src.y * z2 - src.z * y2;
+            //y1 = src.w * y2 - src.x * z2 + src.z * x2;
+            //z1 = src.w * z2 + src.x * y2 - src.y * x2;
+            //out.x = -w1 * src.x + x1 * src.w - y1 * src.z + z1 * src.y;
+            //out.y = -w1 * src.y + x1 * src.z + y1 * src.w - z1 * src.x;
+            //out.z = -w1 * src.z - x1 * src.y + y1 * src.x + z1 * src.w;
+            //  return out;
         }
         /**
-         * ����. ��ʽ: log(q) = [0, ��N], N Ϊ��λ����
+         * 对数. 公式: log(q) = [0, αN], N 为单位向量
          */
         log() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
-            // w = cos(�� / 2)
+            var w = this.w, x = this.x, y = this.y, z = this.z;
+            var rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
+            // w = cos(θ / 2)
             if (Math.abs(w) < 1.0) {
-                let angle = Math.acos(w);
-                let sina = Math.sin(angle);
+                var angle = Math.acos(w);
+                var sina = Math.sin(angle);
                 if (Math.abs(sina) >= s_epsilon) {
-                    let fCoeff = angle / sina;
+                    var fCoeff = angle / sina;
                     rx = fCoeff * x;
                     ry = fCoeff * y;
                     rz = fCoeff * z;
@@ -2331,16 +2414,16 @@ var QuickEngine;
             return new Quaternion(rw, rx, ry, rz);
         }
         /**
-         * ָ��. ��ʽ: exp(p) = [cos() ]
+         * 指数. 公式: exp(p) = [cos() ]
          */
         exp() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
-            let fAngle = Math.sqrt(x * x + y * y + z * z);
-            let fSin = Math.sin(fAngle);
+            var w = this.w, x = this.x, y = this.y, z = this.z;
+            var rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
+            var fAngle = Math.sqrt(x * x + y * y + z * z);
+            var fSin = Math.sin(fAngle);
             rw = Math.cos(fAngle);
             if (Math.abs(fSin) >= s_epsilon) {
-                let fCoeff = fSin / (fAngle);
+                var fCoeff = fSin / (fAngle);
                 rx = fCoeff * x;
                 ry = fCoeff * y;
                 rz = fCoeff * z;
@@ -2353,19 +2436,19 @@ var QuickEngine;
             return new Quaternion(rw, rx, ry, rz);
         }
         /**
-         * ������Ԫ��, ��Ԫ����q-1 = ���Ĺ������ģ��
+         * 共轭四元数, 四元数逆q-1 = 它的共轭除以模长
          */
         conjugate() {
             return new Quaternion(this.w, -this.x, -this.y, -this.z);
         }
         /**
-         * ��Ԫ������
+         * 四元数的逆
          */
         inverse() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let mag = w * w + x * x + y * y + z * z;
+            var w = this.w, x = this.x, y = this.y, z = this.z;
+            var mag = w * w + x * x + y * y + z * z;
             if (mag > 0.0) {
-                let invMag = 1.0 / mag;
+                var invMag = 1.0 / mag;
                 return new Quaternion(w * invMag, -x * invMag, -y * invMag, -z * invMag);
             }
             else {
@@ -2373,31 +2456,31 @@ var QuickEngine;
             }
         }
         /**
-         * ��λ��Ԫ������, �����ǵ�λ��Ԫ�����ܵ��ô˷���
+         * 单位四元数求逆, 必须是单位四元数才能调用此方法
          */
         unitInverse() {
             return new Quaternion(this.w, -this.x, -this.y, -this.z);
         }
         /**
-         * ģ��
+         * 模长
          */
         get magnitude() {
             return this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
         }
         /**
-         * ģ��ƽ��
+         * 模长平方
          */
         get sqrMagnitude() {
             return Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
         }
         /**
-         * ����
+         * 正则化
          */
         normalize() {
-            // ģ��
-            let len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+            // 模长
+            var len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
             console.assert(len != 0);
-            let invLen = 1.0 / len;
+            var invLen = 1.0 / len;
             this.x *= invLen;
             this.y *= invLen;
             this.z *= invLen;
@@ -2405,36 +2488,36 @@ var QuickEngine;
             return this;
         }
         /**
-         * �Ƚ�������Ԫ���Ƿ����
+         * 比较两个四元素是否相等
          * @param other
          */
         equal(q) {
             return this.x == q.x && this.y == q.y && this.z == q.z && this.w == q.w;
         }
-        //----------------------------------��ֵ����-------------------------------------
+        //----------------------------------插值操作-------------------------------------
         /**
-         * ���Բ�ֵ(Linear Interpolation)
+         * 线性插值(Linear Interpolation)
          * @param lhs
          * @param rhs
          * @param t
          */
         lerp(lhs, rhs, t) {
-            let w0 = lhs.w, x0 = lhs.x, y0 = lhs.y, z0 = lhs.z;
-            let w1 = rhs.w, x1 = rhs.x, y1 = rhs.y, z1 = rhs.z;
-            // ����Ԫ�����
-            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
-            // ���Ϊ��, ��ת��Ԫ����ȡ�ö̻�
+            var w0 = lhs.w, x0 = lhs.x, y0 = lhs.y, z0 = lhs.z;
+            var w1 = rhs.w, x1 = rhs.x, y1 = rhs.y, z1 = rhs.z;
+            // 两四元数点乘
+            var cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
+            // 点乘为负, 反转四元数以取得短弧
             if (cosOmega < 0) {
                 w1 = -w1;
                 x1 = -x1;
                 y1 = -y1;
                 z1 = -z1;
             }
-            let w = w0 + t * (w1 - w0);
-            let x = x0 + t * (x1 - x0);
-            let y = y0 + t * (y1 - y0);
-            let z = z0 + t * (z1 - z0);
-            let invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
+            var w = w0 + t * (w1 - w0);
+            var x = x0 + t * (x1 - x0);
+            var y = y0 + t * (y1 - y0);
+            var z = z0 + t * (z1 - z0);
+            var invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
             this.w = w * invLen;
             this.x = x * invLen;
             this.y = y * invLen;
@@ -2442,17 +2525,17 @@ var QuickEngine;
             return this;
         }
         /**
-         * �������Բ�ֵ(Spherical Linear Interpolation)
+         * 球面线性插值(Spherical Linear Interpolation)
          * @param lhs
          * @param rhs
          * @param t
          */
         slerp(lhs, rhs, t) {
-            let w0, x0, y0, z0;
-            let w1, x1, y1, z1;
-            // ����Ԫ�����
-            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
-            // ���Ϊ��, ��ת��Ԫ����ȡ�ö̻�
+            var w0, x0, y0, z0;
+            var w1, x1, y1, z1;
+            // 两四元数点乘
+            var cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
+            // 点乘为负, 反转四元数以取得短弧
             if (cosOmega < 0) {
                 w1 = -w1;
                 x1 = -x1;
@@ -2460,15 +2543,15 @@ var QuickEngine;
                 z1 = -z1;
                 cosOmega = -cosOmega;
             }
-            let k0 = 0, k1 = 0;
+            var k0 = 0, k1 = 0;
             if (cosOmega > 1 - s_epsilon) {
                 k0 = 1 - t;
                 k1 = t;
             }
             else {
-                let sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
-                let omega = Math.atan2(sinOmega, cosOmega);
-                let invSinOmega = 1 / sinOmega;
+                var sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
+                var omega = Math.atan2(sinOmega, cosOmega);
+                var invSinOmega = 1 / sinOmega;
                 k0 = Math.sin((1 - t) * omega) * invSinOmega;
                 k1 = Math.sin(t * omega) * invSinOmega;
             }
@@ -2479,84 +2562,29 @@ var QuickEngine;
             return this;
         }
         squad(q0, q1, s0, s1, t) {
-            let slerpT = 2 * t * (1 - t);
-            let slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
-            let slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
+            var slerpT = 2 * t * (1 - t);
+            var slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
+            var slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
             return this.slerp(slerpQ0, slerpQ1, slerpT);
         }
-        //------------------------------��Ԫ��,����,��������ת��--------------------------
+        //------------------------------四元数,矩阵,向量互相转换--------------------------
         /**
-         * ͨ����ת��������Ԫ��
+         * 通过旋转矩阵构造四元数
          * @param rotMat
          */
         FromRotationMatrix(rotMat) {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let out = this;
-            let trace = rotMat._00 + rotMat._11 + rotMat._22;
-            if (trace > 0) {
-                //    // |w| > 1/2, may as well choose w > 1/2
-                let root = Math.sqrt(trace + 1.0); // 2w
-                this.w = 0.5 * root;
-                root = 0.5 / root; // 1/(4w)
-                this.x = (rotMat._21 - rotMat._12) * root;
-                this.y = (rotMat._02 - rotMat._20) * root;
-                this.z = (rotMat._10 - rotMat._01) * root;
-            }
-            else {
-                if (rotMat._00 > rotMat._11) {
-                    if (rotMat._00 > rotMat._22) {
-                        // XDiagDomMatrix
-                        let rs = (rotMat._00 - (rotMat._11 + rotMat._22)) + 1;
-                        rs = Math.sqrt(rs);
-                        out.x = rs * 0.5;
-                        rs = 0.5 / rs;
-                        out.w = (rotMat._12 - rotMat._21) * rs;
-                        out.y = (rotMat._01 + rotMat._10) * rs;
-                        out.z = (rotMat._02 + rotMat._20) * rs;
-                    }
-                    else {
-                        // ZDiagDomMatrix
-                        let rs = (rotMat._22 - (rotMat._00 + rotMat._11)) + 1;
-                        rs = Math.sqrt(rs);
-                        out.z = rs * 0.5;
-                        rs = 0.5 / rs;
-                        out.w = (rotMat._01 - rotMat._10) * rs;
-                        out.x = (rotMat._20 + rotMat._02) * rs;
-                        out.y = (rotMat._21 + rotMat._12) * rs;
-                    }
-                }
-                else if (rotMat._11 > rotMat._22) {
-                    // YDiagDomMatrix
-                    let rs = (rotMat._11 - (rotMat._22 + rotMat._00)) + 1;
-                    rs = Math.sqrt(rs);
-                    out.y = rs * 0.5;
-                    rs = 0.5 / rs;
-                    out.w = (rotMat._20 - rotMat._02) * rs;
-                    out.z = (rotMat._12 + rotMat._21) * rs;
-                    out.x = (rotMat._10 + rotMat._01) * rs;
-                }
-                else {
-                    // ZDiagDomMatrix
-                    let rs = (rotMat._22 - (rotMat._00 + rotMat._11)) + 1;
-                    rs = Math.sqrt(rs);
-                    out.z = rs * 0.5;
-                    rs = 0.5 / rs;
-                    out.w = (rotMat._01 - rotMat._10) * rs;
-                    out.x = (rotMat._20 + rotMat._02) * rs;
-                    out.y = (rotMat._21 + rotMat._12) * rs;
-                }
-            }
+            var w = this.w, x = this.x, y = this.y, z = this.z;
             return this;
         }
         ToRotationMatrix(rotMat) {
             if (!rotMat) {
                 rotMat = new QuickEngine.Matrix4();
             }
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let _2x = x + x, _2y = y + y, _2z = z + z;
-            let _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
-            let _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
-            let _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
+            var w = this.w, x = this.x, y = this.y, z = this.z;
+            var _2x = x + x, _2y = y + y, _2z = z + z;
+            var _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
+            var _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
+            var _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
             rotMat._00 = 1.0 - (_2yy + _2zz);
             rotMat._01 = _2xy - _2zw; /*-----*/
             rotMat._02 = _2xz + _2yw; /*-----*/
@@ -2576,40 +2604,39 @@ var QuickEngine;
             return rotMat;
         }
         /**
-         * ����һ����axis��Ϊ������תrads���ȵ���Ԫ��
+         * 创建一个以axis轴为中心旋转rads弧度的四元数
          * @param axis
-         * @param degrees
+         * @param rads
          */
-        FromAngleAxis(axis, degrees) {
-            let rads = degrees * QuickEngine.DEGREES_TO_RADIANS;
-            let half_rads = rads / 2.0;
-            let cosine = Math.cos(half_rads);
-            let sine = Math.sin(half_rads);
+        FromAngleAxis(axis, rads) {
+            var half_rads = rads / 2.0;
+            var cosine = Math.cos(half_rads);
+            var sine = Math.sin(half_rads);
             this.x = axis.x * sine;
             this.y = axis.y * sine;
             this.z = axis.z * sine;
             this.w = cosine;
         }
         /**
-         * ������Ԫ�������ĺͽǶ�
-         * @param axis ��ת��
-         * @returns ����
+         * 返回四元数绕轴心和角度
+         * @param axis 旋转轴
+         * @returns 弧度
          */
         ToAngleAxis(axis) {
-            let rads = Math.acos(this.w);
-            let sin_theta_inv = 1.0 / Math.sin(rads);
+            var rads = Math.acos(this.w);
+            var sin_theta_inv = 1.0 / Math.sin(rads);
             axis.x = this.x * sin_theta_inv;
             axis.y = this.y * sin_theta_inv;
             axis.z = this.z * sin_theta_inv;
-            // acos(w) ������ǽǶȵ�һ��
+            // acos(w) 求出的是角度的一半
             rads *= 2;
             return rads;
         }
         /**
-         * ŷ����ת��Ԫ��
-         * @param eulerAngle ŷ����
-         * @param refQuaternion ŷ�������ã������Ϊ�գ�����ı䴫�����Ԫ���������ش������Ԫ��
-         * @return Quaternion ��Ԫ��
+         * 欧拉角转四元数
+         * @param eulerAngle 欧拉角
+         * @param refQuaternion 欧拉角引用，如果不为空，将会改变传入的四元数，并返回传入的四元数
+         * @return Quaternion 四元数
          */
         FromEulerAngle(eulerAngle, refQuaternion) {
             return this.FromEulerAngleScalar(eulerAngle.x, eulerAngle.y, eulerAngle.z, refQuaternion);
@@ -2618,15 +2645,15 @@ var QuickEngine;
             if (!refQuaternion) {
                 refQuaternion = new Quaternion();
             }
-            let half_x = x * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
-            let sinx = Math.sin(half_x);
-            let cosx = Math.cos(half_x);
-            let half_y = y * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
-            let siny = Math.sin(half_y);
-            let cosy = Math.cos(half_y);
-            let half_z = z * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
-            let sinz = Math.sin(half_z);
-            let cosz = Math.cos(half_z);
+            var half_x = x * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
+            var sinx = Math.sin(half_x);
+            var cosx = Math.cos(half_x);
+            var half_y = y * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
+            var siny = Math.sin(half_y);
+            var cosy = Math.cos(half_y);
+            var half_z = z * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
+            var sinz = Math.sin(half_z);
+            var cosz = Math.cos(half_z);
             refQuaternion.w = cosx * cosy * cosz + sinx * siny * sinz;
             refQuaternion.x = sinx * cosy * cosz + cosx * siny * sinz;
             refQuaternion.y = cosx * siny * cosz - sinx * cosy * sinz;
@@ -2634,15 +2661,15 @@ var QuickEngine;
             return refQuaternion;
         }
         /**
-         * ��Ԫ��תŷ����
+         * 四元数转欧拉角
          */
         ToEulerAngle(refEulerAngle) {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
+            var w = this.w, x = this.x, y = this.y, z = this.z;
             if (!refEulerAngle) {
                 refEulerAngle = new QuickEngine.Vector3();
             }
             refEulerAngle.x = Math.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y));
-            let temp = 2.0 * (w * y - z * x);
+            var temp = 2.0 * (w * y - z * x);
             temp = QuickEngine.MathUtil.clampf(temp, -1.0, 1.0);
             refEulerAngle.y = Math.asin(temp);
             refEulerAngle.z = Math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
@@ -2652,15 +2679,15 @@ var QuickEngine;
             return refEulerAngle;
         }
         getRightVector() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
+            var w = this.w, x = this.x, y = this.y, z = this.z;
             return new QuickEngine.Vector3(1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + w * z), 2.0 * (x * z - w * y));
         }
         getUpVector() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
+            var w = this.w, x = this.x, y = this.y, z = this.z;
             return new QuickEngine.Vector3(2.0 * (x * y - w * z), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + w * x));
         }
         getDirVector() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
+            var w = this.w, x = this.x, y = this.y, z = this.z;
             return new QuickEngine.Vector3(2.0 * (w * y + x * z), 2.0 * (y * z - w * x), 1.0 - 2.0 * (x * x + y * y));
         }
     }
@@ -2668,11 +2695,10 @@ var QuickEngine;
     Quaternion.ZERO = new Quaternion(1, 0, 0, 0);
     Quaternion.IDENTITY = new Quaternion(1, 0, 0, 0);
     /**
-     * ��Ԫ������ squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
+     * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
      */
     Quaternion._TempQuat0 = new Quaternion();
     Quaternion._TempQuat1 = new Quaternion();
-    Quaternion.s_iNext = [1, 2, 0];
     QuickEngine.Quaternion = Quaternion;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
@@ -2887,7 +2913,7 @@ var QuickEngine;
          *
          * @param other
          */
-        copyFrom(other) {
+        copy(other) {
             this.x = other.x;
             this.y = other.y;
             this.z = other.z;
@@ -2937,7 +2963,7 @@ var QuickEngine;
             return new Vector3(x, y, z);
         }
         /**
-         * Scalar Product 无向积
+         * Scalar Product 乘以标量
          * @param multiplier
          */
         multiplyScalar(multiplier) {
@@ -2947,7 +2973,7 @@ var QuickEngine;
             return new Vector3(x, y, z);
         }
         /**
-         * 向量积
+         * 乘以向量
          * @param other
          */
         multiplyVector3(other) {
@@ -2996,6 +3022,10 @@ var QuickEngine;
             let z = x1 * y2 - x2 * y1;
             return new Vector3(x, y, z);
         }
+        /**
+         * 除以标量
+         * @param val
+         */
         divide(val) {
             // 不做除0检查
             console.assert(val != 0);
@@ -3005,6 +3035,10 @@ var QuickEngine;
             let z = this.z * t;
             return new Vector3(x, y, z);
         }
+        /**
+         * 除以向量
+         * @param other
+         */
         divideVector(other) {
             console.assert(other.x > 0 && other.y > 0 && other.z > 0);
             let x = this.x / other.x;
@@ -3054,7 +3088,7 @@ var QuickEngine;
          * @param v0
          * @param v1
          */
-        static distanceSquare(v0, v1) {
+        static sqrDistance(v0, v1) {
             let dx = v0.x - v1.x;
             let dy = v0.y - v1.y;
             let dz = v0.z - v1.z;
@@ -3529,7 +3563,8 @@ var QuickEngine;
                     break;
                 case 0 /* Prespective */:
                     {
-                        QuickEngine.Matrix4.makePerspectiveFovLH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
+                        // Matrix4.makePerspectiveFovLH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
+                        QuickEngine.Matrix4.makePerspectiveFovRH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
                     }
                     break;
                 default:
@@ -3664,9 +3699,9 @@ var QuickEngine;
             if (this._parent) {
                 let localMat = this.worldToLocalMatrix;
                 // 世界坐标转换到本地坐标系
-                val = localMat.transfromVector3(val);
+                val = localMat.transformVector3(val);
             }
-            this._localPosition.copyFrom(val);
+            this._localPosition.copy(val);
             this.needUpdate(false);
         }
         /*
@@ -3679,7 +3714,7 @@ var QuickEngine;
          * 设置本地坐标
         */
         set localPosition(val) {
-            this._localPosition.copyFrom(val);
+            this._localPosition.copy(val);
             this.needUpdate(false);
         }
         /*
@@ -3731,7 +3766,7 @@ var QuickEngine;
          * 设置本地欧拉角
         */
         set eulerAngle(e) {
-            this._eulerAngle.copyFrom(e);
+            this._eulerAngle.copy(e);
             let tempQuat = new QuickEngine.Quaternion();
             this.rotation = tempQuat.FromEulerAngle(e);
             this.needUpdate(false);
@@ -3750,7 +3785,7 @@ var QuickEngine;
          * 设置本地欧拉角
         */
         set localEulerAngle(e) {
-            this._localEulerAngle.copyFrom(e);
+            this._localEulerAngle.copy(e);
             this.localRotation = this._localRotation.FromEulerAngle(e);
             this.needUpdate(false);
         }
@@ -3764,7 +3799,7 @@ var QuickEngine;
          * 设置世界缩放
         */
         set scale(s) {
-            this._scale.copyFrom(s);
+            this._scale.copy(s);
             // TODO:
             this.needUpdate(false);
         }
@@ -3778,7 +3813,7 @@ var QuickEngine;
          * 设置本地缩放
         */
         set localScale(s) {
-            this._localScale.copyFrom(s);
+            this._localScale.copy(s);
             this.needUpdate(false);
         }
         /*
@@ -3910,9 +3945,9 @@ var QuickEngine;
                 this._position = tempPos.add(parent.position);
             }
             else {
-                this._position.copyFrom(this._localPosition);
+                this._position.copy(this._localPosition);
                 this._rotation.copyFrom(this._localRotation);
-                this._scale.copyFrom(this._localScale);
+                this._scale.copy(this._localScale);
             }
             QuickEngine.Matrix4.makeTransform(this._position, this._rotation, this._scale, this._localToWorldMatrix);
             this._needTransformUpdate = false;
@@ -4858,7 +4893,7 @@ var QuickEngine;
     //            } break;
     //            case InterpolationMode.Constant: {
     //                // 常数的话,直接使用k1的属性           
-    //                ret = ret.copyFrom(k1.value);
+    //                ret = ret.copy(k1.value);
     //            } break;
     //            default: {
     //                console.error("[QuaternionCurve.getInterpolation] 不支持的插值类型: " + interpolationMode);
@@ -7328,66 +7363,5 @@ var QuickEngine;
             };
         }
     })(DownloadHelper = QuickEngine.DownloadHelper || (QuickEngine.DownloadHelper = {}));
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    function assert(cond, msg) {
-    }
-    QuickEngine.assert = assert;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    class Log {
-        static D(...args) {
-            console.log.apply(this, arguments);
-        }
-        static I(...args) {
-            console.info.apply(this, arguments);
-        }
-        static W(...args) {
-            console.warn.apply(this, arguments);
-        }
-        static E(...args) {
-            console.error.apply(this, arguments);
-        }
-        static F(...args) {
-            console.error.apply(this, arguments);
-        }
-    }
-    QuickEngine.Log = Log;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    class TextResource extends QuickEngine.Resource {
-        constructor(name) {
-            super(name);
-        }
-        get data() {
-            return this._data;
-        }
-        clone() {
-            let obj = new TextResource(this._name);
-            obj._data = this._data;
-            return obj;
-        }
-        loadImpl() {
-            QuickEngine.TextLoader.instance.load(this.name, (err, data) => {
-                if (err || !data) {
-                    console.error('load text failed: ' + this.name + ' error: ' + err);
-                    this._state = 2 /* Loaded */;
-                    this._data = '';
-                    this._onLoad();
-                    return;
-                }
-                this._data = data;
-                this._state = 2 /* Loaded */;
-                this._onLoad();
-            }, this);
-        }
-        unloadImpl() {
-            this._data = null;
-        }
-    }
-    QuickEngine.TextResource = TextResource;
 })(QuickEngine || (QuickEngine = {}));
 //# sourceMappingURL=quick.js.map

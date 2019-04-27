@@ -1,3 +1,4 @@
+///<reference path="../loader/Resource.ts"/>
 namespace QuickEngine {
 	export class TextResource extends Resource {
 		private _data: string;

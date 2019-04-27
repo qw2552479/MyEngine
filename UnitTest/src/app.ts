@@ -21,10 +21,10 @@
                 // TestPerformenceArrayBufferAndArray.run();
                 // TestGetSet.run();
                 // testMinHeap();
-                //  UnitTest.TestMatrix.run();
-                // testSprite();
+                // UnitTest.TestMatrix.run();
+                testSprite();
                 // testAnimation();
-                testGeometry();
+                // testGeometry();
                 // testFbxModel();
             }
         });

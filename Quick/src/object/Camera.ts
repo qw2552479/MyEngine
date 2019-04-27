@@ -209,7 +209,8 @@ namespace QuickEngine {
                     Matrix4.makeOrthoLH(left, right, top, bottom, near, far, this._projMatrix);
                 } break;
                 case CameraType.Prespective: {
-                    Matrix4.makePerspectiveFovLH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
+                    // Matrix4.makePerspectiveFovLH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
+                    Matrix4.makePerspectiveFovRH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
                 } break;
                 default: {
                     console.warn("unkonw camera type: " + this._cameraType);

@@ -14,14 +14,17 @@ namespace QuickEngine {
      * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
      * 线性代数课本
      * 矩阵是列向量矩阵
-    | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
-    | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
-                | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
-                                | 3 7 11 15 |      | 30 31 32 33 |
+     | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
+     | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
+     | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
+     | 3 7 11 15 |      | 30 31 32 33 |
+     */
+    /**
+     * TODO: 矩阵数据使用array buffer, 数组计算更缓存友好
      */
     export class Matrix4 {
 
-        public static ClassName = "Matrix4";
+        public static ClassName = 'Matrix4';
 
         public _00: number = 1;
         public _10: number = 0;
@@ -65,9 +68,9 @@ namespace QuickEngine {
         }
 
         public set(_00: number, _01: number, _02: number, _03: number,
-            _10: number, _11: number, _12: number, _13: number,
-            _20: number, _21: number, _22: number, _23: number,
-            _30: number, _31: number, _32: number, _33: number): Matrix4 {
+                   _10: number, _11: number, _12: number, _13: number,
+                   _20: number, _21: number, _22: number, _23: number,
+                   _30: number, _31: number, _32: number, _33: number): Matrix4 {
 
             this._00 = _00, this._01 = _01, this._02 = _02, this._03 = _03;
             this._10 = _10, this._11 = _11, this._12 = _12, this._13 = _13;
@@ -99,12 +102,12 @@ namespace QuickEngine {
         }
 
         /**
-        * 矩阵相乘
-       a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
-       a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
-       a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
-       a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
-        */
+         * 矩阵相乘
+         a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
+         a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
+         a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
+         a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
+         */
         public multiply(v: Matrix4, out?: Matrix4): Matrix4 {
 
             if (!out) {
@@ -186,12 +189,12 @@ namespace QuickEngine {
         /**
          * 矩阵向量相乘, 列向量应该右乘矩阵
          * @param vec
-        a00 a01 a02 a03    x
-        a10 a11 a12 a13 *  y
-        a20 a21 a22 a23    z
-        a30 a31 a32 a33    w=0
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
          */
-        public transfromVector3(v: Vector3): Vector3 {
+        public transformVector3(v: Vector3): Vector3 {
 
             let x = this._00 * v.x + this._01 * v.y + this._02 * v.z;
             let y = this._10 * v.x + this._11 * v.y + this._12 * v.z;
@@ -203,11 +206,13 @@ namespace QuickEngine {
         /**
          * 单位矩阵
          */
-        public identity(): void {
+        public identity(): Matrix4 {
             this._00 = 1, this._01 = 0, this._02 = 0, this._03 = 0;
             this._10 = 0, this._11 = 1, this._12 = 0, this._20 = 0;
             this._20 = 0, this._21 = 0, this._22 = 1, this._23 = 0;
             this._30 = 0, this._31 = 0, this._32 = 0, this._33 = 1;
+
+            return this;
         }
 
         public static identity(): Matrix4 {
@@ -231,10 +236,10 @@ namespace QuickEngine {
             let v4 = m21 * m33 - m23 * m31;
             let v5 = m22 * m33 - m23 * m32;
 
-            let t00 = + (v5 * m11 - v4 * m12 + v3 * m13);
-            let t10 = - (v5 * m10 - v2 * m12 + v1 * m13);
-            let t20 = + (v4 * m10 - v2 * m11 + v0 * m13);
-            let t30 = - (v3 * m10 - v1 * m11 + v0 * m12);
+            let t00 = +(v5 * m11 - v4 * m12 + v3 * m13);
+            let t10 = -(v5 * m10 - v2 * m12 + v1 * m13);
+            let t20 = +(v4 * m10 - v2 * m11 + v0 * m13);
+            let t30 = -(v3 * m10 - v1 * m11 + v0 * m12);
 
             let invDet = 1 / (t00 * m00 + t10 * m01 + t20 * m02 + t30 * m03);
 
@@ -243,10 +248,10 @@ namespace QuickEngine {
             let d20 = t20 * invDet;
             let d30 = t30 * invDet;
 
-            let d01 = - (v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d11 = + (v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d21 = - (v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d31 = + (v3 * m00 - v1 * m01 + v0 * m02) * invDet;
+            let d01 = -(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
+            let d11 = +(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
+            let d21 = -(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
+            let d31 = +(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
 
             v0 = m10 * m31 - m11 * m30;
             v1 = m10 * m32 - m12 * m30;
@@ -255,10 +260,10 @@ namespace QuickEngine {
             v4 = m11 * m33 - m13 * m31;
             v5 = m12 * m33 - m13 * m32;
 
-            let d02 = + (v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d12 = - (v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d22 = + (v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d32 = - (v3 * m00 - v1 * m01 + v0 * m02) * invDet;
+            let d02 = +(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
+            let d12 = -(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
+            let d22 = +(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
+            let d32 = -(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
 
             v0 = m21 * m10 - m20 * m11;
             v1 = m22 * m10 - m20 * m12;
@@ -267,10 +272,10 @@ namespace QuickEngine {
             v4 = m23 * m11 - m21 * m13;
             v5 = m23 * m12 - m22 * m13;
 
-            let d03 = - (v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d13 = + (v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d23 = - (v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d33 = + (v3 * m00 - v1 * m01 + v0 * m02) * invDet;
+            let d03 = -(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
+            let d13 = +(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
+            let d23 = -(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
+            let d33 = +(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
 
             return Matrix4.create(
                 d00, d01, d02, d03,
@@ -281,9 +286,9 @@ namespace QuickEngine {
 
         /**
          * 矩阵转置
-        每一列变成每一行
-        | a b |  T   | a c |
-        | c d | ===> | b d |
+         每一列变成每一行
+         | a b |  T   | a c |
+         | c d | ===> | b d |
          */
         public transpose(): Matrix4 {
 
@@ -327,10 +332,22 @@ namespace QuickEngine {
             let xz = x * z, xy = x * y, yz = y * z;
             let xs = x * sa, ys = y * sa, zs = z * sa;
 
-            this._00 = x2 * c1 + ca; this._01 = xy * c1 + zs; this._02 = xz * c1 - ys; this._03 = 0;
-            this._10 = xy * c1 - zs; this._11 = y2 * c1 + ca; this._12 = yz * c1 + xs; this._13 = 0;
-            this._20 = xz * c1 + ys; this._21 = yz * c1 - xs; this._22 = z2 * c1 + ca; this._23 = 0;
-            this._30 = 0; this._31 = 0; this._32 = 0; this._33 = 1;
+            this._00 = x2 * c1 + ca;
+            this._01 = xy * c1 + zs;
+            this._02 = xz * c1 - ys;
+            this._03 = 0;
+            this._10 = xy * c1 - zs;
+            this._11 = y2 * c1 + ca;
+            this._12 = yz * c1 + xs;
+            this._13 = 0;
+            this._20 = xz * c1 + ys;
+            this._21 = yz * c1 - xs;
+            this._22 = z2 * c1 + ca;
+            this._23 = 0;
+            this._30 = 0;
+            this._31 = 0;
+            this._32 = 0;
+            this._33 = 1;
 
             return this;
         }
@@ -377,14 +394,23 @@ namespace QuickEngine {
             console.assert(this.isAffine());
         }
 
-        // opengl是列向量矩阵
+        // openGL是列向量矩阵
         public toArrayBuffer(): Float32Array {
-            this._rawData.set([
-                this._00, this._10, this._20, this._30,
-                this._01, this._11, this._21, this._31,
-                this._02, this._12, this._22, this._32,
-                this._03, this._13, this._23, this._33
-            ]);
+            if (__USE_COLUMN_MATRIX__) {
+                this._rawData.set([
+                    this._00, this._10, this._20, this._30,
+                    this._01, this._11, this._21, this._31,
+                    this._02, this._12, this._22, this._32,
+                    this._03, this._13, this._23, this._33
+                ]);
+            } else {
+                this._rawData.set([
+                    this._00, this._01, this._02, this._03,
+                    this._10, this._11, this._12, this._13,
+                    this._20, this._21, this._22, this._23,
+                    this._30, this._31, this._32, this._33
+                ]);
+            }
             return this._rawData;
         }
 
@@ -403,26 +429,38 @@ namespace QuickEngine {
             let rot4x4 = rotation.ToRotationMatrix();
             let scale4x4 = Matrix4.makeScale(scale.x, scale.y, scale.z);
             /**
-            * 矩阵相乘
-           r00 r01 r02 r03     s00 0   0   0       r00*s00+r01*s10+r02*s20+r03*s30 r00*s01+r01*s11+r02*s21+r03*s31 r00*s02+r01*s12+r02*s22+r03*s32 r00*s03+r01*s13+r02*s23+r03*s33
-           r10 r11 r12 r13  *  0   s11 0   0   =   r10*s00+r11*s10+r12*s20+r13*s30 r10*s01+r11*s11+r12*s21+r13*s31 r10*s02+r11*s12+r12*s22+r13*s32 r10*s03+r11*s13+r12*s23+r13*s33
-           r20 r21 r22 r23     0   0   s22 0       r20*s00+r21*s10+r22*s20+r23*s30 r20*s01+r21*s11+r22*s21+r23*s31 r20*s02+r21*s12+r22*s22+r23*s32 r20*s03+r21*s13+r22*s23+r23*s33
-           r30 r31 r32 r33     0   0   0   s33     r30*s00+r31*s10+r32*s20+r33*s30 r30*s01+r31*s11+r32*s21+r33*s31 r30*s02+r31*s12+r32*s22+r33*s32 r30*s03+r31*s13+r32*s23+r33*s33
-                                                   r00*s00                                 r01*s11                                 r02*s22                                 r03*s33
-                                               =   r10*s00                                 r11*s11                                 r12*s22                                 r13*s33
-                                                   r20*s00                                 r21*s11                                 r22*s22                                 r23*s33
-                                                   r30*s00                                 r31*s11                                 r32*s22                                 r33*s33
-                                                   r00*s00 r01*s11 r02*s22 r03*s33
-                                               =   r10*s00 r11*s11 r12*s22 r13*s33
-                                                   r20*s00 r21*s11 r22*s22 r23*s33
-                                                   r30*s00 r31*s11 r32*s22 r33*s33
-   
-                */
+             * 矩阵相乘
+             r00 r01 r02 r03     s00 0   0   0       r00*s00+r01*s10+r02*s20+r03*s30 r00*s01+r01*s11+r02*s21+r03*s31 r00*s02+r01*s12+r02*s22+r03*s32 r00*s03+r01*s13+r02*s23+r03*s33
+             r10 r11 r12 r13  *  0   s11 0   0   =   r10*s00+r11*s10+r12*s20+r13*s30 r10*s01+r11*s11+r12*s21+r13*s31 r10*s02+r11*s12+r12*s22+r13*s32 r10*s03+r11*s13+r12*s23+r13*s33
+             r20 r21 r22 r23     0   0   s22 0       r20*s00+r21*s10+r22*s20+r23*s30 r20*s01+r21*s11+r22*s21+r23*s31 r20*s02+r21*s12+r22*s22+r23*s32 r20*s03+r21*s13+r22*s23+r23*s33
+             r30 r31 r32 r33     0   0   0   s33     r30*s00+r31*s10+r32*s20+r33*s30 r30*s01+r31*s11+r32*s21+r33*s31 r30*s02+r31*s12+r32*s22+r33*s32 r30*s03+r31*s13+r32*s23+r33*s33
+             r00*s00                                 r01*s11                                 r02*s22                                 r03*s33
+             =   r10*s00                                 r11*s11                                 r12*s22                                 r13*s33
+             r20*s00                                 r21*s11                                 r22*s22                                 r23*s33
+             r30*s00                                 r31*s11                                 r32*s22                                 r33*s33
+             r00*s00 r01*s11 r02*s22 r03*s33
+             =   r10*s00 r11*s11 r12*s22 r13*s33
+             r20*s00 r21*s11 r22*s22 r23*s33
+             r30*s00 r31*s11 r32*s22 r33*s33
 
-            out._00 = rot4x4._00 * scale.x; out._01 = rot4x4._01 * scale.y; out._02 = rot4x4._02 * scale.z; out._03 = position.x;
-            out._10 = rot4x4._10 * scale.x; out._11 = rot4x4._11 * scale.y; out._12 = rot4x4._12 * scale.z; out._13 = position.y;
-            out._20 = rot4x4._20 * scale.x; out._21 = rot4x4._21 * scale.y; out._22 = rot4x4._22 * scale.z; out._23 = position.z;
-            out._30 = /*---------------*/0; out._31 = /*---------------*/0; out._32 = /*---------------*/0; out._33 = /*-----*/1;
+             */
+
+            out._00 = rot4x4._00 * scale.x;
+            out._01 = rot4x4._01 * scale.y;
+            out._02 = rot4x4._02 * scale.z;
+            out._03 = position.x;
+            out._10 = rot4x4._10 * scale.x;
+            out._11 = rot4x4._11 * scale.y;
+            out._12 = rot4x4._12 * scale.z;
+            out._13 = position.y;
+            out._20 = rot4x4._20 * scale.x;
+            out._21 = rot4x4._21 * scale.y;
+            out._22 = rot4x4._22 * scale.z;
+            out._23 = position.z;
+            out._30 = /*---------------*/0;
+            out._31 = /*---------------*/0;
+            out._32 = /*---------------*/0;
+            out._33 = /*-----*/1;
 
             return out;
         }
@@ -506,9 +544,15 @@ namespace QuickEngine {
             let xz = x * z, xy = x * y, yz = y * z;
             let xs = x * sa, ys = y * sa, zs = z * sa;
 
-            out._00 = x2 * c1 + ca; out._01 = xy * c1 + zs; out._02 = xz * c1 - ys;
-            out._10 = xy * c1 - zs; out._11 = y2 * c1 + ca; out._12 = yz * c1 + xs;
-            out._20 = xz * c1 + ys; out._21 = yz * c1 - xs; out._22 = z2 * c1 + ca;
+            out._00 = x2 * c1 + ca;
+            out._01 = xy * c1 + zs;
+            out._02 = xz * c1 - ys;
+            out._10 = xy * c1 - zs;
+            out._11 = y2 * c1 + ca;
+            out._12 = yz * c1 + xs;
+            out._20 = xz * c1 + ys;
+            out._21 = yz * c1 - xs;
+            out._22 = z2 * c1 + ca;
 
             return out;
         }
@@ -636,12 +680,12 @@ namespace QuickEngine {
         }
 
         /**
-        * 生成左手视图矩阵
-        * @param position
-        * @param orientation
-        * @param reflectMatrix
-        * @param viewMatrix
-        */
+         * 生成左手视图矩阵
+         * @param position
+         * @param orientation
+         * @param reflectMatrix
+         * @param viewMatrix
+         */
         public static makeViewMatrixLH(position: Vector3, orientation: Quaternion, reflectMatrix?: Matrix4, viewMatrix?: Matrix4): Matrix4 {
             if (!viewMatrix) {
                 viewMatrix = new Matrix4();
@@ -659,15 +703,78 @@ namespace QuickEngine {
         }
 
         /**
-        * 构造左手正交视图矩阵
-        * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
-        * @param w
-        * @param h
-        * @param zn
-        * @param zf
-        * @param target
-        */
+         * 构造左手正交视图矩阵
+         * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         * @example
+         * |2 / (right - left), 0,                  0,                -(right + left) / (right - left) |
+         * |0,                  2 / (top - bottom), 0,                -(top + bottom) / (top - bottom) |
+         * |0,                  0,                  2 / (far - near), -(far + near) / (far - near)     |
+         * |0,                  0,                  0,                1                                |
+         */
         public static makeOrthoLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
+
+            target = target ? target.identity() : new Matrix4();
+
+            let w = right - left;
+            let h = top - bottom;
+            let d = far - near;
+            let inv_d = 1 / d;
+
+            let x = (right + left) / w;
+            let y = (top + bottom) / h;
+            let z = (far + near) / d;
+
+            target._00 = 2 / w;
+            target._03 = -x;
+            target._11 = 2 / h;
+            target._13 = -y;
+            target._22 = -2 / d;
+            target._23 = -z;
+
+            return target;
+        }
+
+        /**
+         * TODO:
+         * @param w
+         * @param h
+         * @param near
+         * @param far
+         * @param target
+         */
+        public static makeOrthoFovLH(w: number, h: number, near: number, far: number, target?: Matrix4): Matrix4 {
+
+            if (!target) {
+                target = new Matrix4();
+            } else {
+                target.identity();
+            }
+
+            let inv = 1.0 / (far - near);
+
+            target._00 = 2.0 / w;
+            target._11 = 2.0 / h;
+            target._22 = inv;
+            //  target._23 = -near * inv;
+            target._33 = 1.0;
+
+            return target;
+        }
+
+        /**
+         * 生成正交视图矩阵
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         */
+        public static makeOrthoRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
 
             if (!target) {
                 target = new Matrix4();
@@ -691,27 +798,6 @@ namespace QuickEngine {
             target._13 = -y;
             target._22 = -2 / d;
             target._23 = -z;
-
-            target._33 = 1;
-
-            return target;
-        }
-
-        public static makeOrthoFovLH(w: number, h: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
-            if (!target) {
-                target = new Matrix4();
-            } else {
-                target.identity();
-            }
-
-            let inv = 1.0 / (far - near);
-
-            target._00 = 2.0 / w;
-            target._11 = 2.0 / h;
-            target._22 = inv;
-            //  target._23 = -near * inv;
-            target._33 = 1.0;
 
             return target;
         }
@@ -784,42 +870,6 @@ namespace QuickEngine {
         }
 
         /**
-         * 生成正交视图矩阵
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         */
-        public static makeOrthoRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
-            if (!target) {
-                target = new Matrix4();
-            } else {
-                target.identity();
-            }
-
-            let inv_d = 1 / (far - near);
-
-            let w = right - left;
-            let h = top - bottom;
-            let d = far - near;
-
-            let x = (right + left) / w;
-            let y = (top + bottom) / h;
-            let z = (far + near) / d;
-
-            target._00 = 2 / w;
-            target._03 = -x;
-            target._11 = 2 / h;
-            target._13 = -y;
-            target._22 = -2 / d;
-            target._23 = -z;
-
-            return target;
-        }
-
-        /**
          * 构造右手投影矩阵
          * @param left
          * @param right
@@ -839,6 +889,8 @@ namespace QuickEngine {
 
             let inv_w = 1 / (right - left);
             let inv_h = 1 / (top - bottom);
+
+
             let inv_d = 1 / (far - near);
 
             let A = 2 * near * inv_w;
@@ -849,10 +901,10 @@ namespace QuickEngine {
 
             if (far == 0) {
                 // Infinite far plane
-                q = 0.00001 - 1;
-                qn = near * (0.00001 - 2);
+                q = Number.EPSILON - 1;
+                qn = near * (Number.EPSILON - 2);
             } else {
-                q = - (far + near) * inv_d;
+                q = -(far + near) * inv_d;
                 qn = -2 * (far * near) * inv_d;
             }
 
