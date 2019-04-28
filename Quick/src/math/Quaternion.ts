@@ -68,7 +68,7 @@
          * @param q
          */
         public multiply(q: Quaternion): Quaternion {
-            var w = this.w, x = this.x, y = this.y, z = this.z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
 
             return new Quaternion(
                 w * q.w - x * q.x - y * q.y - z * q.z,
@@ -92,10 +92,10 @@
 
         public multiplyVector(vector: Vector3): Quaternion {
 
-            var w = this.w, x = this.x, y = this.y, z = this.z;
-            var x2: number = vector.x;
-            var y2: number = vector.y;
-            var z2: number = vector.z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let x2: number = vector.x;
+            let y2: number = vector.y;
+            let z2: number = vector.z;
 
             return new Quaternion(
                 -x * x2 - y * y2 - z * z2,
@@ -107,17 +107,17 @@
 
         public rotateVector3(v: Vector3): Vector3 {
 
-            var qvec = new Vector3(this.x, this.y, this.z);
-            var uv = qvec.cross(v);
-            var uuv = qvec.cross(uv);
+            let qvec = new Vector3(this.x, this.y, this.z);
+            let uv = qvec.cross(v);
+            let uuv = qvec.cross(uv);
 
             uv = uv.multiplyScalar(2.0 * this.w);
             uuv = uuv.multiplyScalar(2.0);
 
             return new Vector3(v.x + uv.x + uuv.x, v.y + uv.y + uuv.y, v.z + uv.z + uuv.z);
-            //var out = new Vector3();
-            //var src = this;
-            //var vector = v;
+            //let out = new Vector3();
+            //let src = this;
+            //let vector = v;
             //let x1: number, y1: number, z1: number, w1: number;
             //let x2: number = vector.x, y2: number = vector.y, z2: number = vector.z;
 
@@ -139,16 +139,16 @@
          */
         public log(): Quaternion {
 
-            var w = this.w, x = this.x, y = this.y, z = this.z;           
-            var rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
             // w = cos(θ / 2)
             if (Math.abs(w) < 1.0)
             {
-                var angle: Radian = Math.acos(w);
-                var sina = Math.sin(angle);
+                let angle: Radian = Math.acos(w);
+                let sina = Math.sin(angle);
                 if (Math.abs(sina) >= s_epsilon)
                 {
-                    var fCoeff = angle / sina;
+                    let fCoeff = angle / sina;
                     rx = fCoeff * x;
                     ry = fCoeff * y;
                     rz = fCoeff * z;
@@ -163,17 +163,17 @@
          */
         public exp(): Quaternion {
 
-            var w = this.w, x = this.x, y = this.y, z = this.z;
-            var rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
 
-            var fAngle = Math.sqrt(x * x + y * y + z * z);
-            var fSin = Math.sin(fAngle);
+            let fAngle = Math.sqrt(x * x + y * y + z * z);
+            let fSin = Math.sin(fAngle);
 
             rw = Math.cos(fAngle);
 
             if (Math.abs(fSin) >= s_epsilon )
             {
-                var fCoeff = fSin / (fAngle);
+                let fCoeff = fSin / (fAngle);
                 rx = fCoeff * x;
                 ry = fCoeff * y;
                 rz = fCoeff * z;
@@ -198,11 +198,11 @@
          */
         public inverse(): Quaternion {
 
-            var w = this.w, x = this.x, y = this.y, z = this.z;
-            var mag = w * w + x * x + y * y + z * z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let mag = w * w + x * x + y * y + z * z;
 
             if (mag > 0.0) {
-                var invMag = 1.0 / mag;
+                let invMag = 1.0 / mag;
                 return new Quaternion(w * invMag, -x * invMag, -y * invMag, -z * invMag);
             } else {
                 return new Quaternion(0, 0, 0, 0);
@@ -236,11 +236,11 @@
         public normalize(): Quaternion {
 
             // 模长
-            var len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+            let len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
 
             console.assert(len != 0);
 
-            var invLen = 1.0 / len;
+            let invLen = 1.0 / len;
             this.x *= invLen;
             this.y *= invLen;
             this.z *= invLen;
@@ -266,11 +266,11 @@
          */
         public lerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion {
 
-            var w0: number = lhs.w, x0: number = lhs.x, y0: number = lhs.y, z0: number = lhs.z;
-            var w1: number = rhs.w, x1: number = rhs.x, y1: number = rhs.y, z1: number = rhs.z;
+            let w0: number = lhs.w, x0: number = lhs.x, y0: number = lhs.y, z0: number = lhs.z;
+            let w1: number = rhs.w, x1: number = rhs.x, y1: number = rhs.y, z1: number = rhs.z;
 
             // 两四元数点乘
-            var cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
+            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
              // 点乘为负, 反转四元数以取得短弧
             if (cosOmega < 0) {
                 w1 = -w1;
@@ -279,11 +279,11 @@
                 z1 = -z1;
             }
 
-            var w = w0 + t * (w1 - w0);
-            var x = x0 + t * (x1 - x0);
-            var y = y0 + t * (y1 - y0);
-            var z = z0 + t * (z1 - z0);
-            var invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
+            let w = w0 + t * (w1 - w0);
+            let x = x0 + t * (x1 - x0);
+            let y = y0 + t * (y1 - y0);
+            let z = z0 + t * (z1 - z0);
+            let invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
 
             this.w = w * invLen;
             this.x = x * invLen;
@@ -301,10 +301,10 @@
          */
         public slerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion {
 
-            var w0, x0, y0, z0;
-            var w1, x1, y1, z1;
+            let w0, x0, y0, z0;
+            let w1, x1, y1, z1;
             // 两四元数点乘
-            var cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
+            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
             // 点乘为负, 反转四元数以取得短弧
             if (cosOmega < 0) {
                 w1 = -w1;
@@ -314,14 +314,14 @@
                 cosOmega = -cosOmega;
             }
 
-            var k0 = 0, k1 = 0;
+            let k0 = 0, k1 = 0;
             if (cosOmega > 1 - s_epsilon) {
                 k0 = 1 - t;
                 k1 = t;
             } else {
-                var sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
-                var omega = Math.atan2(sinOmega, cosOmega);
-                var invSinOmega = 1 / sinOmega;
+                let sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
+                let omega = Math.atan2(sinOmega, cosOmega);
+                let invSinOmega = 1 / sinOmega;
                 k0 = Math.sin((1 - t) * omega) * invSinOmega;
                 k1 = Math.sin(t * omega) * invSinOmega;
             }
@@ -341,9 +341,9 @@
         private static _TempQuat1 = new Quaternion();
         public squad(q0, q1, s0, s1, t) {
 
-            var slerpT = 2 * t * (1 - t);
-            var slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
-            var slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
+            let slerpT = 2 * t * (1 - t);
+            let slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
+            let slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
 
             return this.slerp(slerpQ0, slerpQ1, slerpT);
         }
@@ -355,7 +355,7 @@
          */
         public FromRotationMatrix(rotMat: Matrix4): Quaternion {
 
-            var w = this.w, x = this.x, y = this.y, z = this.z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
 
 
 
@@ -368,11 +368,11 @@
                 rotMat = new Matrix4();
             }
 
-            var w = this.w, x = this.x, y = this.y, z = this.z;
-            var _2x = x + x, _2y = y + y, _2z = z + z;
-            var _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
-            var _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
-            var _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let _2x = x + x, _2y = y + y, _2z = z + z;
+            let _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
+            let _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
+            let _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
 
             rotMat._00 = 1.0 - (_2yy + _2zz); rotMat._01 = _2xy - _2zw;/*-----*/rotMat._02 = _2xz + _2yw;/*-----*/rotMat._03 = 0;
             rotMat._10 = _2xy + _2zw;/*-----*/rotMat._11 = 1.0 - (_2xx + _2zz); rotMat._12 = _2yz - _2xw;/*-----*/rotMat._13 = 0;
@@ -389,9 +389,9 @@
          */
         public FromAngleAxis(axis: Vector3, rads: Radian) {
 
-            var half_rads = rads / 2.0;
-            var cosine = Math.cos(half_rads);
-            var sine = Math.sin(half_rads);
+            let half_rads = rads / 2.0;
+            let cosine = Math.cos(half_rads);
+            let sine = Math.sin(half_rads);
 
             this.x = axis.x * sine;
             this.y = axis.y * sine;
@@ -406,9 +406,9 @@
          */
         public ToAngleAxis(axis: Vector3): Radian {
 
-            var rads = Math.acos(this.w);
+            let rads = Math.acos(this.w);
 
-            var sin_theta_inv = 1.0 / Math.sin(rads);
+            let sin_theta_inv = 1.0 / Math.sin(rads);
 
             axis.x = this.x * sin_theta_inv;
             axis.y = this.y * sin_theta_inv;
@@ -435,17 +435,17 @@
                 refQuaternion = new Quaternion();
             }
 
-            var half_x = x * 0.5 * DEGREES_TO_RADIANS;
-            var sinx = Math.sin(half_x);
-            var cosx = Math.cos(half_x);
+            let half_x = x * 0.5 * DEGREES_TO_RADIANS;
+            let sinx = Math.sin(half_x);
+            let cosx = Math.cos(half_x);
 
-            var half_y = y * 0.5 * DEGREES_TO_RADIANS;
-            var siny = Math.sin(half_y);
-            var cosy = Math.cos(half_y);
+            let half_y = y * 0.5 * DEGREES_TO_RADIANS;
+            let siny = Math.sin(half_y);
+            let cosy = Math.cos(half_y);
 
-            var half_z = z * 0.5 * DEGREES_TO_RADIANS;
-            var sinz = Math.sin(half_z);
-            var cosz = Math.cos(half_z);
+            let half_z = z * 0.5 * DEGREES_TO_RADIANS;
+            let sinz = Math.sin(half_z);
+            let cosz = Math.cos(half_z);
 
             refQuaternion.w = cosx * cosy * cosz + sinx * siny * sinz;
             refQuaternion.x = sinx * cosy * cosz + cosx * siny * sinz;
@@ -460,14 +460,14 @@
          */
         public ToEulerAngle(refEulerAngle?: Vector3): Vector3 {
 
-            var w = this.w, x = this.x, y = this.y, z = this.z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
             if (!refEulerAngle) {
                 refEulerAngle = new Vector3();
             }
 
             refEulerAngle.x = Math.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y));
 
-            var temp: number = 2.0 * (w * y - z * x);
+            let temp: number = 2.0 * (w * y - z * x);
             temp = MathUtil.clampf(temp, -1.0, 1.0);
             refEulerAngle.y = Math.asin(temp);
             refEulerAngle.z = Math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
@@ -480,7 +480,7 @@
         }       
 
         public getRightVector(): Vector3 {
-            var w = this.w, x = this.x, y = this.y, z = this.z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
             return new Vector3(
                 1.0 - 2.0 * (y * y + z * z),
                 2.0 * (x * y + w * z),
@@ -489,7 +489,7 @@
         }
 
         public getUpVector(): Vector3 {
-            var w = this.w, x = this.x, y = this.y, z = this.z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
             return new Vector3(
                2.0 * (x * y - w * z),
                1.0 - 2.0 * (x * x + z * z),
@@ -498,7 +498,7 @@
         }
 
         public getDirVector(): Vector3 {
-            var w = this.w, x = this.x, y = this.y, z = this.z;
+            let w = this.w, x = this.x, y = this.y, z = this.z;
             return new Vector3(
                 2.0 * (w * y + x * z),
                 2.0 * (y * z - w * x),

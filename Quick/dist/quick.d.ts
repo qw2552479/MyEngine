@@ -512,238 +512,6 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
-    /**
-     * 学习资料:
-     * http://www.euclideanspace.com/maths/algebra/matrix/
-     * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
-     * 线性代数课本
-     * 矩阵是列向量矩阵
-     | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
-     | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
-     | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
-     | 3 7 11 15 |      | 30 31 32 33 |
-     */
-    /**
-     * TODO: 矩阵数据使用array buffer, 数组计算更缓存友好
-     */
-    class Matrix4 {
-        static ClassName: string;
-        _00: number;
-        _10: number;
-        _20: number;
-        _30: number;
-        _01: number;
-        _11: number;
-        _21: number;
-        _31: number;
-        _02: number;
-        _12: number;
-        _22: number;
-        _32: number;
-        _03: number;
-        _13: number;
-        _23: number;
-        _33: number;
-        private _rawData;
-        constructor();
-        static create(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
-        set(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
-        copyFrom(other: Matrix4): Matrix4;
-        clone(): Matrix4;
-        /**
-         * 矩阵相乘
-         a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
-         a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
-         a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
-         a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
-         */
-        multiply(v: Matrix4, out?: Matrix4): Matrix4;
-        static multiply(v1: Matrix4, v2: Matrix4, out?: Matrix4): Matrix4;
-        /**
-         * 矩阵向量相乘, 列向量应该右乘矩阵
-         * @param vec
-         a00 a01 a02 a03    x
-         a10 a11 a12 a13 *  y
-         a20 a21 a22 a23    z
-         a30 a31 a32 a33    w=0
-         */
-        transformVector3(v: Vector3): Vector3;
-        /**
-         * 单位矩阵
-         */
-        identity(): Matrix4;
-        static identity(): Matrix4;
-        /**
-         * 矩阵求逆
-         */
-        inverse(): Matrix4;
-        /**
-         * 矩阵转置
-         每一列变成每一行
-         | a b |  T   | a c |
-         | c d | ===> | b d |
-         */
-        transpose(): Matrix4;
-        static transpose(target: Matrix4): Matrix4;
-        isAffine(): boolean;
-        /**
-         * 绕任意轴旋转
-         */
-        rotateByAxis(angle: number, axis: Vector3): Matrix4;
-        rotateByScalar(x: number, y: number, z: number): Matrix4;
-        /**
-         * 矩阵分解, 可分解为position,scale,quaternion
-         */
-        decompose(): void;
-        toArrayBuffer(): Float32Array;
-        static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4;
-        /**
-         * 构造平移矩阵
-         * @param v
-         * @param out
-         * @example
-         *          |1, 0, 0, x|
-         *          |0, 1, 0, y|
-         *          |0, 0, 1, z|
-         *          |0, 0, 0, 1|
-         */
-        static makeTranslate(v: Vector3): Matrix4;
-        /**
-         * 根据x，y，z标量构造平移矩阵
-         * @param t_x
-         * @param t_y
-         * @param t_z
-         * @param out
-         */
-        static makeTranslateByScalar(t_x: number, t_y: number, t_z: number): Matrix4;
-        /**
-         * 构造缩放矩阵
-         * @param s_x
-         * @param s_y
-         * @param s_z
-         * @param out 如果传入out，则不创建新的matrix，返回out
-         * @example
-         *          |sx, 0 , 0 , 0|
-         *          |0 , sy, 0 , 0|
-         *          |0 , 0 , sz, 0|
-         *          |0 , 0 , 0 , 1|
-         */
-        static makeScale(s_x: number, s_y: number, s_z: number): Matrix4;
-        /**
-         * 根据标量, 绕任意轴旋转构造旋转矩阵
-         * @param a
-         * @param x
-         * @param y
-         * @param z
-         * @param out
-         */
-        static makeRotation(a: number, x: number, y: number, z: number): Matrix4;
-        /**
-         * 根据向量，绕任意轴构造旋转矩阵
-         * @param angle
-         * @param axis
-         */
-        static makeRotationByAxis(angle: number, axis: Vector3): Matrix4;
-        static makeRotationEulerAngle(eulerAngle: Vector3): Matrix4;
-        static makeRotationQuaternion(q: Quaternion, out?: Matrix4): Matrix4;
-        /**
-         * 绕X轴旋转，也叫做俯仰角
-         * @param a
-         * @param out
-         */
-        static pitch(a: number, out?: Matrix4): Matrix4;
-        /**
-         * 绕Y轴旋转，也叫偏航角
-         */
-        static yaw(a: number, out?: Matrix4): Matrix4;
-        /**
-         * 绕Z轴旋转，也叫翻滚角
-         */
-        static roll(a: number, out?: Matrix4): Matrix4;
-        /**
-         * 生成左手视图矩阵
-         * @param position
-         * @param orientation
-         * @param reflectMatrix
-         * @param viewMatrix
-         */
-        static makeViewMatrixLH(position: Vector3, orientation: Quaternion, reflectMatrix?: Matrix4, viewMatrix?: Matrix4): Matrix4;
-        /**
-         * 构造左手正交视图矩阵
-         * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         * @example
-         * |2 / (right - left), 0,                  0,                -(right + left) / (right - left) |
-         * |0,                  2 / (top - bottom), 0,                -(top + bottom) / (top - bottom) |
-         * |0,                  0,                  2 / (far - near), -(far + near) / (far - near)     |
-         * |0,                  0,                  0,                1                                |
-         */
-        static makeOrthoLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * TODO:
-         * @param w
-         * @param h
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makeOrthoFovLH(w: number, h: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 生成正交视图矩阵
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         */
-        static makeOrthoRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 构造左手投影矩阵
-         * @param left
-         * @param right
-         * @param top
-         * @param bottom
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 根据fov构造左手透视投影矩阵
-         * @param fov
-         * @param aspect
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveFovLH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 构造右手投影矩阵
-         * @param left
-         * @param right
-         * @param top
-         * @param bottom
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 根据fov构造右手透视投影矩阵
-         * @param fov
-         * @param aspect
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveFovRH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4;
-    }
-}
-declare namespace QuickEngine {
     const enum PlaneSide {
         Front = 0,
         Back = 1,
@@ -797,142 +565,6 @@ declare namespace QuickEngine {
          * @param points
          */
         static computeBestFitNormal(points: Vector3[]): Vector3;
-    }
-}
-declare namespace QuickEngine {
-    /**
-     * 四元数 [w, x, y, z]
-     * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
-     */
-    class Quaternion {
-        static ClassName: string;
-        static ZERO: Quaternion;
-        static IDENTITY: Quaternion;
-        x: number;
-        y: number;
-        z: number;
-        w: number;
-        constructor(w?: number, x?: number, y?: number, z?: number);
-        copyFrom(q: Quaternion): Quaternion;
-        clone(): Quaternion;
-        /**
-         * 加法
-         * @param q
-         */
-        add(q: Quaternion): Quaternion;
-        /**
-         * 减法
-         * @param q
-         */
-        minus(q: Quaternion): Quaternion;
-        /**
-         * 点乘
-         * @param q
-         */
-        dot(q: Quaternion): number;
-        /**
-         * 叉乘
-         * @param q
-         */
-        multiply(q: Quaternion): Quaternion;
-        /**
-         * 乘以一个标量
-         * @param s
-         */
-        multiplyScalar(s: number): Quaternion;
-        static multiplyScalar(s: number, q: Quaternion): Quaternion;
-        multiplyVector(vector: Vector3): Quaternion;
-        rotateVector3(v: Vector3): Vector3;
-        /**
-         * 对数. 公式: log(q) = [0, αN], N 为单位向量
-         */
-        log(): Quaternion;
-        /**
-         * 指数. 公式: exp(p) = [cos() ]
-         */
-        exp(): Quaternion;
-        /**
-         * 共轭四元数, 四元数逆q-1 = 它的共轭除以模长
-         */
-        conjugate(): Quaternion;
-        /**
-         * 四元数的逆
-         */
-        inverse(): Quaternion;
-        /**
-         * 单位四元数求逆, 必须是单位四元数才能调用此方法
-         */
-        unitInverse(): Quaternion;
-        /**
-         * 模长
-         */
-        readonly magnitude: number;
-        /**
-         * 模长平方
-         */
-        readonly sqrMagnitude: number;
-        /**
-         * 正则化
-         */
-        normalize(): Quaternion;
-        /**
-         * 比较两个四元素是否相等
-         * @param other
-         */
-        equal(q: Quaternion): boolean;
-        /**
-         * 线性插值(Linear Interpolation)
-         * @param lhs
-         * @param rhs
-         * @param t
-         */
-        lerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion;
-        /**
-         * 球面线性插值(Spherical Linear Interpolation)
-         * @param lhs
-         * @param rhs
-         * @param t
-         */
-        slerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion;
-        /**
-         * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
-         */
-        private static _TempQuat0;
-        private static _TempQuat1;
-        squad(q0: any, q1: any, s0: any, s1: any, t: any): Quaternion;
-        /**
-         * 通过旋转矩阵构造四元数
-         * @param rotMat
-         */
-        FromRotationMatrix(rotMat: Matrix4): Quaternion;
-        ToRotationMatrix(rotMat?: Matrix4): Matrix4;
-        /**
-         * 创建一个以axis轴为中心旋转rads弧度的四元数
-         * @param axis
-         * @param rads
-         */
-        FromAngleAxis(axis: Vector3, rads: Radian): void;
-        /**
-         * 返回四元数绕轴心和角度
-         * @param axis 旋转轴
-         * @returns 弧度
-         */
-        ToAngleAxis(axis: Vector3): Radian;
-        /**
-         * 欧拉角转四元数
-         * @param eulerAngle 欧拉角
-         * @param refQuaternion 欧拉角引用，如果不为空，将会改变传入的四元数，并返回传入的四元数
-         * @return Quaternion 四元数
-         */
-        FromEulerAngle(eulerAngle: Vector3, refQuaternion?: Quaternion): Quaternion;
-        FromEulerAngleScalar(x: number, y: number, z: number, refQuaternion?: Quaternion): Quaternion;
-        /**
-         * 四元数转欧拉角
-         */
-        ToEulerAngle(refEulerAngle?: Vector3): Vector3;
-        getRightVector(): Vector3;
-        getUpVector(): Vector3;
-        getDirVector(): Vector3;
     }
 }
 declare namespace QuickEngine {
@@ -1924,6 +1556,168 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
+    const enum VertexElementSemantic {
+        POSITION = 1,
+        BLEND_WEIGHTS = 2,
+        BLEND_INDICES = 3,
+        NORMAL = 4,
+        DIFFUSE = 5,
+        SPECULAR = 6,
+        TEXTURE_COORDINATES = 7,
+        BINORMAL = 8,
+        TANGENT = 9,
+        COUNT = 9
+    }
+    const enum VertexElementType {
+        FLOAT1 = 0,
+        FLOAT2 = 1,
+        FLOAT3 = 2,
+        FLOAT4 = 3,
+        COLOUR = 4,
+        SHORT1 = 5,
+        SHORT2 = 6,
+        SHORT3 = 7,
+        SHORT4 = 8,
+        UBYTE4 = 9,
+        COLOUR_ARGB = 10,
+        COLOUR_ABGR = 11,
+        DOUBLE1 = 12,
+        DOUBLE2 = 13,
+        DOUBLE3 = 14,
+        DOUBLE4 = 15,
+        USHORT1 = 16,
+        USHORT2 = 17,
+        USHORT3 = 18,
+        USHORT4 = 19,
+        INT1 = 20,
+        INT2 = 21,
+        INT3 = 22,
+        INT4 = 23,
+        UINT1 = 24,
+        UINT2 = 25,
+        UINT3 = 26,
+        UINT4 = 27
+    }
+    const enum TextureType {
+        TEXTURE_2D = 0,
+        TEXTURE_2D_ARRAY = 1,
+        TEXTURE_3D = 2,
+        TEXTURE_CUBE_MAP = 3
+    }
+    const enum FilterMode {
+        Point = 0,
+        Bilinear = 1,
+        Trilinear = 2
+    }
+    const enum WrapMode {
+        Clamp = 0,
+        Repeat = 1
+    }
+    const enum PixelFormat {
+        UNKNOWN = 0,
+        RED = 1,
+        RG = 2,
+        RGB = 3,
+        RGBA = 4,
+        LUMINANCE = 5,
+        LUMINANCE_ALPHA = 6,
+        ALPHA = 7,
+        DEPTH_COMPONENT = 8,
+        DEPTH_STENCIL = 9,
+        RED_INTEGER = 10,
+        RG_INTEGER = 11,
+        RGB_INTEGER = 12,
+        RGBA_INTEGER = 13
+    }
+    const enum DataType {
+        GL_UNSIGNED_BYTE = 0,
+        GL_BYTE = 1,
+        GL_UNSIGNED_SHORT = 2,
+        GL_SHORT = 3,
+        GL_UNSIGNED_INT = 4,
+        GL_INT = 5,
+        GL_HALF_FLOAT = 6,
+        GL_FLOAT = 7,
+        GL_UNSIGNED_SHORT_5_6_5 = 8
+    }
+    const enum PixelUnpackType {
+        UNPACK_ALIGNMENT = 0,
+        UNPACK_COLORSPACE_CONVERSION_WEBGL = 1,
+        UNPACK_FLIP_Y_WEBGL = 2,
+        UNPACK_PREMULTIPLY_ALPHA_WEBGL = 3
+    }
+    const enum PixelPackType {
+        PACK_ALIGNMENT = 0
+    }
+    const enum BufferUsage {
+        STATIC = 1,
+        DYNAMIC = 2,
+        WRITE_ONLY = 4,
+        DISCARDABLE = 8,
+        STATIC_WRITE_ONLY = 5,
+        DYNAMIC_WRITE_ONLY = 6,
+        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14
+    }
+    const enum ShaderType {
+        Vertex = 0,
+        Fragment = 1
+    }
+    const enum CullMode {
+        NONE = 0,
+        FRONT = 1,
+        BACK = 2,
+        OVERLAPPED = 3
+    }
+    const enum FillMode {
+        POINT = 0,
+        FRAME = 1,
+        SOLID = 2
+    }
+    const enum BlendMode {
+        Normal = 0,
+        OPACITY = 1,
+        ALPHA_TEST = 2,
+        ALPHA_BLEND = 3,
+        ADD = 4,
+        MUL = 5,
+        OVERLAPPED = 6
+    }
+    const enum DepthCheck {
+        NONE = 0,
+        CHECK_ONLY = 1,
+        CHECK_WRITE = 2,
+        OVERLAPPED = 3
+    }
+    const enum ColorMask {
+        NONE = 0,
+        RED = 1,
+        GREEN = 2,
+        BLUE = 4,
+        ALPHA = 8,
+        ALL = 15
+    }
+    const enum ClearMask {
+        None = 0,
+        COLOR_BUFFER_BIT = 1,
+        DEPTH_BUFFER_BIT = 2,
+        STENCIL_BUFFER_BIT = 4,
+        ALL = 7
+    }
+    class RenderState {
+        cullMode: CullMode;
+        blendMode: BlendMode;
+        depthCheck: DepthCheck;
+        colorMask: ColorMask;
+        constructor();
+    }
+    interface Viewport {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }
+}
+declare namespace QuickEngine {
     class RenderContext {
         private _name;
         private _isEnable;
@@ -1966,98 +1760,77 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
-    const MAX_NUM_UNIFORM = 32;
-    const MAX_NUM_SAMPLER = 8;
-    const MAX_NUM_VELEMENT = 16;
-    const MAX_NUM_USER_CONST = 64;
-    const MAX_NUM_SHADER_PASS = 8;
-    const MAX_NUM_VERTEX_STREAM = 4;
-    abstract class RenderSystem {
-        protected static _sInstance: RenderSystem;
-        static readonly instance: RenderSystem;
-        protected _renderStatedChanged: boolean;
-        protected _currentRenderState: RenderState;
-        protected _textureChanged: boolean[];
-        protected _currentTextures: Texture[];
-        protected _shaderPassChanged: boolean;
-        protected _currentShaderPass: WebGLShaderPass;
-        protected _currentRenderTarget: RenderTarget;
-        protected _viewport: Viewport;
-        protected _worldMatrix: Matrix4;
-        protected _viewMatrix: Matrix4;
-        protected _projectionMatrix: Matrix4;
-        protected _worldViewTM: Matrix4;
-        protected _viewProjTM: Matrix4;
-        protected _worldViewProjTM: Matrix4;
-        protected _textureTM: Matrix4[];
-        protected _isTransformDirty: boolean;
-        protected _boneCount: boolean;
-        protected _boneTM: Matrix4[];
-        protected _cameraPosition: Vector4;
-        protected _cameraDirection: Vector4;
-        protected _materialEmissive: Vector4;
-        protected _materialAmbient: Vector4;
-        protected _materialDiffuse: Vector4;
-        protected _materialSpecular: Vector4;
-        protected _materialOpacity: Vector4;
-        protected _lightPosition: Vector4;
-        protected _lightDirection: Vector4;
-        protected _lightAmbient: Vector4;
-        protected _lightDiffuse: Vector4;
-        protected _lightSpecular: Vector4;
-        protected _lightAttenParam: Vector4;
-        protected _lightSpotParam: Vector4;
-        protected _ambient: Vector4;
-        protected _diffuse: Vector4;
-        protected _specular: Vector4;
-        protected _fogColor: Vector4;
-        protected _fogParam: Vector4;
-        protected _shaderState: Vector4;
-        protected _time: Vector4;
-        protected _clipPlane: Vector4;
-        protected _userConst: Vector4[];
-        protected constructor();
-        private _clearState;
-        onInit(): void;
-        onShutdown(): void;
-        beginScene(): void;
-        endScene(): void;
-        /**
-         * 清除缓冲区
-         * @param mode 要清除的缓冲区掩码
-         * @param color 指定颜色缓冲区清除值
-         * @param depth 指定深度缓冲区清除值
-         * @param stencil 指定模板缓冲区清除值
-         */
-        abstract clear(mask: ClearMask, color: Number4, depth: number, stencil: number): any;
-        abstract setViewport(viewPort: Viewport): any;
-        abstract setRenderTarget(renderTarget: RenderTarget): any;
-        abstract renderOperation(renderOp: RenderOperation): any;
-        abstract bindGpuProgram(gpuProgram: GLShaderProgram): any;
-        abstract onResize(w: number, h: number): void;
-        setWorldMatrix(worldMatrix: Matrix4): void;
-        getWorldMatrix(): Matrix4;
-        setViewMatrix(viewMatrix: Matrix4): void;
-        getViewMatrix(): Matrix4;
-        setProjectionMatrix(projectionMatrix: Matrix4): void;
-        getProjectionMatrix(): Matrix4;
-        getWorldViewMatrix(): Matrix4;
-        getViewProjMatrix(): Matrix4;
-        getWorldViewProjMatrix(): Matrix4;
-        setCamera(camera: Camera): void;
-        setMaterial(material: Material): void;
-        setLight(): void;
-        setFog(fogColor: Color, fogNear: number, fogFar: number): void;
-        setClipPlane(near: number, far: number): void;
-        _setTextureUnitSettings(unit: number, tex: Texture): void;
-        abstract _setTexture(unit: number, enable: boolean, tex: Texture): void;
-        setShaderPass(pass: WebGLShaderPass): void;
-        setRenderState(cullMode: CullMode, blendMode: BlendMode, depthCheck: DepthCheck, colorMask: ColorMask): void;
-        getCurrentTextures(): Texture[];
-        begin(): void;
-        end(): void;
-        render(shader: Shader, renderable: Renderable): void;
-        readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
+    class RenderQueue {
+        solidObjects: Renderable[];
+        alphaObjects: Renderable[];
+        constructor();
+        addRenderable(renderable: Renderable): void;
+        clear(): void;
+    }
+}
+declare namespace QuickEngine {
+    class RenderTarget extends HashObject {
+        private static RdtId;
+        protected _rid: number;
+        protected _texture: Texture;
+        width: number;
+        height: number;
+        _frameBuffer: WebGLFramebuffer;
+        _depthBuffer: WebGLRenderbuffer;
+        _hasDepthBuffer: boolean;
+        private _format;
+        format: PixelFormat;
+        readonly id: number;
+        getTexture(): Texture;
+        constructor();
+        init(): void;
+        destroy(): void;
+    }
+}
+declare namespace QuickEngine {
+    const enum TextureUsage {
+        STATIC = 1,
+        DYNAMIC = 2,
+        WRITE_ONLY = 4,
+        STATIC_WRITE_ONLY = 5,
+        DYNAMIC_WRITE_ONLY = 6,
+        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14,
+        AUTOMIPMAP = 16,
+        /** This texture will be a render target, i.e. used as a target for render to texture
+         setting this flag will ignore all other texture usages except TU_AUTOMIPMAP */
+        RENDERTARGET = 32,
+        DEFAULT = 21
+    }
+    class Texture extends Resource {
+        private static Tid;
+        private readonly _tid;
+        readonly id: number;
+        protected _width: number;
+        width: number;
+        protected _height: number;
+        height: number;
+        protected _resolution: number;
+        resolution: number;
+        protected _webglTex: WebGLTexture;
+        readonly webglTex: WebGLTexture;
+        getWebGLTexture(): WebGLTexture;
+        mipmaps: number;
+        format: PixelFormat;
+        private _usage;
+        usage: TextureUsage;
+        private _image;
+        readonly image: HTMLImageElement;
+        private _imageData;
+        readonly imageData: ImageData;
+        constructor(name?: string);
+        copy(object: Texture): void;
+        clone(): Texture;
+        loadImage(image: HTMLImageElement): void;
+        loadRawData(data: ArrayBuffer, width: number, height: number): void;
+        destroy(): void;
+        protected createWebGLTexture(): void;
+        protected loadImpl(): void;
+        protected unloadImpl(): void;
     }
 }
 declare namespace QuickEngine {
@@ -2246,282 +2019,6 @@ declare namespace QuickEngine {
         addPass(pass: WebGLShaderPass): void;
     }
 }
-declare namespace QuickEngine {
-    interface AsyncCallback {
-        onSuccess?: (data: any) => any;
-        onFail?: (error: number, data: any) => any;
-    }
-    const ResponseType_Default: string;
-    const ResponseType_ArrayBuffer = "arraybuffer";
-    const ResponseType_Blob = "blob";
-    const ResponseType_Document = "document";
-    const ResponseType_Json = "json";
-    const ResponseType_Text = "text";
-    module DownloadHelper {
-        interface DownloadTask {
-            url: string;
-            responseType?: string;
-            callback?: AsyncCallback;
-        }
-        function download(task: DownloadTask): void;
-    }
-}
-declare namespace QuickEngine {
-    const enum TextureUsage {
-        STATIC = 1,
-        DYNAMIC = 2,
-        WRITE_ONLY = 4,
-        STATIC_WRITE_ONLY = 5,
-        DYNAMIC_WRITE_ONLY = 6,
-        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14,
-        AUTOMIPMAP = 16,
-        /** This texture will be a render target, i.e. used as a target for render to texture
-         setting this flag will ignore all other texture usages except TU_AUTOMIPMAP */
-        RENDERTARGET = 32,
-        DEFAULT = 21
-    }
-    class Texture extends Resource {
-        private static Tid;
-        private readonly _tid;
-        readonly id: number;
-        protected _width: number;
-        width: number;
-        protected _height: number;
-        height: number;
-        protected _resolution: number;
-        resolution: number;
-        protected _webglTex: WebGLTexture;
-        readonly webglTex: WebGLTexture;
-        getWebGLTexture(): WebGLTexture;
-        mipmaps: number;
-        format: PixelFormat;
-        private _usage;
-        usage: TextureUsage;
-        private _image;
-        readonly image: HTMLImageElement;
-        private _imageData;
-        readonly imageData: ImageData;
-        constructor(name?: string);
-        copy(object: Texture): void;
-        clone(): Texture;
-        loadImage(image: HTMLImageElement): void;
-        loadRawData(data: ArrayBuffer, width: number, height: number): void;
-        destroy(): void;
-        protected createWebGLTexture(): void;
-        protected loadImpl(): void;
-        protected unloadImpl(): void;
-    }
-}
-declare namespace QuickEngine {
-    const enum VertexElementSemantic {
-        POSITION = 1,
-        BLEND_WEIGHTS = 2,
-        BLEND_INDICES = 3,
-        NORMAL = 4,
-        DIFFUSE = 5,
-        SPECULAR = 6,
-        TEXTURE_COORDINATES = 7,
-        BINORMAL = 8,
-        TANGENT = 9,
-        COUNT = 9
-    }
-    const enum VertexElementType {
-        FLOAT1 = 0,
-        FLOAT2 = 1,
-        FLOAT3 = 2,
-        FLOAT4 = 3,
-        COLOUR = 4,
-        SHORT1 = 5,
-        SHORT2 = 6,
-        SHORT3 = 7,
-        SHORT4 = 8,
-        UBYTE4 = 9,
-        COLOUR_ARGB = 10,
-        COLOUR_ABGR = 11,
-        DOUBLE1 = 12,
-        DOUBLE2 = 13,
-        DOUBLE3 = 14,
-        DOUBLE4 = 15,
-        USHORT1 = 16,
-        USHORT2 = 17,
-        USHORT3 = 18,
-        USHORT4 = 19,
-        INT1 = 20,
-        INT2 = 21,
-        INT3 = 22,
-        INT4 = 23,
-        UINT1 = 24,
-        UINT2 = 25,
-        UINT3 = 26,
-        UINT4 = 27
-    }
-    const enum TextureType {
-        TEXTURE_2D = 0,
-        TEXTURE_2D_ARRAY = 1,
-        TEXTURE_3D = 2,
-        TEXTURE_CUBE_MAP = 3
-    }
-    const enum FilterMode {
-        Point = 0,
-        Bilinear = 1,
-        Trilinear = 2
-    }
-    const enum WrapMode {
-        Clamp = 0,
-        Repeat = 1
-    }
-    const enum PixelFormat {
-        UNKNOWN = 0,
-        RED = 1,
-        RG = 2,
-        RGB = 3,
-        RGBA = 4,
-        LUMINANCE = 5,
-        LUMINANCE_ALPHA = 6,
-        ALPHA = 7,
-        DEPTH_COMPONENT = 8,
-        DEPTH_STENCIL = 9,
-        RED_INTEGER = 10,
-        RG_INTEGER = 11,
-        RGB_INTEGER = 12,
-        RGBA_INTEGER = 13
-    }
-    const enum DataType {
-        GL_UNSIGNED_BYTE = 0,
-        GL_BYTE = 1,
-        GL_UNSIGNED_SHORT = 2,
-        GL_SHORT = 3,
-        GL_UNSIGNED_INT = 4,
-        GL_INT = 5,
-        GL_HALF_FLOAT = 6,
-        GL_FLOAT = 7,
-        GL_UNSIGNED_SHORT_5_6_5 = 8
-    }
-    const enum PixelUnpackType {
-        UNPACK_ALIGNMENT = 0,
-        UNPACK_COLORSPACE_CONVERSION_WEBGL = 1,
-        UNPACK_FLIP_Y_WEBGL = 2,
-        UNPACK_PREMULTIPLY_ALPHA_WEBGL = 3
-    }
-    const enum PixelPackType {
-        PACK_ALIGNMENT = 0
-    }
-    const enum BufferUsage {
-        STATIC = 1,
-        DYNAMIC = 2,
-        WRITE_ONLY = 4,
-        DISCARDABLE = 8,
-        STATIC_WRITE_ONLY = 5,
-        DYNAMIC_WRITE_ONLY = 6,
-        DYNAMIC_WRITE_ONLY_DISCARDABLE = 14
-    }
-    const enum ShaderType {
-        Vertex = 0,
-        Fragment = 1
-    }
-    const enum CullMode {
-        NONE = 0,
-        FRONT = 1,
-        BACK = 2,
-        OVERLAPPED = 3
-    }
-    const enum FillMode {
-        POINT = 0,
-        FRAME = 1,
-        SOLID = 2
-    }
-    const enum BlendMode {
-        Normal = 0,
-        OPACITY = 1,
-        ALPHA_TEST = 2,
-        ALPHA_BLEND = 3,
-        ADD = 4,
-        MUL = 5,
-        OVERLAPPED = 6
-    }
-    const enum DepthCheck {
-        NONE = 0,
-        CHECK_ONLY = 1,
-        CHECK_WRITE = 2,
-        OVERLAPPED = 3
-    }
-    const enum ColorMask {
-        NONE = 0,
-        RED = 1,
-        GREEN = 2,
-        BLUE = 4,
-        ALPHA = 8,
-        ALL = 15
-    }
-    const enum ClearMask {
-        None = 0,
-        COLOR_BUFFER_BIT = 1,
-        DEPTH_BUFFER_BIT = 2,
-        STENCIL_BUFFER_BIT = 4,
-        ALL = 7
-    }
-    class RenderState {
-        cullMode: CullMode;
-        blendMode: BlendMode;
-        depthCheck: DepthCheck;
-        colorMask: ColorMask;
-        constructor();
-    }
-    interface Viewport {
-        x: number;
-        y: number;
-        w: number;
-        h: number;
-    }
-}
-declare namespace QuickEngine {
-    class RenderQueue {
-        solidObjects: Renderable[];
-        alphaObjects: Renderable[];
-        constructor();
-        addRenderable(renderable: Renderable): void;
-        clear(): void;
-    }
-}
-declare namespace QuickEngine {
-    class RenderTarget extends HashObject {
-        private static RdtId;
-        protected _rid: number;
-        protected _texture: Texture;
-        width: number;
-        height: number;
-        _frameBuffer: WebGLFramebuffer;
-        _depthBuffer: WebGLRenderbuffer;
-        _hasDepthBuffer: boolean;
-        private _format;
-        format: PixelFormat;
-        readonly id: number;
-        getTexture(): Texture;
-        constructor();
-        init(): void;
-        destroy(): void;
-    }
-}
-declare namespace QuickEngine {
-    let gl: WebGLRenderingContext;
-    function GL_CHECK_ERROR(): void;
-    class WebGLRendererSystem extends RenderSystem {
-        protected _canvas: HTMLCanvasElement;
-        constructor(div?: HTMLElement);
-        clear(mask: ClearMask, color: Number4, depth: number, stencil: number): void;
-        setViewport(viewPort: Viewport): void;
-        setRenderTarget(renderTarget: RenderTarget): void;
-        _setTexture(unit: number, enable: boolean, tex: Texture): void;
-        private _bindRenderState;
-        bindGpuProgram(gpuProgram: GLShaderProgram): void;
-        private _bindVertexElement;
-        renderOperation(renderOp: RenderOperation): void;
-        static getGLDrawCount(type: RenderOperationType, primCount: number): number;
-        beginScene(): void;
-        endScene(): void;
-        onResize(w: number, h: number): void;
-    }
-}
 declare namespace QuickEngine.ShaderChunks {
     interface ShaderData {
         attributes: string[];
@@ -2563,6 +2060,121 @@ declare namespace QuickEngine {
     }
 }
 declare namespace QuickEngine {
+    const MAX_NUM_UNIFORM = 32;
+    const MAX_NUM_SAMPLER = 8;
+    const MAX_NUM_VELEMENT = 16;
+    const MAX_NUM_USER_CONST = 64;
+    const MAX_NUM_SHADER_PASS = 8;
+    const MAX_NUM_VERTEX_STREAM = 4;
+    abstract class RenderSystem {
+        protected static _sInstance: RenderSystem;
+        static readonly instance: RenderSystem;
+        protected _renderStatedChanged: boolean;
+        protected _currentRenderState: RenderState;
+        protected _textureChanged: boolean[];
+        protected _currentTextures: Texture[];
+        protected _shaderPassChanged: boolean;
+        protected _currentShaderPass: WebGLShaderPass;
+        protected _currentRenderTarget: RenderTarget;
+        protected _viewport: Viewport;
+        protected _worldMatrix: Matrix4;
+        protected _viewMatrix: Matrix4;
+        protected _projectionMatrix: Matrix4;
+        protected _worldViewTM: Matrix4;
+        protected _viewProjTM: Matrix4;
+        protected _worldViewProjTM: Matrix4;
+        protected _textureTM: Matrix4[];
+        protected _isTransformDirty: boolean;
+        protected _boneCount: boolean;
+        protected _boneTM: Matrix4[];
+        protected _cameraPosition: Vector4;
+        protected _cameraDirection: Vector4;
+        protected _materialEmissive: Vector4;
+        protected _materialAmbient: Vector4;
+        protected _materialDiffuse: Vector4;
+        protected _materialSpecular: Vector4;
+        protected _materialOpacity: Vector4;
+        protected _lightPosition: Vector4;
+        protected _lightDirection: Vector4;
+        protected _lightAmbient: Vector4;
+        protected _lightDiffuse: Vector4;
+        protected _lightSpecular: Vector4;
+        protected _lightAttenParam: Vector4;
+        protected _lightSpotParam: Vector4;
+        protected _ambient: Vector4;
+        protected _diffuse: Vector4;
+        protected _specular: Vector4;
+        protected _fogColor: Vector4;
+        protected _fogParam: Vector4;
+        protected _shaderState: Vector4;
+        protected _time: Vector4;
+        protected _clipPlane: Vector4;
+        protected _userConst: Vector4[];
+        protected constructor();
+        private _clearState;
+        onInit(): void;
+        onShutdown(): void;
+        beginScene(): void;
+        endScene(): void;
+        /**
+         * 清除缓冲区
+         * @param mode 要清除的缓冲区掩码
+         * @param color 指定颜色缓冲区清除值
+         * @param depth 指定深度缓冲区清除值
+         * @param stencil 指定模板缓冲区清除值
+         */
+        abstract clear(mask: ClearMask, color: Number4, depth: number, stencil: number): any;
+        abstract setViewport(viewPort: Viewport): any;
+        abstract setRenderTarget(renderTarget: RenderTarget): any;
+        abstract renderOperation(renderOp: RenderOperation): any;
+        abstract bindGpuProgram(gpuProgram: GLShaderProgram): any;
+        abstract onResize(w: number, h: number): void;
+        setWorldMatrix(worldMatrix: Matrix4): void;
+        getWorldMatrix(): Matrix4;
+        setViewMatrix(viewMatrix: Matrix4): void;
+        getViewMatrix(): Matrix4;
+        setProjectionMatrix(projectionMatrix: Matrix4): void;
+        getProjectionMatrix(): Matrix4;
+        getWorldViewMatrix(): Matrix4;
+        getViewProjMatrix(): Matrix4;
+        getWorldViewProjMatrix(): Matrix4;
+        setCamera(camera: Camera): void;
+        setMaterial(material: Material): void;
+        setLight(): void;
+        setFog(fogColor: Color, fogNear: number, fogFar: number): void;
+        setClipPlane(near: number, far: number): void;
+        _setTextureUnitSettings(unit: number, tex: Texture): void;
+        abstract _setTexture(unit: number, enable: boolean, tex: Texture): void;
+        setShaderPass(pass: WebGLShaderPass): void;
+        setRenderState(cullMode: CullMode, blendMode: BlendMode, depthCheck: DepthCheck, colorMask: ColorMask): void;
+        getCurrentTextures(): Texture[];
+        begin(): void;
+        end(): void;
+        render(shader: Shader, renderable: Renderable): void;
+        readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
+    }
+}
+declare namespace QuickEngine {
+    let gl: WebGLRenderingContext;
+    function GL_CHECK_ERROR(): void;
+    class WebGLRendererSystem extends RenderSystem {
+        protected _canvas: HTMLCanvasElement;
+        constructor(div?: HTMLElement);
+        clear(mask: ClearMask, color: Number4, depth: number, stencil: number): void;
+        setViewport(viewPort: Viewport): void;
+        setRenderTarget(renderTarget: RenderTarget): void;
+        _setTexture(unit: number, enable: boolean, tex: Texture): void;
+        private _bindRenderState;
+        bindGpuProgram(gpuProgram: GLShaderProgram): void;
+        private _bindVertexElement;
+        renderOperation(renderOp: RenderOperation): void;
+        static getGLDrawCount(type: RenderOperationType, primCount: number): number;
+        beginScene(): void;
+        endScene(): void;
+        onResize(w: number, h: number): void;
+    }
+}
+declare namespace QuickEngine {
     class WebGLVertexBuffer {
         webGLBuffer: WebGLBuffer;
         _size: number;
@@ -2586,5 +2198,393 @@ declare namespace QuickEngine {
         protected destroyBuffer(): void;
         writeData(data: ArrayBuffer): void;
         bindBuffer(): void;
+    }
+}
+declare namespace QuickEngine {
+    interface AsyncCallback {
+        onSuccess?: (data: any) => any;
+        onFail?: (error: number, data: any) => any;
+    }
+    const ResponseType_Default: string;
+    const ResponseType_ArrayBuffer = "arraybuffer";
+    const ResponseType_Blob = "blob";
+    const ResponseType_Document = "document";
+    const ResponseType_Json = "json";
+    const ResponseType_Text = "text";
+    module DownloadHelper {
+        interface DownloadTask {
+            url: string;
+            responseType?: string;
+            callback?: AsyncCallback;
+        }
+        function download(task: DownloadTask): void;
+    }
+}
+declare namespace QuickEngine {
+    /**
+     * 学习资料:
+     * http://www.euclideanspace.com/maths/algebra/matrix/
+     * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
+     * 线性代数课本
+     * 矩阵是列向量矩阵
+     | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
+     | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
+     | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
+     | 3 7 11 15 |      | 30 31 32 33 |
+     */
+    /**
+     * TODO: 矩阵数据使用array buffer, 数组计算更缓存友好
+     */
+    class Matrix4 {
+        static ClassName: string;
+        _00: number;
+        _10: number;
+        _20: number;
+        _30: number;
+        _01: number;
+        _11: number;
+        _21: number;
+        _31: number;
+        _02: number;
+        _12: number;
+        _22: number;
+        _32: number;
+        _03: number;
+        _13: number;
+        _23: number;
+        _33: number;
+        private _rawData;
+        constructor();
+        static create(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
+        set(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
+        copyFrom(other: Matrix4): Matrix4;
+        clone(): Matrix4;
+        /**
+         * 矩阵相乘
+         a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
+         a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
+         a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
+         a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
+         */
+        multiply(v: Matrix4, out?: Matrix4): Matrix4;
+        static multiply(v1: Matrix4, v2: Matrix4, out?: Matrix4): Matrix4;
+        /**
+         * 矩阵向量相乘, 列向量应该右乘矩阵
+         * @param vec
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
+         */
+        transformVector3(v: Vector3): Vector3;
+        /**
+         * 单位矩阵
+         */
+        identity(): Matrix4;
+        static identity(): Matrix4;
+        /**
+         * 矩阵求逆
+         */
+        inverse(): Matrix4;
+        /**
+         * 矩阵转置
+         每一列变成每一行
+         | a b |  T   | a c |
+         | c d | ===> | b d |
+         */
+        transpose(): Matrix4;
+        static transpose(target: Matrix4): Matrix4;
+        isAffine(): boolean;
+        /**
+         * 绕任意轴旋转
+         */
+        rotateByAxis(angle: number, axis: Vector3): Matrix4;
+        rotateByScalar(x: number, y: number, z: number): Matrix4;
+        /**
+         * 矩阵分解, 可分解为position,scale,quaternion
+         */
+        decompose(): void;
+        toArrayBuffer(): Float32Array;
+        static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4;
+        /**
+         * 构造平移矩阵
+         * @param v
+         * @param out
+         * @example
+         *          |1, 0, 0, x|
+         *          |0, 1, 0, y|
+         *          |0, 0, 1, z|
+         *          |0, 0, 0, 1|
+         */
+        static makeTranslate(v: Vector3): Matrix4;
+        /**
+         * 根据x，y，z标量构造平移矩阵
+         * @param t_x
+         * @param t_y
+         * @param t_z
+         * @param out
+         */
+        static makeTranslateByScalar(t_x: number, t_y: number, t_z: number): Matrix4;
+        /**
+         * 构造缩放矩阵
+         * @param s_x
+         * @param s_y
+         * @param s_z
+         * @param out 如果传入out，则不创建新的matrix，返回out
+         * @example
+         *          |sx, 0 , 0 , 0|
+         *          |0 , sy, 0 , 0|
+         *          |0 , 0 , sz, 0|
+         *          |0 , 0 , 0 , 1|
+         */
+        static makeScale(s_x: number, s_y: number, s_z: number): Matrix4;
+        /**
+         * 根据标量, 绕任意轴旋转构造旋转矩阵
+         * @param a
+         * @param x
+         * @param y
+         * @param z
+         * @param out
+         */
+        static makeRotation(a: number, x: number, y: number, z: number): Matrix4;
+        /**
+         * 根据向量，绕任意轴构造旋转矩阵
+         * @param angle
+         * @param axis
+         */
+        static makeRotationByAxis(angle: number, axis: Vector3): Matrix4;
+        static makeRotationEulerAngle(eulerAngle: Vector3): Matrix4;
+        static makeRotationQuaternion(q: Quaternion, out?: Matrix4): Matrix4;
+        /**
+         * 绕X轴旋转，也叫做俯仰角
+         * @param a
+         * @param out
+         */
+        static pitch(a: number, out?: Matrix4): Matrix4;
+        /**
+         * 绕Y轴旋转，也叫偏航角
+         */
+        static yaw(a: number, out?: Matrix4): Matrix4;
+        /**
+         * 绕Z轴旋转，也叫翻滚角
+         */
+        static roll(a: number, out?: Matrix4): Matrix4;
+        /**
+         * 生成左手视图矩阵
+         * @param position
+         * @param orientation
+         * @param reflectMatrix
+         * @param viewMatrix
+         */
+        static makeViewMatrixLH(position: Vector3, orientation: Quaternion, reflectMatrix?: Matrix4, viewMatrix?: Matrix4): Matrix4;
+        /**
+         * 构造左手正交视图矩阵
+         * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         * @example
+         * |2 / (right - left), 0,                  0,                -(right + left) / (right - left) |
+         * |0,                  2 / (top - bottom), 0,                -(top + bottom) / (top - bottom) |
+         * |0,                  0,                  2 / (far - near), -(far + near) / (far - near)     |
+         * |0,                  0,                  0,                1                                |
+         */
+        static makeOrthoLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * TODO:
+         * @param w
+         * @param h
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makeOrthoFovLH(w: number, h: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 生成正交视图矩阵
+         * @param w
+         * @param h
+         * @param zn
+         * @param zf
+         * @param target
+         */
+        static makeOrthoRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 构造左手投影矩阵
+         * @param left
+         * @param right
+         * @param top
+         * @param bottom
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 根据fov构造左手透视投影矩阵
+         * @param fov
+         * @param aspect
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveFovLH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 构造右手投影矩阵
+         * @param left
+         * @param right
+         * @param top
+         * @param bottom
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 根据fov构造右手透视投影矩阵
+         * @param fov
+         * @param aspect
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveFovRH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4;
+    }
+}
+declare namespace QuickEngine {
+    /**
+     * 四元数 [w, x, y, z]
+     * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
+     */
+    class Quaternion {
+        static ClassName: string;
+        static ZERO: Quaternion;
+        static IDENTITY: Quaternion;
+        x: number;
+        y: number;
+        z: number;
+        w: number;
+        constructor(w?: number, x?: number, y?: number, z?: number);
+        copyFrom(q: Quaternion): Quaternion;
+        clone(): Quaternion;
+        /**
+         * 加法
+         * @param q
+         */
+        add(q: Quaternion): Quaternion;
+        /**
+         * 减法
+         * @param q
+         */
+        minus(q: Quaternion): Quaternion;
+        /**
+         * 点乘
+         * @param q
+         */
+        dot(q: Quaternion): number;
+        /**
+         * 叉乘
+         * @param q
+         */
+        multiply(q: Quaternion): Quaternion;
+        /**
+         * 乘以一个标量
+         * @param s
+         */
+        multiplyScalar(s: number): Quaternion;
+        static multiplyScalar(s: number, q: Quaternion): Quaternion;
+        multiplyVector(vector: Vector3): Quaternion;
+        rotateVector3(v: Vector3): Vector3;
+        /**
+         * 对数. 公式: log(q) = [0, αN], N 为单位向量
+         */
+        log(): Quaternion;
+        /**
+         * 指数. 公式: exp(p) = [cos() ]
+         */
+        exp(): Quaternion;
+        /**
+         * 共轭四元数, 四元数逆q-1 = 它的共轭除以模长
+         */
+        conjugate(): Quaternion;
+        /**
+         * 四元数的逆
+         */
+        inverse(): Quaternion;
+        /**
+         * 单位四元数求逆, 必须是单位四元数才能调用此方法
+         */
+        unitInverse(): Quaternion;
+        /**
+         * 模长
+         */
+        readonly magnitude: number;
+        /**
+         * 模长平方
+         */
+        readonly sqrMagnitude: number;
+        /**
+         * 正则化
+         */
+        normalize(): Quaternion;
+        /**
+         * 比较两个四元素是否相等
+         * @param other
+         */
+        equal(q: Quaternion): boolean;
+        /**
+         * 线性插值(Linear Interpolation)
+         * @param lhs
+         * @param rhs
+         * @param t
+         */
+        lerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion;
+        /**
+         * 球面线性插值(Spherical Linear Interpolation)
+         * @param lhs
+         * @param rhs
+         * @param t
+         */
+        slerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion;
+        /**
+         * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
+         */
+        private static _TempQuat0;
+        private static _TempQuat1;
+        squad(q0: any, q1: any, s0: any, s1: any, t: any): Quaternion;
+        /**
+         * 通过旋转矩阵构造四元数
+         * @param rotMat
+         */
+        FromRotationMatrix(rotMat: Matrix4): Quaternion;
+        ToRotationMatrix(rotMat?: Matrix4): Matrix4;
+        /**
+         * 创建一个以axis轴为中心旋转rads弧度的四元数
+         * @param axis
+         * @param rads
+         */
+        FromAngleAxis(axis: Vector3, rads: Radian): void;
+        /**
+         * 返回四元数绕轴心和角度
+         * @param axis 旋转轴
+         * @returns 弧度
+         */
+        ToAngleAxis(axis: Vector3): Radian;
+        /**
+         * 欧拉角转四元数
+         * @param eulerAngle 欧拉角
+         * @param refQuaternion 欧拉角引用，如果不为空，将会改变传入的四元数，并返回传入的四元数
+         * @return Quaternion 四元数
+         */
+        FromEulerAngle(eulerAngle: Vector3, refQuaternion?: Quaternion): Quaternion;
+        FromEulerAngleScalar(x: number, y: number, z: number, refQuaternion?: Quaternion): Quaternion;
+        /**
+         * 四元数转欧拉角
+         */
+        ToEulerAngle(refEulerAngle?: Vector3): Vector3;
+        getRightVector(): Vector3;
+        getUpVector(): Vector3;
+        getDirVector(): Vector3;
     }
 }

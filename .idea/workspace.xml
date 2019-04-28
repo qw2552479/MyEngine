@@ -16,83 +16,29 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Quick/src/math/Matrix4.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="325">
-              <caret line="738" column="12" selection-start-line="738" selection-start-column="12" selection-end-line="738" selection-end-column="12" />
-              <folding>
-                <element signature="n#!!block;n#set#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#multiply#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#multiply#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#identity#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#identity#1;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#inverse#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#inverse#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#transpose#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#transpose#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#transpose#1;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#isAffine#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#rotateByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#rotateByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#rotateByScalar#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#decompose#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makeTransform#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#makeTranslateByScalar#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#makeScale#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#makeRotation#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#makeRotationByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makeRotationByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makeRotationEulerAngle#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makeRotationQuaternion#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#pitch#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#pitch#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#yaw#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#yaw#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#roll#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#roll#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!doc;n#makeViewMatrixLH#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makeViewMatrixLH#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makeOrthoFovLH#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makePerspectiveLH#0;n#Matrix4#0;n#QuickEngine#0" />
-                <element signature="n#!!block;n#makePerspectiveFovLH#0;n#Matrix4#0;n#QuickEngine#0" />
-              </folding>
+            <state relative-caret-position="-664">
+              <caret line="428" column="39" lean-forward="true" selection-start-line="428" selection-start-column="39" selection-end-line="428" selection-end-column="39" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/Quick/src/object/Camera.ts">
+        <entry file="file://$PROJECT_DIR$/Quick/src/math/Quaternion.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="154">
-              <caret line="183" selection-start-line="183" selection-end-line="183" />
+            <state relative-caret-position="477">
+              <caret line="420" lean-forward="true" selection-start-line="420" selection-end-line="420" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/UnitTest/dist/unittest.js">
+        <entry file="file://$PROJECT_DIR$/../../Quick/trunk/Quick/src/math/Matrix4.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="172">
-              <caret line="362" column="27" lean-forward="true" selection-start-line="362" selection-start-column="27" selection-end-line="362" selection-end-column="27" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Quick/src/Scene3D.ts">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="182">
-              <caret line="19" column="34" selection-start-line="19" selection-start-column="34" selection-end-line="19" selection-end-column="34" />
+            <state relative-caret-position="7410">
+              <caret line="390" column="34" selection-start-line="390" selection-end-line="428" />
               <folding>
-                <element signature="n#!!block;n#insertNode#0;n#Scene3D#0;n#QuickEngine#0" />
+                <element signature="n#!!block;n#makeTransform#0;n#Matrix4#0;n#QuickEngine#0" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Quick/src/render_system/RenderPipeline.ts">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="56" column="52" selection-start-line="56" selection-start-column="52" selection-end-line="56" selection-end-column="52" />
             </state>
           </provider>
         </entry>
@@ -100,8 +46,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Quick/src/render_system/shader/GLShaderPass.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="154">
-              <caret line="202" column="8" selection-start-line="202" selection-start-column="8" selection-end-line="202" selection-end-column="8" />
+            <state relative-caret-position="3648">
+              <caret line="192" column="30" selection-start-line="192" selection-start-column="30" selection-end-line="192" selection-end-column="30" />
             </state>
           </provider>
         </entry>
@@ -109,8 +55,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Quick/src/render_system/RenderSystem.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="325">
-              <caret line="249" column="26" selection-start-line="249" selection-start-column="26" selection-end-line="249" selection-end-column="26" />
+            <state relative-caret-position="4883">
+              <caret line="271" column="21" selection-start-line="271" selection-start-column="21" selection-end-line="271" selection-end-column="21" />
               <folding>
                 <element signature="n#!!block;n#getWorldMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
                 <element signature="n#!!block;n#setViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
@@ -124,28 +70,49 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/UnitTest/src/TestSprite.ts">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="152">
-              <caret line="8" column="8" selection-start-line="8" selection-start-column="8" selection-end-line="8" selection-end-column="8" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Quick/src/render_system/Renderable.ts">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="76">
-              <caret line="4" column="8" selection-start-line="4" selection-start-column="8" selection-end-line="4" selection-end-column="8" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Quick/src/render_system/webgl/WebGLRendererSystem.ts">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="667">
-              <caret line="231" column="23" selection-start-line="231" selection-start-column="23" selection-end-line="231" selection-end-column="23" />
+            <state relative-caret-position="4047">
+              <caret line="213" column="30" selection-start-line="213" selection-start-column="30" selection-end-line="213" selection-end-column="30" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Quick/src/render/SpriteRender.ts">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1463">
+              <caret line="77" lean-forward="true" selection-start-line="77" selection-end-line="77" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Quick/src/object/Node.ts">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="627">
+              <caret line="33" column="8" selection-start-line="33" selection-start-column="8" selection-end-line="33" selection-end-column="8" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Quick/src/object/Transfrom.ts">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="7999">
+              <caret line="421" column="29" selection-start-line="421" selection-start-column="29" selection-end-line="421" selection-end-column="29" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Quick/src/Scene3D.ts">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1653">
+              <caret line="108" column="38" selection-start-line="108" selection-start-column="38" selection-end-line="108" selection-end-column="38" />
+              <folding>
+                <element signature="n#!!block;n#insertNode#0;n#Scene3D#0;n#QuickEngine#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -174,7 +141,12 @@
       <find>Prespective</find>
       <find>CameraType</find>
       <find>testspri</find>
+      <find>var</find>
+      <find>var</find>
     </findStrings>
+    <replaceStrings>
+      <replace>let</replace>
+    </replaceStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -216,6 +188,7 @@
         <option value="$PROJECT_DIR$/Quick/src/core/TextResource.ts" />
         <option value="$PROJECT_DIR$/UnitTest/src/app.ts" />
         <option value="$PROJECT_DIR$/UnitTest/src/TestSprite.ts" />
+        <option value="$PROJECT_DIR$/Quick/src/math/Quaternion.ts" />
       </list>
     </option>
   </component>
@@ -253,15 +226,7 @@
               <item name="MyEngine" type="462c0819:PsiDirectoryNode" />
               <item name="Quick" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="loader" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="MyEngine" type="b2602c69:ProjectViewProjectNode" />
-              <item name="MyEngine" type="462c0819:PsiDirectoryNode" />
-              <item name="Quick" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="loader" type="462c0819:PsiDirectoryNode" />
-              <item name="loaders" type="462c0819:PsiDirectoryNode" />
+              <item name="render" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="MyEngine" type="b2602c69:ProjectViewProjectNode" />
@@ -269,30 +234,6 @@
               <item name="Quick" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="render_system" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="MyEngine" type="b2602c69:ProjectViewProjectNode" />
-              <item name="MyEngine" type="462c0819:PsiDirectoryNode" />
-              <item name="Quick" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="render_system" type="462c0819:PsiDirectoryNode" />
-              <item name="shader" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="MyEngine" type="b2602c69:ProjectViewProjectNode" />
-              <item name="MyEngine" type="462c0819:PsiDirectoryNode" />
-              <item name="Quick" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="render_system" type="462c0819:PsiDirectoryNode" />
-              <item name="Texture" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="MyEngine" type="b2602c69:ProjectViewProjectNode" />
-              <item name="MyEngine" type="462c0819:PsiDirectoryNode" />
-              <item name="Quick" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="render_system" type="462c0819:PsiDirectoryNode" />
-              <item name="webgl" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="MyEngine" type="b2602c69:ProjectViewProjectNode" />
@@ -385,16 +326,16 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="18478000" />
+    <option name="totallyTimeSpent" value="18517000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1015" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Gulp" sideWeight="0.5008696" side_tool="true" weight="0.24973656" />
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49913043" visible="true" weight="0.24973656" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info id="Gulp" order="3" sideWeight="0.5008696" side_tool="true" weight="0.24973656" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32905483" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.32905483" />
@@ -411,6 +352,27 @@
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
     </layout>
+    <layout-to-restore>
+      <window_info id="Gulp" order="0" sideWeight="0.5008696" side_tool="true" weight="0.24973656" />
+      <window_info active="true" content_ui="combo" id="Project" order="1" sideWeight="0.49913043" visible="true" weight="0.24973656" />
+      <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="3" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32905483" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.32905483" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3990665" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
+      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
+      <window_info anchor="bottom" id="TypeScript" order="9" visible="true" weight="0.32905483" />
+      <window_info anchor="bottom" id="Terminal" order="10" />
+      <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
@@ -421,7 +383,6 @@
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/UnitTest/src/TestSprite.ts</url>
           <line>7</line>
-          <properties lambdaOrdinal="-1" />
           <option name="timeStamp" value="26" />
         </line-breakpoint>
       </breakpoints>
@@ -479,7 +440,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/object/Node.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="181">
+        <state relative-caret-position="627">
           <caret line="33" column="8" selection-start-line="33" selection-start-column="8" selection-end-line="33" selection-end-column="8" />
         </state>
       </provider>
@@ -628,8 +589,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/math/Quaternion.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5244">
-          <caret line="276" column="10" lean-forward="true" selection-start-line="276" selection-start-column="10" selection-end-line="276" selection-end-column="10" />
+        <state relative-caret-position="477">
+          <caret line="420" lean-forward="true" selection-start-line="420" selection-end-line="420" />
         </state>
       </provider>
     </entry>
@@ -691,22 +652,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/object/Transfrom.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="181">
-          <caret line="134" column="32" selection-start-line="134" selection-start-column="32" selection-end-line="134" selection-end-column="32" />
+        <state relative-caret-position="7999">
+          <caret line="421" column="29" selection-start-line="421" selection-start-column="29" selection-end-line="421" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/render/SpriteRender.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="80" column="8" selection-start-line="80" selection-start-column="8" selection-end-line="80" selection-end-column="8" />
+        <state relative-caret-position="1463">
+          <caret line="77" lean-forward="true" selection-start-line="77" selection-end-line="77" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/render_system/shader/GLShaderPass.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="154">
-          <caret line="202" column="8" selection-start-line="202" selection-start-column="8" selection-end-line="202" selection-end-column="8" />
+        <state relative-caret-position="3648">
+          <caret line="192" column="30" selection-start-line="192" selection-start-column="30" selection-end-line="192" selection-end-column="30" />
         </state>
       </provider>
     </entry>
@@ -719,15 +680,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/render_system/webgl/WebGLRendererSystem.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="667">
-          <caret line="231" column="23" selection-start-line="231" selection-start-column="23" selection-end-line="231" selection-end-column="23" />
+        <state relative-caret-position="4047">
+          <caret line="213" column="30" selection-start-line="213" selection-start-column="30" selection-end-line="213" selection-end-column="30" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/render_system/RenderSystem.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="325">
-          <caret line="249" column="26" selection-start-line="249" selection-start-column="26" selection-end-line="249" selection-end-column="26" />
+        <state relative-caret-position="4883">
+          <caret line="271" column="21" selection-start-line="271" selection-start-column="21" selection-end-line="271" selection-end-column="21" />
           <folding>
             <element signature="n#!!block;n#getWorldMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
             <element signature="n#!!block;n#setViewMatrix#0;n#RenderSystem#0;n#QuickEngine#0" />
@@ -748,8 +709,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/Scene3D.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="182">
-          <caret line="19" column="34" selection-start-line="19" selection-start-column="34" selection-end-line="19" selection-end-column="34" />
+        <state relative-caret-position="1653">
+          <caret line="108" column="38" selection-start-line="108" selection-start-column="38" selection-end-line="108" selection-end-column="38" />
           <folding>
             <element signature="n#!!block;n#insertNode#0;n#Scene3D#0;n#QuickEngine#0" />
           </folding>
@@ -772,44 +733,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Quick/src/math/Matrix4.ts">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="325">
-          <caret line="738" column="12" selection-start-line="738" selection-start-column="12" selection-end-line="738" selection-end-column="12" />
-          <folding>
-            <element signature="n#!!block;n#set#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#multiply#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#multiply#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#identity#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#identity#1;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#inverse#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#inverse#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#transpose#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#transpose#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#transpose#1;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#isAffine#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#rotateByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#rotateByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#rotateByScalar#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#decompose#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makeTransform#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#makeTranslateByScalar#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#makeScale#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#makeRotation#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#makeRotationByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makeRotationByAxis#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makeRotationEulerAngle#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makeRotationQuaternion#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#pitch#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#pitch#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#yaw#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#yaw#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#roll#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#roll#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!doc;n#makeViewMatrixLH#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makeViewMatrixLH#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makeOrthoFovLH#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makePerspectiveLH#0;n#Matrix4#0;n#QuickEngine#0" />
-            <element signature="n#!!block;n#makePerspectiveFovLH#0;n#Matrix4#0;n#QuickEngine#0" />
-          </folding>
+        <state relative-caret-position="-664">
+          <caret line="428" column="39" lean-forward="true" selection-start-line="428" selection-start-column="39" selection-end-line="428" selection-end-column="39" />
         </state>
       </provider>
     </entry>
