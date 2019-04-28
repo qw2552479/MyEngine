@@ -374,9 +374,9 @@
             let _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
             let _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
 
-            rotMat._00 = 1.0 - (_2yy + _2zz); rotMat._01 = _2xy - _2zw;/*-----*/rotMat._02 = _2xz + _2yw;/*-----*/rotMat._03 = 0;
-            rotMat._10 = _2xy + _2zw;/*-----*/rotMat._11 = 1.0 - (_2xx + _2zz); rotMat._12 = _2yz - _2xw;/*-----*/rotMat._13 = 0;
-            rotMat._20 = _2xz - _2yw;/*-----*/rotMat._21 = _2yz + _2xw;/*-----*/rotMat._22 = 1.0 - (_2xx + _2yy); rotMat._23 = 0;
+            rotMat._00 = 1.0 - (_2yy + _2zz); rotMat._01 = _2xy + _2zw;/*-----*/rotMat._02 = _2xz - _2yw;/*-----*/rotMat._03 = 0;
+            rotMat._10 = _2xy - _2zw;/*-----*/rotMat._11 = 1.0 - (_2xx + _2zz); rotMat._12 = _2yz + _2xw;/*-----*/rotMat._13 = 0;
+            rotMat._20 = _2xz + _2yw;/*-----*/rotMat._21 = _2yz - _2xw;/*-----*/rotMat._22 = 1.0 - (_2xx + _2yy); rotMat._23 = 0;
             rotMat._30 = 0;/*---------------*/rotMat._31 = 0;/*---------------*/rotMat._32 = 0;/*---------------*/rotMat._33 = 1;
 
             return rotMat;

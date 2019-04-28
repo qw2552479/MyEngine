@@ -195,12 +195,15 @@ namespace QuickEngine {
          a30 a31 a32 a33    w=0
          */
         public transformVector3(v: Vector3): Vector3 {
+            let x = v.x;
+            let y = v.y;
+            let z = v.z;
 
-            let x = this._00 * v.x + this._01 * v.y + this._02 * v.z;
-            let y = this._10 * v.x + this._11 * v.y + this._12 * v.z;
-            let z = this._20 * v.x + this._21 * v.y + this._22 * v.z;
+            let x1 = this._00 * x + this._10 * y + this._20 * z;
+            let y1 = this._01 * x + this._11 * y + this._21 * z;
+            let z1 = this._02 * x + this._12 * y + this._22 * z;
 
-            return new Vector3(x, y, z);
+            return new Vector3(x1, y1, z1);
         }
 
         /**
@@ -398,28 +401,37 @@ namespace QuickEngine {
         public toArrayBuffer(): Float32Array {
             if (__USE_COLUMN_MATRIX__) {
                 this._rawData.set([
-                    this._00, this._10, this._20, this._30,
-                    this._01, this._11, this._21, this._31,
-                    this._02, this._12, this._22, this._32,
-                    this._03, this._13, this._23, this._33
-                ]);
-            } else {
-                this._rawData.set([
                     this._00, this._01, this._02, this._03,
                     this._10, this._11, this._12, this._13,
                     this._20, this._21, this._22, this._23,
                     this._30, this._31, this._32, this._33
                 ]);
+            } else {
+                this._rawData.set([
+                    this._00, this._10, this._20, this._30,
+                    this._01, this._11, this._21, this._31,
+                    this._02, this._12, this._22, this._32,
+                    this._03, this._13, this._23, this._33
+                ]);
             }
             return this._rawData;
         }
 
+        /**
+         *
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
+         * @param position
+         * @param rotation
+         * @param scale
+         * @param out
+         */
         public static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4 {
-
             if (!out) {
                 out = new Matrix4();
             }
-
             // Ordering:
             //    1. Scale
             //    2. Rotate
@@ -427,40 +439,25 @@ namespace QuickEngine {
             // 右乘
             // M = Mt * Mr * Ms
             let rot4x4 = rotation.ToRotationMatrix();
-            let scale4x4 = Matrix4.makeScale(scale.x, scale.y, scale.z);
-            /**
-             * 矩阵相乘
-             r00 r01 r02 r03     s00 0   0   0       r00*s00+r01*s10+r02*s20+r03*s30 r00*s01+r01*s11+r02*s21+r03*s31 r00*s02+r01*s12+r02*s22+r03*s32 r00*s03+r01*s13+r02*s23+r03*s33
-             r10 r11 r12 r13  *  0   s11 0   0   =   r10*s00+r11*s10+r12*s20+r13*s30 r10*s01+r11*s11+r12*s21+r13*s31 r10*s02+r11*s12+r12*s22+r13*s32 r10*s03+r11*s13+r12*s23+r13*s33
-             r20 r21 r22 r23     0   0   s22 0       r20*s00+r21*s10+r22*s20+r23*s30 r20*s01+r21*s11+r22*s21+r23*s31 r20*s02+r21*s12+r22*s22+r23*s32 r20*s03+r21*s13+r22*s23+r23*s33
-             r30 r31 r32 r33     0   0   0   s33     r30*s00+r31*s10+r32*s20+r33*s30 r30*s01+r31*s11+r32*s21+r33*s31 r30*s02+r31*s12+r32*s22+r33*s32 r30*s03+r31*s13+r32*s23+r33*s33
-             r00*s00                                 r01*s11                                 r02*s22                                 r03*s33
-             =   r10*s00                                 r11*s11                                 r12*s22                                 r13*s33
-             r20*s00                                 r21*s11                                 r22*s22                                 r23*s33
-             r30*s00                                 r31*s11                                 r32*s22                                 r33*s33
-             r00*s00 r01*s11 r02*s22 r03*s33
-             =   r10*s00 r11*s11 r12*s22 r13*s33
-             r20*s00 r21*s11 r22*s22 r23*s33
-             r30*s00 r31*s11 r32*s22 r33*s33
-
-             */
-
             out._00 = rot4x4._00 * scale.x;
             out._01 = rot4x4._01 * scale.y;
             out._02 = rot4x4._02 * scale.z;
-            out._03 = position.x;
+            out._03 = 0;
+
             out._10 = rot4x4._10 * scale.x;
             out._11 = rot4x4._11 * scale.y;
             out._12 = rot4x4._12 * scale.z;
-            out._13 = position.y;
+            out._13 = 0;
+
             out._20 = rot4x4._20 * scale.x;
             out._21 = rot4x4._21 * scale.y;
             out._22 = rot4x4._22 * scale.z;
-            out._23 = position.z;
-            out._30 = /*---------------*/0;
-            out._31 = /*---------------*/0;
-            out._32 = /*---------------*/0;
-            out._33 = /*-----*/1;
+            out._23 = 0;
+
+            out._30 = position.x;
+            out._31 = position.y;
+            out._32 = position.z;
+            out._33 = 1;
 
             return out;
         }
@@ -723,18 +720,17 @@ namespace QuickEngine {
             let w = right - left;
             let h = top - bottom;
             let d = far - near;
-            let inv_d = 1 / d;
 
             let x = (right + left) / w;
             let y = (top + bottom) / h;
             let z = (far + near) / d;
 
             target._00 = 2 / w;
-            target._03 = -x;
             target._11 = 2 / h;
-            target._13 = -y;
             target._22 = -2 / d;
-            target._23 = -z;
+            target._30 = -x;
+            target._31 = -y;
+            target._32 = -z;
 
             return target;
         }

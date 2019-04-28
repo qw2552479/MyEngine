@@ -2305,6 +2305,17 @@ declare namespace QuickEngine {
          */
         decompose(): void;
         toArrayBuffer(): Float32Array;
+        /**
+         *
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
+         * @param position
+         * @param rotation
+         * @param scale
+         * @param out
+         */
         static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4;
         /**
          * 构造平移矩阵
