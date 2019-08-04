@@ -33,10 +33,6 @@ namespace QuickEngine {
             return this._transfrom;
         }
 
-        public set transform(val: Transform) {
-            // TODO: 需要删除
-        }
-
         public updateRenderQueue(renderQueue: RenderQueue) {
 
             let render = this.getComponent<MeshRender>(MeshRender);

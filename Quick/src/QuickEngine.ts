@@ -14,7 +14,7 @@ namespace QuickEngine {
     export function run(data: RunData) {
 
         new WebGLBufferManager();
-        new WebGLRendererSystem(data.div);
+        new RenderSystem(data.div);
         new SceneManager();
 
         window.onresize = (ev: UIEvent) => {

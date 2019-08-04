@@ -10,3 +10,6 @@ Quick/dist/quick.d.ts
 Quick/dist/quick.js.map
 Quick/dist/quick.d.ts
 Quick/dist/quick.js
+node_modules
+.vscode
+.idea

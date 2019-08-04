@@ -273,7 +273,7 @@ namespace QuickEngine {
                 // TODO: 计算权重
                
                 // 设置本地坐标                
-                target.localRotation = target.localRotation.FromEulerAngleScalar(interpolationX, interpolationY, interpolationZ, target.localRotation);
+                target.localRotation = target.localRotation.fromEulerAngleScalar(interpolationX, interpolationY, interpolationZ);
             }
         }
 

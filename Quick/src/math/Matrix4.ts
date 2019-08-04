@@ -9,6 +9,7 @@ namespace QuickEngine {
     ];
 
     /**
+     * 矩阵存储和openGL规则一致,列主序
      * 学习资料:
      * http://www.euclideanspace.com/maths/algebra/matrix/
      * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
@@ -19,36 +20,147 @@ namespace QuickEngine {
      | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
      | 3 7 11 15 |      | 30 31 32 33 |
      */
-    /**
-     * TODO: 矩阵数据使用array buffer, 数组计算更缓存友好
-     */
     export class Matrix4 {
 
         public static ClassName = 'Matrix4';
 
-        public _00: number = 1;
-        public _10: number = 0;
-        public _20: number = 0;
-        public _30: number = 0;
+        public get _00(): number {
+            return this._rawData[0];
+        }
 
-        public _01: number = 0;
-        public _11: number = 1;
-        public _21: number = 0;
-        public _31: number = 0;
+        public set _00(val: number) {
+            this._rawData[0] = val;
+        }
 
-        public _02: number = 0;
-        public _12: number = 0;
-        public _22: number = 1;
-        public _32: number = 0;
+        public get _01(): number {
+            return this._rawData[4];
+        }
 
-        public _03: number = 0;
-        public _13: number = 0;
-        public _23: number = 0;
-        public _33: number = 1;
+        public set _01(val: number) {
+            this._rawData[4] = val;
+        }
 
-        private _rawData = new Float32Array(16);
+        public get _02(): number {
+            return this._rawData[8];
+        }
+
+        public set _02(val: number) {
+            this._rawData[8] = val;
+        }
+
+        public get _03(): number {
+            return this._rawData[12];
+        }
+
+        public set _03(val: number) {
+            this._rawData[12] = val;
+        }
+
+        public get _10(): number {
+            return this._rawData[1];
+        }
+
+        public set _10(val: number) {
+            this._rawData[1] = val;
+        }
+
+        public get _11(): number {
+            return this._rawData[5];
+        }
+
+        public set _11(val: number) {
+            this._rawData[5] = val;
+        }
+
+        public get _12(): number {
+            return this._rawData[9];
+        }
+
+        public set _12(val: number) {
+            this._rawData[9] = val;
+        }
+
+        public get _13(): number {
+            return this._rawData[13];
+        }
+
+        public set _13(val: number) {
+            this._rawData[13] = val;
+        }
+
+        public get _20(): number {
+            return this._rawData[2];
+        }
+
+        public set _20(val: number) {
+            this._rawData[2] = val;
+        }
+
+        public get _21(): number {
+            return this._rawData[6];
+        }
+
+        public set _21(val: number) {
+            this._rawData[6] = val;
+        }
+
+        public get _22(): number {
+            return this._rawData[10];
+        }
+
+        public set _22(val: number) {
+            this._rawData[10] = val;
+        }
+
+        public get _23(): number {
+            return this._rawData[14];
+        }
+
+        public set _23(val: number) {
+            this._rawData[14] = val;
+        }
+
+        public get _30(): number {
+            return this._rawData[3];
+        }
+
+        public set _30(val: number) {
+            this._rawData[3] = val;
+        }
+
+        public get _31(): number {
+            return this._rawData[7];
+        }
+
+        public set _31(val: number) {
+            this._rawData[7] = val;
+        }
+
+        public get _32(): number {
+            return this._rawData[11];
+        }
+
+
+        public set _32(val: number) {
+            this._rawData[11] = val;
+        }
+
+        public get _33(): number {
+            return this._rawData[15];
+        }
+
+        public set _33(val: number) {
+            this._rawData[15] = val;
+        }
+
+        private _rawData: Float32Array;
+
+        public get rawData(): Float32Array {
+            return this._rawData;
+        }
 
         constructor() {
+            this._rawData = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
         }
 
         public static create(
@@ -67,38 +179,30 @@ namespace QuickEngine {
             return matrix;
         }
 
+        public setArray(array: ArrayLike<number>): Matrix4 {
+            this._rawData.set(array, 0);
+            return this;
+        }
+
         public set(_00: number, _01: number, _02: number, _03: number,
                    _10: number, _11: number, _12: number, _13: number,
                    _20: number, _21: number, _22: number, _23: number,
                    _30: number, _31: number, _32: number, _33: number): Matrix4 {
 
-            this._00 = _00, this._01 = _01, this._02 = _02, this._03 = _03;
-            this._10 = _10, this._11 = _11, this._12 = _12, this._13 = _13;
-            this._20 = _20, this._21 = _21, this._22 = _22, this._23 = _23;
-            this._30 = _30, this._31 = _31, this._32 = _32, this._33 = _33;
+            this._rawData[0] = _00, this._rawData[4] = _01, this._rawData[8] = _02, this._rawData[12] = _03;
+            this._rawData[1] = _10, this._rawData[5] = _11, this._rawData[9] = _12, this._rawData[13] = _13;
+            this._rawData[2] = _20, this._rawData[6] = _21, this._rawData[10] = _22, this._rawData[14] = _23;
+            this._rawData[3] = _30, this._rawData[7] = _31, this._rawData[11] = _32, this._rawData[15] = _33;
 
             return this;
         }
 
         public copyFrom(other: Matrix4): Matrix4 {
-
-            this._00 = other._00, this._01 = other._01, this._02 = other._02, this._03 = other._03;
-            this._10 = other._10, this._11 = other._11, this._12 = other._12, this._13 = other._13;
-            this._20 = other._20, this._21 = other._21, this._22 = other._22, this._23 = other._23;
-            this._30 = other._30, this._31 = other._31, this._32 = other._32, this._33 = other._33;
-
-            return this;
+            return this.setArray(other.rawData);
         }
 
         public clone(): Matrix4 {
-            let matrix = new Matrix4();
-
-            matrix._00 = this._00, matrix._01 = this._01, matrix._02 = this._02, matrix._03 = this._03;
-            matrix._10 = this._10, matrix._11 = this._11, matrix._12 = this._12, matrix._13 = this._13;
-            matrix._20 = this._20, matrix._21 = this._21, matrix._22 = this._22, matrix._23 = this._23;
-            matrix._30 = this._30, matrix._31 = this._31, matrix._32 = this._32, matrix._33 = this._33;
-
-            return matrix;
+            return new Matrix4().copyFrom(this);
         }
 
         /**
@@ -108,82 +212,46 @@ namespace QuickEngine {
          a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
          a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
          */
-        public multiply(v: Matrix4, out?: Matrix4): Matrix4 {
-
-            if (!out) {
-                out = new Matrix4();
+        public multiply(v: Matrix4, outMat?: Matrix4): Matrix4 {
+            if (!outMat) {
+                outMat = new Matrix4();
             }
 
-            let a00 = this._00, a01 = this._01, a02 = this._02, a03 = this._03;
-            let a10 = this._10, a11 = this._11, a12 = this._12, a13 = this._13;
-            let a20 = this._20, a21 = this._21, a22 = this._22, a23 = this._23;
-            let a30 = this._30, a31 = this._31, a32 = this._32, a33 = this._33;
+            const out = outMat._rawData;
+            const a = this._rawData;
+            const b = v._rawData;
 
-            let b00 = v._00, b01 = v._01, b02 = v._02, b03 = v._03;
-            let b10 = v._10, b11 = v._11, b12 = v._12, b13 = v._13;
-            let b20 = v._20, b21 = v._21, b22 = v._22, b23 = v._23;
-            let b30 = v._30, b31 = v._31, b32 = v._32, b33 = v._33;
-            // #1
-            out._00 = a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30;
-            out._01 = a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31;
-            out._02 = a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32;
-            out._03 = a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33;
-            // #2
-            out._10 = a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30;
-            out._11 = a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31;
-            out._12 = a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32;
-            out._13 = a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33;
-            // #3
-            out._20 = a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30;
-            out._21 = a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31;
-            out._22 = a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32;
-            out._23 = a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33;
-            // #4
-            out._30 = a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30;
-            out._31 = a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31;
-            out._32 = a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32;
-            out._33 = a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33;
+            const m111 = a[0], m121 = a[4], m131 = a[8], m141 = a[12];
+            const m112 = a[1], m122 = a[5], m132 = a[9], m142 = a[13];
+            const m113 = a[2], m123 = a[6], m133 = a[10], m143 = a[14];
+            const m114 = a[3], m124 = a[7], m134 = a[11], m144 = a[15];
 
-            return out;
-        }
+            const m211 = b[0], m221 = b[4], m231 = b[8], m241 = b[12];
+            const m212 = b[1], m222 = b[5], m232 = b[9], m242 = b[13];
+            const m213 = b[2], m223 = b[6], m233 = b[10], m243 = b[14];
+            const m214 = b[3], m224 = b[7], m234 = b[11], m244 = b[15];
 
-        public static multiply(v1: Matrix4, v2: Matrix4, out?: Matrix4): Matrix4 {
+            out[0] = m111 * m211 + m112 * m221 + m113 * m231 + m114 * m241;
+            out[1] = m111 * m212 + m112 * m222 + m113 * m232 + m114 * m242;
+            out[2] = m111 * m213 + m112 * m223 + m113 * m233 + m114 * m243;
+            out[3] = m111 * m214 + m112 * m224 + m113 * m234 + m114 * m244;
 
-            if (!out) {
-                out = new Matrix4();
-            }
+            out[4] = m121 * m211 + m122 * m221 + m123 * m231 + m124 * m241;
+            out[5] = m121 * m212 + m122 * m222 + m123 * m232 + m124 * m242;
+            out[6] = m121 * m213 + m122 * m223 + m123 * m233 + m124 * m243;
+            out[7] = m121 * m214 + m122 * m224 + m123 * m234 + m124 * m244;
 
-            let a00 = v1._00, a01 = v1._01, a02 = v1._02, a03 = v1._03;
-            let a10 = v1._10, a11 = v1._11, a12 = v1._12, a13 = v1._13;
-            let a20 = v1._20, a21 = v1._21, a22 = v1._22, a23 = v1._23;
-            let a30 = v1._30, a31 = v1._31, a32 = v1._32, a33 = v1._33;
+            out[8] = m131 * m211 + m132 * m221 + m133 * m231 + m134 * m241;
+            out[9] = m131 * m212 + m132 * m222 + m133 * m232 + m134 * m242;
+            out[10] = m131 * m213 + m132 * m223 + m133 * m233 + m134 * m243;
+            out[11] = m131 * m214 + m132 * m224 + m133 * m234 + m134 * m244;
 
-            let b00 = v2._00, b01 = v2._01, b02 = v2._02, b03 = v2._03;
-            let b10 = v2._10, b11 = v2._11, b12 = v2._12, b13 = v2._13;
-            let b20 = v2._20, b21 = v2._21, b22 = v2._22, b23 = v2._23;
-            let b30 = v2._30, b31 = v2._31, b32 = v2._32, b33 = v2._33;
-            // #1
-            out._00 = a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30;
-            out._01 = a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31;
-            out._02 = a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32;
-            out._03 = a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33;
-            // #2
-            out._10 = a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30;
-            out._11 = a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31;
-            out._12 = a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32;
-            out._13 = a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33;
-            // #3
-            out._20 = a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30;
-            out._21 = a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31;
-            out._22 = a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32;
-            out._23 = a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33;
-            // #4
-            out._30 = a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30;
-            out._31 = a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31;
-            out._32 = a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32;
-            out._33 = a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33;
+            out[12] = m141 * m211 + m142 * m221 + m143 * m231 + m144 * m241;
+            out[13] = m141 * m212 + m142 * m222 + m143 * m232 + m144 * m242;
+            out[14] = m141 * m213 + m142 * m223 + m143 * m233 + m144 * m243;
+            out[15] = m141 * m214 + m142 * m224 + m143 * m234 + m144 * m244;
 
-            return out;
+            return outMat;
         }
 
         /**
@@ -194,97 +262,108 @@ namespace QuickEngine {
          a20 a21 a22 a23    z
          a30 a31 a32 a33    w=0
          */
-        public transformVector3(v: Vector3): Vector3 {
-            let x = v.x;
-            let y = v.y;
-            let z = v.z;
+        public transformVector3(v: Vector3, out?: Vector3): Vector3 {
+            const x = v.x;
+            const y = v.y;
+            const z = v.z;
+            const m = this._rawData;
 
-            let x1 = this._00 * x + this._10 * y + this._20 * z;
-            let y1 = this._01 * x + this._11 * y + this._21 * z;
-            let z1 = this._02 * x + this._12 * y + this._22 * z;
+            const x1 = m[0] * x + m[4] * y + m[8] * z + m[12];
+            const y1 = m[1] * x + m[5] * y + m[9] * z + m[13];
+            const z1 = m[2] * x + m[6] * y + m[10] * z + m[14];
 
-            return new Vector3(x1, y1, z1);
+            if (!out) {
+                out = new Vector3(x1, y1, z1);
+            } else {
+                out.set(x1, y1, z1);
+            }
+
+            return out;
         }
 
         /**
          * 单位矩阵
          */
         public identity(): Matrix4 {
-            this._00 = 1, this._01 = 0, this._02 = 0, this._03 = 0;
-            this._10 = 0, this._11 = 1, this._12 = 0, this._20 = 0;
-            this._20 = 0, this._21 = 0, this._22 = 1, this._23 = 0;
-            this._30 = 0, this._31 = 0, this._32 = 0, this._33 = 1;
+            const out = this._rawData;
+
+            out[0] = 1;
+            out[1] = 0;
+            out[2] = 0;
+            out[3] = 0;
+            out[4] = 0;
+            out[5] = 1;
+            out[6] = 0;
+            out[7] = 0;
+            out[8] = 0;
+            out[9] = 0;
+            out[10] = 1;
+            out[11] = 0;
+            out[12] = 0;
+            out[13] = 0;
+            out[14] = 0;
+            out[15] = 1;
 
             return this;
         }
 
-        public static identity(): Matrix4 {
-            return new Matrix4();
-        }
-
         /**
          * 矩阵求逆
+         * TODO
          */
-        public inverse(): Matrix4 {
+        public inverse(outMat?: Matrix4): Matrix4 {
 
-            let m00 = this._00, m01 = this._01, m02 = this._02, m03 = this._03;
-            let m10 = this._10, m11 = this._11, m12 = this._12, m13 = this._13;
-            let m20 = this._20, m21 = this._21, m22 = this._22, m23 = this._23;
-            let m30 = this._30, m31 = this._31, m32 = this._32, m33 = this._33;
+            if (!outMat) {
+                outMat = new Matrix4();
+            }
 
-            let v0 = m20 * m31 - m21 * m30;
-            let v1 = m20 * m32 - m22 * m30;
-            let v2 = m20 * m33 - m23 * m30;
-            let v3 = m21 * m32 - m22 * m31;
-            let v4 = m21 * m33 - m23 * m31;
-            let v5 = m22 * m33 - m23 * m32;
+            const a = this._rawData;
+            const out = outMat._rawData;
 
-            let t00 = +(v5 * m11 - v4 * m12 + v3 * m13);
-            let t10 = -(v5 * m10 - v2 * m12 + v1 * m13);
-            let t20 = +(v4 * m10 - v2 * m11 + v0 * m13);
-            let t30 = -(v3 * m10 - v1 * m11 + v0 * m12);
+            let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+            let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+            let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+            let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
 
-            let invDet = 1 / (t00 * m00 + t10 * m01 + t20 * m02 + t30 * m03);
+            let b00 = a00 * a11 - a01 * a10;
+            let b01 = a00 * a12 - a02 * a10;
+            let b02 = a00 * a13 - a03 * a10;
+            let b03 = a01 * a12 - a02 * a11;
+            let b04 = a01 * a13 - a03 * a11;
+            let b05 = a02 * a13 - a03 * a12;
+            let b06 = a20 * a31 - a21 * a30;
+            let b07 = a20 * a32 - a22 * a30;
+            let b08 = a20 * a33 - a23 * a30;
+            let b09 = a21 * a32 - a22 * a31;
+            let b10 = a21 * a33 - a23 * a31;
+            let b11 = a22 * a33 - a23 * a32;
 
-            let d00 = t00 * invDet;
-            let d10 = t10 * invDet;
-            let d20 = t20 * invDet;
-            let d30 = t30 * invDet;
+            // Calculate the determinant
+            let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 
-            let d01 = -(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d11 = +(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d21 = -(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d31 = +(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
+            if (!det) {
+                return null;
+            }
+            det = 1.0 / det;
 
-            v0 = m10 * m31 - m11 * m30;
-            v1 = m10 * m32 - m12 * m30;
-            v2 = m10 * m33 - m13 * m30;
-            v3 = m11 * m32 - m12 * m31;
-            v4 = m11 * m33 - m13 * m31;
-            v5 = m12 * m33 - m13 * m32;
+            out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+            out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+            out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+            out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+            out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+            out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+            out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+            out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+            out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+            out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+            out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+            out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+            out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+            out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+            out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+            out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
 
-            let d02 = +(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d12 = -(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d22 = +(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d32 = -(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
-
-            v0 = m21 * m10 - m20 * m11;
-            v1 = m22 * m10 - m20 * m12;
-            v2 = m23 * m10 - m20 * m13;
-            v3 = m22 * m11 - m21 * m12;
-            v4 = m23 * m11 - m21 * m13;
-            v5 = m23 * m12 - m22 * m13;
-
-            let d03 = -(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d13 = +(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d23 = -(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d33 = +(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
-
-            return Matrix4.create(
-                d00, d01, d02, d03,
-                d10, d11, d12, d13,
-                d20, d21, d22, d23,
-                d30, d31, d32, d33);
+            return outMat;
         }
 
         /**
@@ -294,30 +373,29 @@ namespace QuickEngine {
          | c d | ===> | b d |
          */
         public transpose(): Matrix4 {
+            const a = this._rawData;
 
-            let newMat = new Matrix4();
+            const a01 = a[1];
+            const a02 = a[2];
+            const a03 = a[3];
+            const a12 = a[6];
+            const a13 = a[7];
+            const a23 = a[11];
 
-            newMat._00 = this._00, newMat._01 = this._10, newMat._02 = this._20, newMat._03 = this._30;
-            newMat._10 = this._01, newMat._11 = this._11, newMat._12 = this._21, newMat._20 = this._31;
-            newMat._20 = this._02, newMat._21 = this._12, newMat._22 = this._22, newMat._23 = this._32;
-            newMat._30 = this._03, newMat._31 = this._13, newMat._32 = this._23, newMat._33 = this._33;
+            a[1] = a[4];
+            a[2] = a[8];
+            a[3] = a[12];
+            a[4] = a01;
+            a[6] = a[9];
+            a[7] = a[13];
+            a[8] = a02;
+            a[9] = a12;
+            a[11] = a[14];
+            a[12] = a03;
+            a[13] = a13;
+            a[14] = a23;
 
-            return newMat;
-        }
-
-        public static transpose(target: Matrix4) {
-
-            let a00 = target._00, a01 = target._01, a02 = target._02, a03 = target._03;
-            let a10 = target._10, a11 = target._11, a12 = target._12, a13 = target._13;
-            let a20 = target._20, a21 = target._21, a22 = target._22, a23 = target._23;
-            let a30 = target._30, a31 = target._31, a32 = target._32, a33 = target._33;
-
-            target._00 = a00, target._01 = a10, target._02 = a20, target._03 = a30;
-            target._10 = a01, target._11 = a11, target._12 = a21, target._20 = a31;
-            target._20 = a02, target._21 = a12, target._22 = a22, target._23 = a32;
-            target._30 = a03, target._31 = a13, target._32 = a23, target._33 = a33;
-
-            return target;
+            return this;
         }
 
         public isAffine(): boolean {
@@ -391,30 +469,65 @@ namespace QuickEngine {
 
         /**
          * 矩阵分解, 可分解为position,scale,quaternion
+         * @param outPosition
+         * @param outScale
+         * @param outQuaternion
          */
-        public decompose() {
-            let position: Vector3, scale: Vector3, orientation: Quaternion;
-            console.assert(this.isAffine());
-        }
+        public decompose(outPosition: Vector3, outScale: Vector3, outQuaternion: Quaternion) {
+            const mat = this._rawData;
+            // pos
+            outPosition.x = mat[12];
+            outPosition.y = mat[13];
+            outPosition.z = mat[14];
 
-        // openGL是列向量矩阵
-        public toArrayBuffer(): Float32Array {
-            if (__USE_COLUMN_MATRIX__) {
-                this._rawData.set([
-                    this._00, this._01, this._02, this._03,
-                    this._10, this._11, this._12, this._13,
-                    this._20, this._21, this._22, this._23,
-                    this._30, this._31, this._32, this._33
-                ]);
+            // scale
+            outScale.x = Math.hypot(mat[0], mat[1], mat[2]);
+            outScale.y = Math.hypot(mat[4], mat[5], mat[6]);
+            outScale.z = Math.hypot(mat[8], mat[9], mat[10]);
+
+            // quaternion
+            let is1 = 1 / outScale.x;
+            let is2 = 1 / outScale.y;
+            let is3 = 1 / outScale.z;
+
+            let sm11 = mat[0] * is1;
+            let sm12 = mat[1] * is1;
+            let sm13 = mat[2] * is1;
+            let sm21 = mat[4] * is2;
+            let sm22 = mat[5] * is2;
+            let sm23 = mat[6] * is2;
+            let sm31 = mat[8] * is3;
+            let sm32 = mat[9] * is3;
+            let sm33 = mat[10] * is3;
+
+            let trace = sm11 + sm22 + sm33;
+            let S = 0;
+
+            if (trace > 0) {
+                S = Math.sqrt(trace + 1.0) * 2;
+                outQuaternion.w = 0.25 * S;
+                outQuaternion.x = (sm23 - sm32) / S;
+                outQuaternion.y = (sm31 - sm13) / S;
+                outQuaternion.z = (sm12 - sm21) / S;
+            } else if ((sm11 > sm22) && (sm11 > sm33)) {
+                S = Math.sqrt(1.0 + sm11 - sm22 - sm33) * 2;
+                outQuaternion.w = (sm23 - sm32) / S;
+                outQuaternion.x = 0.25 * S;
+                outQuaternion.y = (sm12 + sm21) / S;
+                outQuaternion.z = (sm31 + sm13) / S;
+            } else if (sm22 > sm33) {
+                S = Math.sqrt(1.0 + sm22 - sm11 - sm33) * 2;
+                outQuaternion.w = (sm31 - sm13) / S;
+                outQuaternion.x = (sm12 + sm21) / S;
+                outQuaternion.y = 0.25 * S;
+                outQuaternion.z = (sm23 + sm32) / S;
             } else {
-                this._rawData.set([
-                    this._00, this._10, this._20, this._30,
-                    this._01, this._11, this._21, this._31,
-                    this._02, this._12, this._22, this._32,
-                    this._03, this._13, this._23, this._33
-                ]);
+                S = Math.sqrt(1.0 + sm33 - sm11 - sm22) * 2;
+                outQuaternion.w = (sm12 - sm21) / S;
+                outQuaternion.x = (sm31 + sm13) / S;
+                outQuaternion.y = (sm23 + sm32) / S;
+                outQuaternion.z = 0.25 * S;
             }
-            return this._rawData;
         }
 
         /**
@@ -438,344 +551,72 @@ namespace QuickEngine {
             //    3. Translate
             // 右乘
             // M = Mt * Mr * Ms
-            let rot4x4 = rotation.ToRotationMatrix();
-            out._00 = rot4x4._00 * scale.x;
-            out._01 = rot4x4._01 * scale.y;
-            out._02 = rot4x4._02 * scale.z;
-            out._03 = 0;
 
-            out._10 = rot4x4._10 * scale.x;
-            out._11 = rot4x4._11 * scale.y;
-            out._12 = rot4x4._12 * scale.z;
-            out._13 = 0;
+            // Quaternion math
+            let x = rotation.x, y = rotation.y, z = rotation.z, w = rotation.w;
+            let x2 = x + x;
+            let y2 = y + y;
+            let z2 = z + z;
 
-            out._20 = rot4x4._20 * scale.x;
-            out._21 = rot4x4._21 * scale.y;
-            out._22 = rot4x4._22 * scale.z;
-            out._23 = 0;
+            let xx = x * x2;
+            let xy = x * y2;
+            let xz = x * z2;
+            let yy = y * y2;
+            let yz = y * z2;
+            let zz = z * z2;
+            let wx = w * x2;
+            let wy = w * y2;
+            let wz = w * z2;
 
-            out._30 = position.x;
-            out._31 = position.y;
-            out._32 = position.z;
-            out._33 = 1;
+            let sx = scale.x;
+            let sy = scale.y;
+            let sz = scale.z;
 
-            return out;
-        }
+            let out0 = (1 - (yy + zz)) * sx;
+            let out1 = (xy + wz) * sx;
+            let out2 = (xz - wy) * sx;
+            let out4 = (xy - wz) * sy;
+            let out5 = (1 - (xx + zz)) * sy;
+            let out6 = (yz + wx) * sy;
+            let out8 = (xz + wy) * sz;
+            let out9 = (yz - wx) * sz;
+            let out10 = (1 - (xx + yy)) * sz;
 
-        /**
-         * 构造平移矩阵
-         * @param v
-         * @param out
-         * @example
-         *          |1, 0, 0, x|
-         *          |0, 1, 0, y|
-         *          |0, 0, 1, z|
-         *          |0, 0, 0, 1|
-         */
-        public static makeTranslate(v: Vector3): Matrix4 {
+            const rawData = out._rawData;
 
-            let out = new Matrix4();
-
-            out._03 = v.x;
-            out._13 = v.y;
-            out._23 = v.z;
-
-            return out;
-        }
-
-        /**
-         * 根据x，y，z标量构造平移矩阵
-         * @param t_x
-         * @param t_y
-         * @param t_z
-         * @param out
-         */
-        public static makeTranslateByScalar(t_x: number, t_y: number, t_z: number): Matrix4 {
-
-            let out = new Matrix4();
-
-            out._03 = t_x;
-            out._13 = t_y;
-            out._23 = t_z;
+            rawData[0] = out0;
+            rawData[1] = out1;
+            rawData[2] = out2;
+            rawData[3] = 0;
+            rawData[4] = out4;
+            rawData[5] = out5;
+            rawData[6] = out6;
+            rawData[7] = 0;
+            rawData[8] = out8;
+            rawData[9] = out9;
+            rawData[10] = out10;
+            rawData[11] = 0;
+            rawData[12] = position.x;
+            rawData[13] = position.y;
+            rawData[14] = position.z;
+            rawData[15] = 1;
 
             return out;
-        }
-
-        /**
-         * 构造缩放矩阵
-         * @param s_x
-         * @param s_y
-         * @param s_z
-         * @param out 如果传入out，则不创建新的matrix，返回out
-         * @example
-         *          |sx, 0 , 0 , 0|
-         *          |0 , sy, 0 , 0|
-         *          |0 , 0 , sz, 0|
-         *          |0 , 0 , 0 , 1|
-         */
-        public static makeScale(s_x: number, s_y: number, s_z: number): Matrix4 {
-
-            let out = new Matrix4();
-
-            out._00 = s_x;
-            out._11 = s_y;
-            out._22 = s_z;
-
-            return out;
-        }
-
-        /**
-         * 根据标量, 绕任意轴旋转构造旋转矩阵
-         * @param a
-         * @param x
-         * @param y
-         * @param z
-         * @param out
-         */
-        public static makeRotation(a: number, x: number, y: number, z: number): Matrix4 {
-
-            let out = new Matrix4();
-
-            let ca = Math.cos(a), sa = Math.sin(a), c1 = 1 - ca;
-            let x2 = x * x, y2 = y * y, z2 = z * z;
-            let xz = x * z, xy = x * y, yz = y * z;
-            let xs = x * sa, ys = y * sa, zs = z * sa;
-
-            out._00 = x2 * c1 + ca;
-            out._01 = xy * c1 + zs;
-            out._02 = xz * c1 - ys;
-            out._10 = xy * c1 - zs;
-            out._11 = y2 * c1 + ca;
-            out._12 = yz * c1 + xs;
-            out._20 = xz * c1 + ys;
-            out._21 = yz * c1 - xs;
-            out._22 = z2 * c1 + ca;
-
-            return out;
-        }
-
-        /**
-         * 根据向量，绕任意轴构造旋转矩阵
-         * @param angle
-         * @param axis
-         */
-        public static makeRotationByAxis(angle: number, axis: Vector3): Matrix4 {
-
-            let out = new Matrix4();
-
-            out.rotateByAxis(angle, axis);
-
-            return out;
-        }
-
-        public static makeRotationEulerAngle(eulerAngle: Vector3): Matrix4 {
-
-            let yaw = eulerAngle.y, pitch = eulerAngle.x, roll = eulerAngle.z;
-
-            let out = new Matrix4();
-
-            out.rotateByScalar(yaw, pitch, roll);
-
-            return out;
-        }
-
-        public static makeRotationQuaternion(q: Quaternion, out?: Matrix4) {
-
-            let w = q.w, x = q.x, y = q.y, z = q.z;
-
-            if (!out) {
-                out = new Matrix4();
-            } else {
-                out.identity();
-            }
-
-            let _2xx = 2.0 * x * x;
-            let _2yy = 2.0 * y * y;
-            let _2zz = 2.0 * z * z;
-            let _2xy = 2.0 * x * y;
-            let _2xz = 2.0 * x * z;
-            let _2yz = 2.0 * y * z;
-            let _2wx = 2.0 * w * x;
-            let _2wy = 2.0 * w * y;
-            let _2wz = 2.0 * w * z;
-
-            out._11 = 1.0 - _2yy - _2zz;
-            out._12 = _2xy + _2wz;
-            out._13 = _2xz - _2wy;
-
-            out._21 = _2xy - _2wz;
-            out._22 = 1.0 - _2xx - _2zz;
-            out._23 = _2yz + _2wx;
-
-            out._31 = _2xz + _2wy;
-            out._32 = _2yz - _2wx;
-            out._33 = 1.0 - _2xx - _2yy;
-
-            return out;
-        }
-
-        /**
-         * 绕X轴旋转，也叫做俯仰角
-         * @param a
-         * @param out
-         */
-        public static pitch(a: number, out?: Matrix4): Matrix4 {
-
-            if (!out) {
-                out = new Matrix4();
-            }
-
-            let ca = Math.cos(a);
-            let sa = Math.sin(a);
-
-            out._11 = ca;
-            out._12 = sa;
-            out._21 = -sa;
-            out._22 = ca;
-
-            return out;
-        }
-
-        /**
-         * 绕Y轴旋转，也叫偏航角
-         */
-        public static yaw(a: number, out?: Matrix4): Matrix4 {
-
-            if (!out) {
-                out = new Matrix4();
-            }
-
-            let ca = Math.cos(a);
-            let sa = Math.sin(a);
-
-            out._00 = ca;
-            out._02 = -sa;
-            out._20 = sa;
-            out._22 = ca;
-
-            return out;
-        }
-
-        /**
-         * 绕Z轴旋转，也叫翻滚角
-         */
-        public static roll(a: number, out?: Matrix4): Matrix4 {
-
-            if (!out) {
-                out = new Matrix4();
-            }
-
-            let ca = Math.cos(a);
-            let sa = Math.sin(a);
-
-            out._00 = ca;
-            out._01 = sa;
-            out._10 = -sa;
-            out._11 = ca;
-
-            return out;
-        }
-
-        /**
-         * 生成左手视图矩阵
-         * @param position
-         * @param orientation
-         * @param reflectMatrix
-         * @param viewMatrix
-         */
-        public static makeViewMatrixLH(position: Vector3, orientation: Quaternion, reflectMatrix?: Matrix4, viewMatrix?: Matrix4): Matrix4 {
-            if (!viewMatrix) {
-                viewMatrix = new Matrix4();
-            }
-
-            // View matrix is:
-            //
-            //  [ Lx  Uy  Dz  Tx  ]
-            //  [ Lx  Uy  Dz  Ty  ]
-            //  [ Lx  Uy  Dz  Tz  ]
-            //  [ 0   0   0   1   ]
-            //
-            // Where T = -(Transposed(Rot) * Pos)
-            return viewMatrix;
-        }
-
-        /**
-         * 构造左手正交视图矩阵
-         * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         * @example
-         * |2 / (right - left), 0,                  0,                -(right + left) / (right - left) |
-         * |0,                  2 / (top - bottom), 0,                -(top + bottom) / (top - bottom) |
-         * |0,                  0,                  2 / (far - near), -(far + near) / (far - near)     |
-         * |0,                  0,                  0,                1                                |
-         */
-        public static makeOrthoLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
-            target = target ? target.identity() : new Matrix4();
-
-            let w = right - left;
-            let h = top - bottom;
-            let d = far - near;
-
-            let x = (right + left) / w;
-            let y = (top + bottom) / h;
-            let z = (far + near) / d;
-
-            target._00 = 2 / w;
-            target._11 = 2 / h;
-            target._22 = -2 / d;
-            target._30 = -x;
-            target._31 = -y;
-            target._32 = -z;
-
-            return target;
-        }
-
-        /**
-         * TODO:
-         * @param w
-         * @param h
-         * @param near
-         * @param far
-         * @param target
-         */
-        public static makeOrthoFovLH(w: number, h: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
-            if (!target) {
-                target = new Matrix4();
-            } else {
-                target.identity();
-            }
-
-            let inv = 1.0 / (far - near);
-
-            target._00 = 2.0 / w;
-            target._11 = 2.0 / h;
-            target._22 = inv;
-            //  target._23 = -near * inv;
-            target._33 = 1.0;
-
-            return target;
         }
 
         /**
          * 生成正交视图矩阵
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
+         * @param left
+         * @param right
+         * @param bottom
+         * @param top
+         * @param near
+         * @param far
          * @param target
          */
-        public static makeOrthoRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
+        public static makeOrthoRH(left: number, right: number, bottom: number, top: number, near: number, far: number, target?: Matrix4): Matrix4 {
             if (!target) {
                 target = new Matrix4();
-            } else {
-                target.identity();
             }
 
             let inv_d = 1 / (far - near);
@@ -788,81 +629,29 @@ namespace QuickEngine {
             let y = (top + bottom) / h;
             let z = (far + near) / d;
 
-            target._00 = 2 / w;
-            target._03 = -x;
-            target._11 = 2 / h;
-            target._13 = -y;
-            target._22 = -2 / d;
-            target._23 = -z;
+            const rawData = target._rawData;
+
+            rawData[0] = 2 / w;
+            rawData[1] = 0;
+            rawData[2] = 0;
+            rawData[3] = 0;
+
+            rawData[4] = 0;
+            rawData[5] = 2 / h;
+            rawData[6] = 0;
+            rawData[7] = 0;
+
+            rawData[8] = 0;
+            rawData[9] = 0;
+            rawData[10] = -2 / d;
+            rawData[11] = 0;
+
+            rawData[12] = -x;
+            rawData[13] = -y;
+            rawData[14] = -z;
+            rawData[15] = 1;
 
             return target;
-        }
-
-        /**
-         * 构造左手投影矩阵
-         * @param left
-         * @param right
-         * @param top
-         * @param bottom
-         * @param near
-         * @param far
-         * @param target
-         */
-        public static makePerspectiveLH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
-            if (!target) {
-                target = new Matrix4();
-            } else {
-                target.identity();
-            }
-
-            let inv_w = 1 / (right - left);
-            let inv_h = 1 / (top - bottom);
-            let inv_d = 1 / (far - near);
-
-            let A = 2 * near * inv_w;
-            let B = 2 * near * inv_h;
-            let C = (right + left) * inv_w;
-            let D = (top + bottom) * inv_h;
-            let q, qn;
-
-            if (far == 0) {
-                // Infinite far plane
-                q = 0.00001 - 1;
-                qn = near * (0.00001 - 2);
-            } else {
-                q = far * inv_d;
-                qn = -(far * near) * inv_d;
-            }
-
-            target._00 = A;
-            target._02 = C;
-            target._11 = B;
-            target._12 = D;
-            target._22 = q;
-            target._23 = qn;
-            target._32 = 1;
-            target._33 = 0;
-
-            return target;
-        }
-
-        /**
-         * 根据fov构造左手透视投影矩阵
-         * @param fov
-         * @param aspect
-         * @param near
-         * @param far
-         * @param target
-         */
-        public static makePerspectiveFovLH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
-            let ymax = far * Math.tan(fov * Math.PI / 360);
-            let ymin = -ymax;
-            let xmin = ymin * aspect;
-            let xmax = ymax * aspect;
-
-            return Matrix4.makePerspectiveLH(xmin, xmax, ymax, ymin, near, far, target);
         }
 
         /**
@@ -876,16 +665,12 @@ namespace QuickEngine {
          * @param target
          */
         public static makePerspectiveRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
             if (!target) {
                 target = new Matrix4();
-            } else {
-                target.identity();
             }
 
             let inv_w = 1 / (right - left);
             let inv_h = 1 / (top - bottom);
-
 
             let inv_d = 1 / (far - near);
 
@@ -904,14 +689,27 @@ namespace QuickEngine {
                 qn = -2 * (far * near) * inv_d;
             }
 
-            target._00 = A;
-            target._02 = C;
-            target._11 = B;
-            target._12 = D;
-            target._22 = q;
-            target._23 = qn;
-            target._32 = -1;
-            target._33 = 0;
+            const rawData = target._rawData;
+
+            rawData[0] = A;
+            rawData[1] = 0;
+            rawData[2] = 0;
+            rawData[3] = 0;
+
+            rawData[4] = 0;
+            rawData[5] = B;
+            rawData[6] = 0;
+            rawData[7] = 0;
+
+            rawData[8] = C;
+            rawData[11] = -1;
+            rawData[9] = D;
+            rawData[10] = q;
+
+            rawData[12] = 0;
+            rawData[13] = 0;
+            rawData[14] = qn;
+            rawData[15] = 0;
 
             return target;
         }

@@ -15,7 +15,7 @@
 
         let mainScene = SceneManager.instance.currentScene;
         let mainCamera = Camera.MainCamera;
-        mainCamera.setCameraType(QuickEngine.CameraType.Prespective);
+        mainCamera.setCameraType(QuickEngine.CameraType.Perspective);
 
         let cameraNode = mainCamera.transform;
         cameraNode.localPosition = new Vector3(0, 0, -10);
@@ -37,7 +37,7 @@
             rootNode.transform.parent = model.transform;
 
             let eulerAngle = new QuickEngine.Vector3(0, 0, 0);
-            rootNode.transform.localRotation = rootNode.transform.localRotation.FromEulerAngle(eulerAngle, rootNode.transform.localRotation);
+            rootNode.transform.localRotation = rootNode.transform.localRotation.fromEulerAngle(eulerAngle);
         });
     }
 }

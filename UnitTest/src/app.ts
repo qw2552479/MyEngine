@@ -22,9 +22,9 @@
                 // TestGetSet.run();
                 // testMinHeap();
                 // UnitTest.TestMatrix.run();
-                testSprite();
+               // testSprite();
                 // testAnimation();
-                // testGeometry();
+                testGeometry();
                 // testFbxModel();
             }
         });

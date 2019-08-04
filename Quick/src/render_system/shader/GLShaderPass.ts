@@ -78,7 +78,7 @@ namespace QuickEngine {
         location: WebGLUniformLocation;
         data?: any;
     };
-       
+
     export interface TextureSampler {
         // 纹理单元名字
         name: string;
@@ -113,9 +113,9 @@ namespace QuickEngine {
 
         public isDestroyed(): boolean {
             return false;
-		}
+        }
 
-		public destroy(): void {
+        public destroy(): void {
             this._renderState = undefined;
             this._uniforms = undefined;
             this._samplers = undefined;
@@ -176,23 +176,34 @@ namespace QuickEngine {
             let projMat = RenderSystem.instance.getProjectionMatrix();
             let mvpMat = RenderSystem.instance.getWorldViewProjMatrix();
 
+            // this._viewMatrix.multiply(this._worldMatrix, this._worldViewTM);
+            // this._projectionMatrix.multiply(this._viewMatrix, this._viewProjTM);
+            // this._projectionMatrix.multiply(this._worldViewTM, this._worldViewProjTM);
+            //
+            // const projectionMatrix1 = Matrix4.makePerspectiveFovRH(45, aspect, zNear, zFar);
+            const modelViewMatrix1 = new Matrix4();
+            const transMatrix = Matrix4.makeTransform(new Vector3(0, 0, -6), Quaternion.IDENTITY, new Vector3(1, 1, 1));
+            modelViewMatrix1.multiply(transMatrix, modelViewMatrix1);
+            mvpMat = projMat.multiply(modelViewMatrix1);
+
             let uniforms = this._uniforms;
             for (let i = 0, len = uniforms.length; i < len; i++) {
 
                 let uniform = uniforms[i];
                 switch (uniform.type) {
-                    case UniformType.WORLD_MATRIX: {   
-                        gl.uniformMatrix4fv(uniform.location, false, mvpMat.toArrayBuffer());
-                    }; break;
-                    case UniformType.LIGHT_DIRECTION: {
+                    case UniformType.WORLD_MATRIX:
+                        gl.uniformMatrix4fv(uniform.location, false, mvpMat.rawData);
+                        break;
+                    case UniformType.LIGHT_DIRECTION:
                         gl.uniform3f(uniform.location, 0.5, 3.0, 4.0);
-                    }; break;
-                    case UniformType.DIFFUSE: {
+                        break;
+                    case UniformType.DIFFUSE:
                         gl.uniform3f(uniform.location, 1, 1, 1);
-                    }; break;
-                    default: {
+                        break;
+                    default:
+                        console.error(`unknow type: ${uniform.type}`);
                         //gl.uniform1f(uniform.location, 0);
-                    } break;
+                        break;
                 }
 
                 if (__DEBUG__) {
@@ -212,8 +223,8 @@ namespace QuickEngine {
                 if (!sampler.samplerTex || !sampler.samplerTex.getWebGLTexture()) {
                     continue;
                 }
-                gl.uniform1i(sampler.location, sampler.index);        
-                GL_CHECK_ERROR();       
+                gl.uniform1i(sampler.location, sampler.index);
+                GL_CHECK_ERROR();
             }
 
         }

@@ -1,117 +1,100 @@
 ﻿namespace QuickEngine {
 
-    /**
-     *
-     */
-    export class RenderPipeline {
+	/**
+	 * 队列渲染管道
+	 */
+	export class RenderPipeline {
 
-        public renderQueue: RenderQueue;
+		public renderQueue: RenderQueue;
 
-        public constructor() {        
-            this.renderQueue = new RenderQueue();
-        }
+		public constructor() {
+			this.renderQueue = new RenderQueue();
+		}
 
-        public doRender(renderContext: RenderContext): void {
-                        
-            let camera = renderContext.camera;
-            let renderQueue = this.renderQueue;
-            let renderSystem = RenderSystem.instance;
+		public doRender(renderContext: RenderContext): void {
 
-            // 清除渲染队列
-            renderQueue.clear();
+			let camera = renderContext.camera;
+			let renderQueue = this.renderQueue;
+			let renderSystem = RenderSystem.instance;
 
-            function doCull() {
+			// 清除渲染队列
+			renderQueue.clear();
 
-                let outArr: Node[] = [];
+			// TODO: 封装裁剪
+			function doCull() {
 
-                function cull(transfrom: Transform, outNodeArr: Node[]) {
+				let outArr: Node[] = [];
 
-                    outNodeArr.push(transfrom.node)
+				function cull(transfrom: Transform, outNodeArr: Node[]) {
 
-                    for (let ii = 0, len = transfrom.childCount; ii < len; ii++) {
-                        cull(transfrom.getChildByIndex(ii), outNodeArr);
-                    }
-                }
+					outNodeArr.push(transfrom.node);
 
-                let children = SceneManager.instance.currentScene.children;
-                for (let i = 0, len = children.length; i < len; i++) {
-                    cull(children[i].transform, outArr);
-                }
+					for (let ii = 0, len = transfrom.childCount; ii < len; ii++) {
+						cull(transfrom.getChildByIndex(ii), outNodeArr);
+					}
+				}
 
-                return outArr;
-            }
+				let children = SceneManager.instance.currentScene.children;
+				for (let i = 0, len = children.length; i < len; i++) {
+					cull(children[i].transform, outArr);
+				}
 
-            // 裁剪
-            let visibleList = doCull();
-            let len = visibleList.length;
-            // 节点加入渲染队列
-            for (let i = 0; i < len; i++) {
-                let child = visibleList[i];
-                if (child) {
-                    child.updateRenderQueue(renderQueue);
-                }
-            }
+				return outArr;
+			}
 
-            // 设置视图矩阵,投影矩阵,裁剪面
-            renderSystem.setViewMatrix(camera.getViewMatrix());
-            renderSystem.setProjectionMatrix(camera.getProjMatrix());
+			// 裁剪
+			let visibleList = doCull();
+			let len = visibleList.length;
+			// 节点加入渲染队列
+			for (let i = 0; i < len; i++) {
+				let child = visibleList[i];
+				if (child) {
+					child.updateRenderQueue(renderQueue);
+				}
+			}
 
-            // #1 渲染不透明物体(完成后渲染透明物体)             
-            // 设置shader pass
-            let soildObjs = renderQueue.solidObjects;
-            for (let i = 0, len = soildObjs.length; i < len; i++) {
-                let soildObj = soildObjs[i];
-                let shader = soildObj.getMaterial().shader;
-                if (shader) {
-                    soildObj.CurrentShader = shader;
-                } else {
-                    let fallback: Shader;
-                    soildObj.CurrentShader = fallback;
-                }
-            }
+			// 设置视图矩阵,投影矩阵,裁剪面
+			renderSystem.setViewMatrix(camera.getViewMatrix());
+			renderSystem.setProjectionMatrix(camera.getProjMatrix());
 
-            if (len > 0) {
-                // 排序
-            }
-            
-            // 设置光照
-            renderSystem.setLight();
+			// #1 渲染不透明物体(完成后渲染透明物体)
+			// 设置shader pass
+			const solidObjs = renderQueue.solidObjects;
 
-            // 渲染
-            for (let i = 0, len = soildObjs.length; i < len; i++) {
-                let soildObj = soildObjs[i];
-                renderSystem.render(soildObj.CurrentShader, soildObj);
-            }
+			if (len > 0) {
+				// 排序
+			}
 
-            // 执行光照
-            this.doLighting();
+			// 设置光照
+			renderSystem.setLight();
 
-            // #2 渲染不透明物体完成后, 开始渲染透明物体)   
-            let alphaObjs = renderQueue.alphaObjects;
+			// 渲染
+			for (let i = 0, len = solidObjs.length; i < len; i++) {
+				const solidObj = solidObjs[i];
+				renderSystem.render(solidObj.getMaterial().shader, solidObj);
+			}
 
-            if (len > 0) {
-                // 排序
-            }
+			// 执行光照
+			this.doLighting();
 
-            // 渲染
-            for (let i = 0, len = alphaObjs.length; i < len; i++) {
-                let alphaObj = alphaObjs[i];
-                let shader = alphaObj.getMaterial().shader;
-                if (shader) {
-                    alphaObj.CurrentShader = shader;
-                } else {
-                    let fallback: Shader;
-                    alphaObj.CurrentShader = fallback;
-                }
+			// #2 渲染不透明物体完成后, 开始渲染透明物体)
+			const alphaObjs = renderQueue.alphaObjects;
 
-                renderSystem.render(alphaObj.CurrentShader, alphaObj);
-            }
-        }
+			if (len > 0) {
+				// 排序
+			}
 
-        // 不透明物体绘制完成后, 执行光照.每个物体可以创建一个renderbuffer,避免多次渲染,但是会增加内存.
-        public doLighting() {
-            
-        }
-    }
+			// 渲染
+			for (let i = 0, len = alphaObjs.length; i < len; i++) {
+				const alphaObj = alphaObjs[i];
+				renderSystem.render(alphaObj.getMaterial().shader, alphaObj);
+			}
+		}
+
+		// 不透明物体绘制完成后, 执行光照.每个物体可以创建一个renderbuffer,避免多次渲染,但是会增加内存.
+		public doLighting() {
+
+		}
+	}
 
 }

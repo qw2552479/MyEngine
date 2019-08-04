@@ -13,7 +13,7 @@ function run(cb) {
     browserSync.init({
         server: {
             baseDir: "../",
-            index: "UnitTest/index.html"
+            index: "./UnitTest/index.html"
         },
         watch: true
     });

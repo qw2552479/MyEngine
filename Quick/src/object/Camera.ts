@@ -1,15 +1,14 @@
 ﻿///<reference path="Component.ts" />
 namespace QuickEngine {
-    
     export const enum CameraType {
-        Prespective,
+        Perspective,
         Orthogonal,
         VR
     }
 
     export const enum ClearFlags {
-        Skybox,
-        SoildColor,
+        SkyBox,
+        SolidColor,
         DepthOnly,
         DontClear
     }
@@ -23,20 +22,20 @@ namespace QuickEngine {
         PARTIAL,//部分可见
     };
 
-    const DEFAULE_FOV = 45;
+    const DEFAULT_FOV = 45;
     const DEFAULT_ASPECT = 1;
-    const DEFAULE_NEAR = 0.1;
-    const DEFAULE_FAR = 100;
+    const DEFAULT_NEAR = 0.1;
+    const DEFAULT_FAR = 100;
 
     export class Camera extends Component {
 
-        public static __ClassName__ = "QuickEngine.Camera";
+        public static __ClassName__ = 'QuickEngine.Camera';
         public static __ClassID__ = 0;
 
         public static MainCamera: Camera;
 
         protected _cameraType: CameraType;
-        protected _clearFlags: ClearFlags = ClearFlags.Skybox;
+        protected _clearFlags: ClearFlags = ClearFlags.SkyBox;
 
         // perspective
         protected _fovY: number;
@@ -54,16 +53,16 @@ namespace QuickEngine {
         protected _isDirty: boolean;
         protected _viewportDirty: boolean;
 
-        private _renderContext: RenderContext;
+        private readonly _renderContext: RenderContext;
         private _renderTarget: RenderTarget;
 
         public constructor() {
 
             super();
 
-            this._fovY = DEFAULE_FOV;// fovY: (0, 180) fovY = atan(（(r - l) / 2） / n)
-            this._near = DEFAULE_NEAR;
-            this._far = DEFAULE_FAR;
+            this._fovY = DEFAULT_FOV;// fovY: (0, 180) fovY = atan(（(r - l) / 2） / n)
+            this._near = DEFAULT_NEAR;
+            this._far = DEFAULT_FAR;
             this._aspect = DEFAULT_ASPECT;
 
             this._isDirty = true;
@@ -75,19 +74,15 @@ namespace QuickEngine {
                 x: 0, y: 0, w: 1, h: 1
             };
 
-            this._cameraType = CameraType.Prespective;
+            this._cameraType = CameraType.Perspective;
 
             this._renderContext = new RenderContext(this);
-        }
-
-        public set renderContext(val: RenderContext) {
-            throw new Error("不允许手动设置");
         }
 
         public get renderContext(): RenderContext {
             return this._renderContext;
         }
-        
+
         public setCameraType(cameraType: CameraType) {
             if (this._cameraType != cameraType) {
                 this._cameraType = cameraType;
@@ -178,13 +173,13 @@ namespace QuickEngine {
         public set renderTarget(val: RenderTarget) {
             this._renderTarget = val;
         }
- 
+
         private _update(): void {
 
-            if (!this._isDirty || !this.transform) {
+            if (!this._isDirty) {
                 return;
             }
-            
+
             let far = this._far;
             let near = this._near;
             let viewport = this._viewport;
@@ -198,23 +193,22 @@ namespace QuickEngine {
                 let half_w = this._orthoWidth * 0.5;
                 let half_h = this._orthoHeight * 0.5;
 
-                left   = - half_w;
-                right  = + half_w;
-                bottom = - half_h;
-                top = + half_h;
+                left = -half_w;
+                right = +half_w;
+                bottom = -half_h;
+                top = +half_h;
             }
 
             switch (this._cameraType) {
-                case CameraType.Orthogonal: {
-                    Matrix4.makeOrthoLH(left, right, top, bottom, near, far, this._projMatrix);
-                } break;
-                case CameraType.Prespective: {
-                    // Matrix4.makePerspectiveFovLH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
+                case CameraType.Orthogonal:
+                    Matrix4.makeOrthoRH(left, right, bottom, top, near, far, this._projMatrix);
+                    break;
+                case CameraType.Perspective:
                     Matrix4.makePerspectiveFovRH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
-                } break;
-                default: {
-                    console.warn("unkonw camera type: " + this._cameraType);
-                } break;
+                    break;
+                default:
+                    console.warn('unkonw camera type: ' + this._cameraType);
+                    break;
             }
 
             this._isDirty = false;

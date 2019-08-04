@@ -14,7 +14,7 @@
 
         let mainScene = QuickEngine.SceneManager.instance.currentScene;
         let mainCamera = QuickEngine.Camera.MainCamera;
-        mainCamera.setCameraType(QuickEngine.CameraType.Prespective);
+        mainCamera.setCameraType(QuickEngine.CameraType.Perspective);
 
         let cameraNode = mainCamera.transform;
         cameraNode.localPosition = new QuickEngine.Vector3(0, 0, -6);

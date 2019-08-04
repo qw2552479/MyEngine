@@ -227,7 +227,7 @@
                 boneTransform.localPosition = new QuickEngine.Vector3(boneData.position[0], boneData.position[1], boneData.position[2]);
                 boneTransform.localScale = new QuickEngine.Vector3(boneData.scale[0], boneData.scale[1], boneData.scale[2]);
                 let eulerAngle = new QuickEngine.Vector3(boneData.eulerAngle[0], boneData.eulerAngle[1], boneData.eulerAngle[2]);
-                let tempQ = boneTransform.localRotation.FromEulerAngle(eulerAngle);
+                let tempQ = boneTransform.localRotation.fromEulerAngle(eulerAngle);
                 boneTransform.localRotation = tempQ;
             }
 

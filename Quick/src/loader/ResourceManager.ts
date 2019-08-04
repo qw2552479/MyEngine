@@ -23,7 +23,7 @@ namespace QuickEngine {
 			tex.mipmaps = 0;
 			tex.format = PixelFormat.RGBA;
 			tex.usage = TextureUsage.STATIC;
-            tex.loadRawData((new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])).buffer, 2, 2);
+            tex.loadRawData((new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255])).buffer, 2, 2);
 
             this._resourceCacheMap.add(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME, tex);
 
@@ -52,7 +52,7 @@ namespace QuickEngine {
         public async loadAsync<T extends Resource>(path: string, type: Type): Promise<T> {
             let res = this._resourceCacheMap.getValue(path) as T;
             if (res && res.state != ResState.UnLoaded) {
-                return await res;
+                return res;
             }
 
             // @ts-ignore

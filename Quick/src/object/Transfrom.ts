@@ -192,7 +192,7 @@ namespace QuickEngine {
                 this._updateFromParent();
             } 
 
-            this.rotation.ToEulerAngle(this._eulerAngle);
+            this.rotation.toEulerAngle(this._eulerAngle);
             return this._eulerAngle;
         }
 
@@ -202,7 +202,7 @@ namespace QuickEngine {
         public set eulerAngle(e: Vector3) {
             this._eulerAngle.copy(e);
             let tempQuat = new Quaternion();
-            this.rotation = tempQuat.FromEulerAngle(e);
+            this.rotation = tempQuat.fromEulerAngle(e);
             this.needUpdate(false);
         }
 
@@ -214,7 +214,7 @@ namespace QuickEngine {
                 this._updateFromParent();
             }
 
-            this.localRotation.ToEulerAngle(this._localEulerAngle);
+            this.localRotation.toEulerAngle(this._localEulerAngle);
             return this._localEulerAngle;
         }
 
@@ -223,7 +223,7 @@ namespace QuickEngine {
         */
         public set localEulerAngle(e: Vector3) {
             this._localEulerAngle.copy(e);
-            this.localRotation = this._localRotation.FromEulerAngle(e);
+            this.localRotation = this._localRotation.fromEulerAngle(e);
             this.needUpdate(false);
         }
 

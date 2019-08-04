@@ -67,7 +67,8 @@ namespace QuickEngine.ShaderChunks {
         varying vec4 v_color;
         void main(void){
             v_texCoord0 = a_texCoord0;
-	        gl_Position = mvpMatrix * vec4(a_position, 1.0);
+	        // gl_Position = mvpMatrix * vec4(a_position, 1.0);
+	        gl_Position = vec4(a_position, 1.0);
             vec3 normal = normalize(vec3(mvpMatrix * vec4(a_normal, 1.0)));
             float nDotL = max(dot(u_lightDirection, normal), 0.0);
             vec3 diffuse = u_lightColor * a_color.rgb * nDotL;
@@ -85,6 +86,7 @@ namespace QuickEngine.ShaderChunks {
         void main(void) {
             vec4 col = texture2D(texture0, v_texCoord0);
 	        //gl_FragColor = v_color;
-            gl_FragColor = col * v_color;
+            // gl_FragColor = col * v_color;
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
         }`;
 }

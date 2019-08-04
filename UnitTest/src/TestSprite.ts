@@ -9,7 +9,8 @@
         mainCamera.setCameraType(QuickEngine.CameraType.Orthogonal);
 
         let cameraNode = mainCamera.node.transform;
-        cameraNode.localPosition = new QuickEngine.Vector3(0, 0, 0);
+        cameraNode.localPosition = new QuickEngine.Vector3(0, 0, -10);
+        cameraNode.localEulerAngle = new QuickEngine.Vector3(1, 1, 1);
     }
 
     export function testSprite() {

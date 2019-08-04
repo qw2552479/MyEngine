@@ -11,7 +11,6 @@ var QuickEngine;
     QuickEngine.__EDITOR_MODE__ = false;
     QuickEngine.__DEBUG__ = true;
     QuickEngine.__PROFILER__ = true;
-    QuickEngine.__USE_COLUMN_MATRIX__ = true;
 })(QuickEngine || (QuickEngine = {}));
 //https://github.com/jsdoc3/jsdoc
 var QuickEngine;
@@ -19,7 +18,7 @@ var QuickEngine;
 (function (QuickEngine) {
     function run(data) {
         new QuickEngine.WebGLBufferManager();
-        new QuickEngine.WebGLRendererSystem(data.div);
+        new QuickEngine.RenderSystem(data.div);
         new QuickEngine.SceneManager();
         window.onresize = (ev) => {
             let w = window.innerWidth;
@@ -120,7 +119,7 @@ var QuickEngine;
             mainCamera.setAspect(1280 / 720);
             mainCamera.setOrthoWidth(1280);
             mainCamera.setOrthoHeight(720);
-            mainCamera.setCameraType(0 /* Prespective */);
+            mainCamera.setCameraType(0 /* Perspective */);
             QuickEngine.Camera.MainCamera = mainCamera;
             this._mainCamera = mainCamera;
             this._cameras = [mainCamera];
@@ -652,7 +651,7 @@ var QuickEngine;
             tex.mipmaps = 0;
             tex.format = 4 /* RGBA */;
             tex.usage = 1 /* STATIC */;
-            tex.loadRawData((new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])).buffer, 2, 2);
+            tex.loadRawData((new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255])).buffer, 2, 2);
             this._resourceCacheMap.add(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME, tex);
             onFinished && onFinished.call(this);
         }
@@ -674,7 +673,7 @@ var QuickEngine;
             return __awaiter(this, void 0, void 0, function* () {
                 let res = this._resourceCacheMap.getValue(path);
                 if (res && res.state != 0 /* UnLoaded */) {
-                    return yield res;
+                    return res;
                 }
                 // @ts-ignore
                 res = new (type.getConstructor())(path);
@@ -1124,6 +1123,21 @@ var QuickEngine;
             this.b = b;
             this.a = a;
         }
+        static get white() {
+            return new Color();
+        }
+        static get black() {
+            return new Color(0, 0, 0, 255);
+        }
+        static get red() {
+            return new Color(255, 0, 0, 255);
+        }
+        static get green() {
+            return new Color(0, 255, 0, 255);
+        }
+        static get blue() {
+            return new Color(0, 0, 255, 255);
+        }
         clone(oriangl) {
             return new Color(oriangl.r, oriangl.g, oriangl.b, oriangl.a);
         }
@@ -1138,11 +1152,6 @@ var QuickEngine;
             return new Color(hex >> 16 & 0xff, hex >> 8 & 0xff, hex & 0xff);
         }
     }
-    Color.White = new Color();
-    Color.Black = new Color(0, 0, 0, 255);
-    Color.Red = new Color(255, 0, 0, 255);
-    Color.Green = new Color(0, 255, 0, 255);
-    Color.Blue = new Color(0, 0, 255, 255);
     QuickEngine.Color = Color;
 })(QuickEngine || (QuickEngine = {}));
 ///<reference path="../core/HashObject.ts" />
@@ -1165,9 +1174,6 @@ var QuickEngine;
         }
         get transform() {
             return this._transfrom;
-        }
-        set transform(val) {
-            // TODO: 需要删除
         }
         updateRenderQueue(renderQueue) {
             let render = this.getComponent(QuickEngine.MeshRender);
@@ -1377,41 +1383,657 @@ var QuickEngine;
 var QuickEngine;
 (function (QuickEngine) {
     /**
-    * 弧度每角度
-    */
+     * 弧度每角度
+     */
     QuickEngine.RADIANS_TO_DEGREES = 180 / Math.PI;
     /**
-    * 角度每弧度 Math.PI / 180;
-    */
+     * 角度每弧度 Math.PI / 180;
+     */
     QuickEngine.DEGREES_TO_RADIANS = Math.PI / 180;
     let MathUtil;
     (function (MathUtil) {
         /**
-        * @private
-        * 1角度为多少弧度
-        */
+         * @private
+         * 1角度为多少弧度
+         */
         MathUtil.RAW_DATA_CONTAINER = new Float32Array(16);
         /**
-        * 把一个值固定在一个范围之内
-        * @param value 当前判定的值
-        * @param min_inclusive 最小取值
-        * @param max_inclusive 最大取值
-        * @returns number 计算后的结果
-        */
-        function clampf(value, min_inclusive, max_inclusive) {
-            if (min_inclusive > max_inclusive) {
-                let temp = min_inclusive;
-                min_inclusive = max_inclusive;
-                max_inclusive = temp;
+         * 把一个值固定在一个范围之内
+         * @param value 当前判定的值
+         * @param min 最小取值
+         * @param max 最大取值
+         * @returns number 计算后的结果
+         */
+        function clampf(value, min, max) {
+            if (min > max) {
+                let temp = min;
+                min = max;
+                max = temp;
             }
-            return value < min_inclusive ? min_inclusive : (value < max_inclusive ? value : max_inclusive);
+            return value < min ? min : (value < max ? value : max);
         }
         MathUtil.clampf = clampf;
         function lerp(a, b, t) {
             return (b - a) * t + a;
         }
         MathUtil.lerp = lerp;
+        function lerpColor(fromC, toC, t, out) {
+            if (!out) {
+                out = new QuickEngine.Color();
+            }
+            out.r = t * (toC.r - fromC.r) + fromC.r;
+            out.g = t * (toC.g - fromC.g) + fromC.g;
+            out.b = t * (toC.b - fromC.b) + fromC.b;
+            out.a = t * (toC.a - fromC.a) + fromC.a;
+            return out;
+        }
+        MathUtil.lerpColor = lerpColor;
     })(MathUtil = QuickEngine.MathUtil || (QuickEngine.MathUtil = {}));
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    // 复用的单位矩阵
+    const identifyMatrixArray = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+    ];
+    /**
+     * 矩阵存储和openGL规则一致,列主序
+     * 学习资料:
+     * http://www.euclideanspace.com/maths/algebra/matrix/
+     * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
+     * 线性代数课本
+     * 矩阵是列向量矩阵
+     | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
+     | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
+     | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
+     | 3 7 11 15 |      | 30 31 32 33 |
+     */
+    class Matrix4 {
+        constructor() {
+            this._rawData = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+        }
+        get _00() {
+            return this._rawData[0];
+        }
+        set _00(val) {
+            this._rawData[0] = val;
+        }
+        get _01() {
+            return this._rawData[4];
+        }
+        set _01(val) {
+            this._rawData[4] = val;
+        }
+        get _02() {
+            return this._rawData[8];
+        }
+        set _02(val) {
+            this._rawData[8] = val;
+        }
+        get _03() {
+            return this._rawData[12];
+        }
+        set _03(val) {
+            this._rawData[12] = val;
+        }
+        get _10() {
+            return this._rawData[1];
+        }
+        set _10(val) {
+            this._rawData[1] = val;
+        }
+        get _11() {
+            return this._rawData[5];
+        }
+        set _11(val) {
+            this._rawData[5] = val;
+        }
+        get _12() {
+            return this._rawData[9];
+        }
+        set _12(val) {
+            this._rawData[9] = val;
+        }
+        get _13() {
+            return this._rawData[13];
+        }
+        set _13(val) {
+            this._rawData[13] = val;
+        }
+        get _20() {
+            return this._rawData[2];
+        }
+        set _20(val) {
+            this._rawData[2] = val;
+        }
+        get _21() {
+            return this._rawData[6];
+        }
+        set _21(val) {
+            this._rawData[6] = val;
+        }
+        get _22() {
+            return this._rawData[10];
+        }
+        set _22(val) {
+            this._rawData[10] = val;
+        }
+        get _23() {
+            return this._rawData[14];
+        }
+        set _23(val) {
+            this._rawData[14] = val;
+        }
+        get _30() {
+            return this._rawData[3];
+        }
+        set _30(val) {
+            this._rawData[3] = val;
+        }
+        get _31() {
+            return this._rawData[7];
+        }
+        set _31(val) {
+            this._rawData[7] = val;
+        }
+        get _32() {
+            return this._rawData[11];
+        }
+        set _32(val) {
+            this._rawData[11] = val;
+        }
+        get _33() {
+            return this._rawData[15];
+        }
+        set _33(val) {
+            this._rawData[15] = val;
+        }
+        get rawData() {
+            return this._rawData;
+        }
+        static create(_00, _01, _02, _03, _10, _11, _12, _13, _20, _21, _22, _23, _30, _31, _32, _33) {
+            let matrix = new Matrix4();
+            matrix._00 = _00, matrix._01 = _01, matrix._02 = _02, matrix._03 = _03;
+            matrix._10 = _10, matrix._11 = _11, matrix._12 = _12, matrix._13 = _13;
+            matrix._20 = _20, matrix._21 = _21, matrix._22 = _22, matrix._23 = _23;
+            matrix._30 = _30, matrix._31 = _31, matrix._32 = _32, matrix._33 = _33;
+            return matrix;
+        }
+        setArray(array) {
+            this._rawData.set(array, 0);
+            return this;
+        }
+        set(_00, _01, _02, _03, _10, _11, _12, _13, _20, _21, _22, _23, _30, _31, _32, _33) {
+            this._rawData[0] = _00, this._rawData[4] = _01, this._rawData[8] = _02, this._rawData[12] = _03;
+            this._rawData[1] = _10, this._rawData[5] = _11, this._rawData[9] = _12, this._rawData[13] = _13;
+            this._rawData[2] = _20, this._rawData[6] = _21, this._rawData[10] = _22, this._rawData[14] = _23;
+            this._rawData[3] = _30, this._rawData[7] = _31, this._rawData[11] = _32, this._rawData[15] = _33;
+            return this;
+        }
+        copyFrom(other) {
+            return this.setArray(other.rawData);
+        }
+        clone() {
+            return new Matrix4().copyFrom(this);
+        }
+        /**
+         * 矩阵相乘
+         a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
+         a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
+         a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
+         a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
+         */
+        multiply(v, outMat) {
+            if (!outMat) {
+                outMat = new Matrix4();
+            }
+            const out = outMat._rawData;
+            const a = this._rawData;
+            const b = v._rawData;
+            const m111 = a[0], m121 = a[4], m131 = a[8], m141 = a[12];
+            const m112 = a[1], m122 = a[5], m132 = a[9], m142 = a[13];
+            const m113 = a[2], m123 = a[6], m133 = a[10], m143 = a[14];
+            const m114 = a[3], m124 = a[7], m134 = a[11], m144 = a[15];
+            const m211 = b[0], m221 = b[4], m231 = b[8], m241 = b[12];
+            const m212 = b[1], m222 = b[5], m232 = b[9], m242 = b[13];
+            const m213 = b[2], m223 = b[6], m233 = b[10], m243 = b[14];
+            const m214 = b[3], m224 = b[7], m234 = b[11], m244 = b[15];
+            out[0] = m111 * m211 + m112 * m221 + m113 * m231 + m114 * m241;
+            out[1] = m111 * m212 + m112 * m222 + m113 * m232 + m114 * m242;
+            out[2] = m111 * m213 + m112 * m223 + m113 * m233 + m114 * m243;
+            out[3] = m111 * m214 + m112 * m224 + m113 * m234 + m114 * m244;
+            out[4] = m121 * m211 + m122 * m221 + m123 * m231 + m124 * m241;
+            out[5] = m121 * m212 + m122 * m222 + m123 * m232 + m124 * m242;
+            out[6] = m121 * m213 + m122 * m223 + m123 * m233 + m124 * m243;
+            out[7] = m121 * m214 + m122 * m224 + m123 * m234 + m124 * m244;
+            out[8] = m131 * m211 + m132 * m221 + m133 * m231 + m134 * m241;
+            out[9] = m131 * m212 + m132 * m222 + m133 * m232 + m134 * m242;
+            out[10] = m131 * m213 + m132 * m223 + m133 * m233 + m134 * m243;
+            out[11] = m131 * m214 + m132 * m224 + m133 * m234 + m134 * m244;
+            out[12] = m141 * m211 + m142 * m221 + m143 * m231 + m144 * m241;
+            out[13] = m141 * m212 + m142 * m222 + m143 * m232 + m144 * m242;
+            out[14] = m141 * m213 + m142 * m223 + m143 * m233 + m144 * m243;
+            out[15] = m141 * m214 + m142 * m224 + m143 * m234 + m144 * m244;
+            return outMat;
+        }
+        /**
+         * 矩阵向量相乘, 列向量应该右乘矩阵
+         * @param vec
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
+         */
+        transformVector3(v, out) {
+            const x = v.x;
+            const y = v.y;
+            const z = v.z;
+            const m = this._rawData;
+            const x1 = m[0] * x + m[4] * y + m[8] * z + m[12];
+            const y1 = m[1] * x + m[5] * y + m[9] * z + m[13];
+            const z1 = m[2] * x + m[6] * y + m[10] * z + m[14];
+            if (!out) {
+                out = new QuickEngine.Vector3(x1, y1, z1);
+            }
+            else {
+                out.set(x1, y1, z1);
+            }
+            return out;
+        }
+        /**
+         * 单位矩阵
+         */
+        identity() {
+            const out = this._rawData;
+            out[0] = 1;
+            out[1] = 0;
+            out[2] = 0;
+            out[3] = 0;
+            out[4] = 0;
+            out[5] = 1;
+            out[6] = 0;
+            out[7] = 0;
+            out[8] = 0;
+            out[9] = 0;
+            out[10] = 1;
+            out[11] = 0;
+            out[12] = 0;
+            out[13] = 0;
+            out[14] = 0;
+            out[15] = 1;
+            return this;
+        }
+        /**
+         * 矩阵求逆
+         * TODO
+         */
+        inverse(outMat) {
+            if (!outMat) {
+                outMat = new Matrix4();
+            }
+            const a = this._rawData;
+            const out = outMat._rawData;
+            let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+            let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+            let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+            let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+            let b00 = a00 * a11 - a01 * a10;
+            let b01 = a00 * a12 - a02 * a10;
+            let b02 = a00 * a13 - a03 * a10;
+            let b03 = a01 * a12 - a02 * a11;
+            let b04 = a01 * a13 - a03 * a11;
+            let b05 = a02 * a13 - a03 * a12;
+            let b06 = a20 * a31 - a21 * a30;
+            let b07 = a20 * a32 - a22 * a30;
+            let b08 = a20 * a33 - a23 * a30;
+            let b09 = a21 * a32 - a22 * a31;
+            let b10 = a21 * a33 - a23 * a31;
+            let b11 = a22 * a33 - a23 * a32;
+            // Calculate the determinant
+            let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+            if (!det) {
+                return null;
+            }
+            det = 1.0 / det;
+            out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+            out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+            out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+            out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+            out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+            out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+            out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+            out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+            out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+            out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+            out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+            out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+            out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+            out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+            out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+            out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+            return outMat;
+        }
+        /**
+         * 矩阵转置
+         每一列变成每一行
+         | a b |  T   | a c |
+         | c d | ===> | b d |
+         */
+        transpose() {
+            const a = this._rawData;
+            const a01 = a[1];
+            const a02 = a[2];
+            const a03 = a[3];
+            const a12 = a[6];
+            const a13 = a[7];
+            const a23 = a[11];
+            a[1] = a[4];
+            a[2] = a[8];
+            a[3] = a[12];
+            a[4] = a01;
+            a[6] = a[9];
+            a[7] = a[13];
+            a[8] = a02;
+            a[9] = a12;
+            a[11] = a[14];
+            a[12] = a03;
+            a[13] = a13;
+            a[14] = a23;
+            return this;
+        }
+        isAffine() {
+            return this._30 === 0 && this._31 === 0 && this._32 === 0 && this._33 === 1;
+        }
+        /**
+         * 绕任意轴旋转
+         */
+        rotateByAxis(angle, axis) {
+            let x = axis.x, y = axis.y, z = axis.z;
+            let ca = Math.cos(angle), sa = Math.sin(angle), c1 = 1 - ca;
+            let x2 = x * x, y2 = y * y, z2 = z * z;
+            let xz = x * z, xy = x * y, yz = y * z;
+            let xs = x * sa, ys = y * sa, zs = z * sa;
+            this._00 = x2 * c1 + ca;
+            this._01 = xy * c1 + zs;
+            this._02 = xz * c1 - ys;
+            this._03 = 0;
+            this._10 = xy * c1 - zs;
+            this._11 = y2 * c1 + ca;
+            this._12 = yz * c1 + xs;
+            this._13 = 0;
+            this._20 = xz * c1 + ys;
+            this._21 = yz * c1 - xs;
+            this._22 = z2 * c1 + ca;
+            this._23 = 0;
+            this._30 = 0;
+            this._31 = 0;
+            this._32 = 0;
+            this._33 = 1;
+            return this;
+        }
+        rotateByScalar(x, y, z) {
+            let yaw = y, pitch = x, roll = z;
+            let sinx = Math.sin(pitch);
+            let cosx = Math.cos(pitch);
+            let siny = Math.sin(yaw);
+            let cosy = Math.cos(yaw);
+            let sinz = Math.sin(roll);
+            let cosz = Math.cos(roll);
+            this._00 = cosy * cosz + siny * sinx * sinz;
+            this._01 = sinz * cosx;
+            this._02 = -siny * sinz + cosy * sinx * sinz;
+            this._03 = 0;
+            this._10 = -cosy * sinz + siny * sinx * cosz;
+            this._11 = cosz * cosx;
+            this._12 = sinz * siny + cosy * sinx * cosz;
+            this._13 = 0;
+            this._20 = siny * cosx;
+            this._21 = -sinx;
+            this._22 = cosy * cosx;
+            this._23 = 0;
+            this._30 = 0;
+            this._31 = 0;
+            this._32 = 0;
+            this._33 = 1;
+            return this;
+        }
+        /**
+         * 矩阵分解, 可分解为position,scale,quaternion
+         * @param outPosition
+         * @param outScale
+         * @param outQuaternion
+         */
+        decompose(outPosition, outScale, outQuaternion) {
+            const mat = this._rawData;
+            // pos
+            outPosition.x = mat[12];
+            outPosition.y = mat[13];
+            outPosition.z = mat[14];
+            // scale
+            outScale.x = Math.hypot(mat[0], mat[1], mat[2]);
+            outScale.y = Math.hypot(mat[4], mat[5], mat[6]);
+            outScale.z = Math.hypot(mat[8], mat[9], mat[10]);
+            // quaternion
+            let is1 = 1 / outScale.x;
+            let is2 = 1 / outScale.y;
+            let is3 = 1 / outScale.z;
+            let sm11 = mat[0] * is1;
+            let sm12 = mat[1] * is1;
+            let sm13 = mat[2] * is1;
+            let sm21 = mat[4] * is2;
+            let sm22 = mat[5] * is2;
+            let sm23 = mat[6] * is2;
+            let sm31 = mat[8] * is3;
+            let sm32 = mat[9] * is3;
+            let sm33 = mat[10] * is3;
+            let trace = sm11 + sm22 + sm33;
+            let S = 0;
+            if (trace > 0) {
+                S = Math.sqrt(trace + 1.0) * 2;
+                outQuaternion.w = 0.25 * S;
+                outQuaternion.x = (sm23 - sm32) / S;
+                outQuaternion.y = (sm31 - sm13) / S;
+                outQuaternion.z = (sm12 - sm21) / S;
+            }
+            else if ((sm11 > sm22) && (sm11 > sm33)) {
+                S = Math.sqrt(1.0 + sm11 - sm22 - sm33) * 2;
+                outQuaternion.w = (sm23 - sm32) / S;
+                outQuaternion.x = 0.25 * S;
+                outQuaternion.y = (sm12 + sm21) / S;
+                outQuaternion.z = (sm31 + sm13) / S;
+            }
+            else if (sm22 > sm33) {
+                S = Math.sqrt(1.0 + sm22 - sm11 - sm33) * 2;
+                outQuaternion.w = (sm31 - sm13) / S;
+                outQuaternion.x = (sm12 + sm21) / S;
+                outQuaternion.y = 0.25 * S;
+                outQuaternion.z = (sm23 + sm32) / S;
+            }
+            else {
+                S = Math.sqrt(1.0 + sm33 - sm11 - sm22) * 2;
+                outQuaternion.w = (sm12 - sm21) / S;
+                outQuaternion.x = (sm31 + sm13) / S;
+                outQuaternion.y = (sm23 + sm32) / S;
+                outQuaternion.z = 0.25 * S;
+            }
+        }
+        /**
+         *
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
+         * @param position
+         * @param rotation
+         * @param scale
+         * @param out
+         */
+        static makeTransform(position, rotation, scale, out) {
+            if (!out) {
+                out = new Matrix4();
+            }
+            // Ordering:
+            //    1. Scale
+            //    2. Rotate
+            //    3. Translate
+            // 右乘
+            // M = Mt * Mr * Ms
+            // Quaternion math
+            let x = rotation.x, y = rotation.y, z = rotation.z, w = rotation.w;
+            let x2 = x + x;
+            let y2 = y + y;
+            let z2 = z + z;
+            let xx = x * x2;
+            let xy = x * y2;
+            let xz = x * z2;
+            let yy = y * y2;
+            let yz = y * z2;
+            let zz = z * z2;
+            let wx = w * x2;
+            let wy = w * y2;
+            let wz = w * z2;
+            let sx = scale.x;
+            let sy = scale.y;
+            let sz = scale.z;
+            let out0 = (1 - (yy + zz)) * sx;
+            let out1 = (xy + wz) * sx;
+            let out2 = (xz - wy) * sx;
+            let out4 = (xy - wz) * sy;
+            let out5 = (1 - (xx + zz)) * sy;
+            let out6 = (yz + wx) * sy;
+            let out8 = (xz + wy) * sz;
+            let out9 = (yz - wx) * sz;
+            let out10 = (1 - (xx + yy)) * sz;
+            const rawData = out._rawData;
+            rawData[0] = out0;
+            rawData[1] = out1;
+            rawData[2] = out2;
+            rawData[3] = 0;
+            rawData[4] = out4;
+            rawData[5] = out5;
+            rawData[6] = out6;
+            rawData[7] = 0;
+            rawData[8] = out8;
+            rawData[9] = out9;
+            rawData[10] = out10;
+            rawData[11] = 0;
+            rawData[12] = position.x;
+            rawData[13] = position.y;
+            rawData[14] = position.z;
+            rawData[15] = 1;
+            return out;
+        }
+        /**
+         * 生成正交视图矩阵
+         * @param left
+         * @param right
+         * @param bottom
+         * @param top
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makeOrthoRH(left, right, bottom, top, near, far, target) {
+            if (!target) {
+                target = new Matrix4();
+            }
+            let inv_d = 1 / (far - near);
+            let w = right - left;
+            let h = top - bottom;
+            let d = far - near;
+            let x = (right + left) / w;
+            let y = (top + bottom) / h;
+            let z = (far + near) / d;
+            const rawData = target._rawData;
+            rawData[0] = 2 / w;
+            rawData[1] = 0;
+            rawData[2] = 0;
+            rawData[3] = 0;
+            rawData[4] = 0;
+            rawData[5] = 2 / h;
+            rawData[6] = 0;
+            rawData[7] = 0;
+            rawData[8] = 0;
+            rawData[9] = 0;
+            rawData[10] = -2 / d;
+            rawData[11] = 0;
+            rawData[12] = -x;
+            rawData[13] = -y;
+            rawData[14] = -z;
+            rawData[15] = 1;
+            return target;
+        }
+        /**
+         * 构造右手投影矩阵
+         * @param left
+         * @param right
+         * @param top
+         * @param bottom
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveRH(left, right, top, bottom, near, far, target) {
+            if (!target) {
+                target = new Matrix4();
+            }
+            let inv_w = 1 / (right - left);
+            let inv_h = 1 / (top - bottom);
+            let inv_d = 1 / (far - near);
+            let A = 2 * near * inv_w;
+            let B = 2 * near * inv_h;
+            let C = (right + left) * inv_w;
+            let D = (top + bottom) * inv_h;
+            let q, qn;
+            if (far == 0) {
+                // Infinite far plane
+                q = Number.EPSILON - 1;
+                qn = near * (Number.EPSILON - 2);
+            }
+            else {
+                q = -(far + near) * inv_d;
+                qn = -2 * (far * near) * inv_d;
+            }
+            const rawData = target._rawData;
+            rawData[0] = A;
+            rawData[1] = 0;
+            rawData[2] = 0;
+            rawData[3] = 0;
+            rawData[4] = 0;
+            rawData[5] = B;
+            rawData[6] = 0;
+            rawData[7] = 0;
+            rawData[8] = C;
+            rawData[11] = -1;
+            rawData[9] = D;
+            rawData[10] = q;
+            rawData[12] = 0;
+            rawData[13] = 0;
+            rawData[14] = qn;
+            rawData[15] = 0;
+            return target;
+        }
+        /**
+         * 根据fov构造右手透视投影矩阵
+         * @param fov
+         * @param aspect
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveFovRH(fov, aspect, near, far, target) {
+            let ymax = near * Math.tan(fov * Math.PI / 360);
+            let ymin = -ymax;
+            let xmin = ymin * aspect;
+            let xmax = ymax * aspect;
+            return Matrix4.makePerspectiveRH(xmin, xmax, ymax, ymin, near, far, target);
+        }
+    }
+    Matrix4.ClassName = 'Matrix4';
+    QuickEngine.Matrix4 = Matrix4;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
@@ -1533,6 +2155,416 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
+    const s_epsilon = 1e-03;
+    /**
+     * 四元数 [w, x, y, z]
+     * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
+     */
+    class Quaternion {
+        constructor(w = 1, x = 0, y = 0, z = 0) {
+            this.w = w;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+        static get ZERO() {
+            return new Quaternion(1, 0, 0, 0);
+        }
+        static get IDENTITY() {
+            return new Quaternion(1, 0, 0, 0);
+        }
+        copyFrom(q) {
+            this.w = q.w;
+            this.x = q.x;
+            this.y = q.y;
+            this.z = q.z;
+            return this;
+        }
+        clone() {
+            return new Quaternion(this.w, this.x, this.y, this.z);
+        }
+        //----------------------------------基本计算-------------------------------------
+        /**
+         * 加法
+         * @param q
+         */
+        add(q) {
+            return new Quaternion(this.w + q.w, this.x + q.x, this.y + q.y, this.z + q.z);
+        }
+        /**
+         * 减法
+         * @param q
+         */
+        minus(q) {
+            return new Quaternion(this.w - q.w, this.x - q.x, this.y - q.y, this.z - q.z);
+        }
+        /**
+         * 点乘
+         * @param q
+         */
+        dot(q) {
+            return this.w * q.w + this.x * q.x + this.y * q.y + this.z * q.z;
+        }
+        /**
+         * 叉乘
+         * @param q
+         */
+        multiply(q) {
+            const w1 = this.w, x1 = this.x, y1 = this.y, z1 = this.z;
+            const w2 = q.w, x2 = q.x, y2 = q.y, z2 = q.z;
+            return new Quaternion(w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2, w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2, w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2, w1 * z2 + x1 * y2 + z1 * w2 - y1 * x2);
+        }
+        /**
+         * 乘以一个标量
+         * @param s
+         */
+        multiplyScalar(s) {
+            return new Quaternion(this.w * s, this.x * s, this.y * s, this.z * s);
+        }
+        static multiplyScalar(s, q) {
+            return new Quaternion(q.w * s, q.x * s, q.y * s, q.z * s);
+        }
+        multiplyVector(vector) {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let x2 = vector.x;
+            let y2 = vector.y;
+            let z2 = vector.z;
+            return new Quaternion(-x * x2 - y * y2 - z * z2, w * x2 + y * z2 - z * y2, w * y2 - x * z2 + z * x2, w * z2 + x * y2 - y * x2);
+        }
+        rotateVector3(v) {
+            // this.clone().multiplyVector(v).toEulerAngle();
+            // let qvec = new Vector3(this.x, this.y, this.z);
+            // let uv = qvec.cross(v);
+            // let uuv = qvec.cross(uv);
+            //
+            // uv = uv.multiplyScalar(2.0 * this.w);
+            // uuv = uuv.multiplyScalar(2.0);
+            //
+            // return new Vector3(v.x + uv.x + uuv.x, v.y + uv.y + uuv.y, v.z + uv.z + uuv.z);
+            let out = new QuickEngine.Vector3();
+            let src = this;
+            let vector = v;
+            let x1, y1, z1, w1;
+            let x2 = vector.x, y2 = vector.y, z2 = vector.z;
+            w1 = -src.x * x2 - src.y * y2 - src.z * z2;
+            x1 = src.w * x2 + src.y * z2 - src.z * y2;
+            y1 = src.w * y2 - src.x * z2 + src.z * x2;
+            z1 = src.w * z2 + src.x * y2 - src.y * x2;
+            out.x = -w1 * src.x + x1 * src.w - y1 * src.z + z1 * src.y;
+            out.y = -w1 * src.y + x1 * src.z + y1 * src.w - z1 * src.x;
+            out.z = -w1 * src.z - x1 * src.y + y1 * src.x + z1 * src.w;
+            return out;
+        }
+        /**
+         * 对数. 公式: log(q) = [0, αN], N 为单位向量
+         */
+        log() {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
+            // w = cos(θ / 2)
+            if (Math.abs(w) < 1.0) {
+                let angle = Math.acos(w);
+                let sina = Math.sin(angle);
+                if (Math.abs(sina) >= s_epsilon) {
+                    let fCoeff = angle / sina;
+                    rx = fCoeff * x;
+                    ry = fCoeff * y;
+                    rz = fCoeff * z;
+                }
+            }
+            return new Quaternion(rw, rx, ry, rz);
+        }
+        /**
+         * 指数. 公式: exp(p) = [cos() ]
+         */
+        exp() {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
+            let fAngle = Math.sqrt(x * x + y * y + z * z);
+            let fSin = Math.sin(fAngle);
+            rw = Math.cos(fAngle);
+            if (Math.abs(fSin) >= s_epsilon) {
+                let fCoeff = fSin / (fAngle);
+                rx = fCoeff * x;
+                ry = fCoeff * y;
+                rz = fCoeff * z;
+            }
+            else {
+                rx = x;
+                ry = y;
+                rz = z;
+            }
+            return new Quaternion(rw, rx, ry, rz);
+        }
+        /**
+         * 共轭四元数, 四元数逆q-1 = 它的共轭除以模长
+         */
+        conjugate() {
+            return new Quaternion(this.w, -this.x, -this.y, -this.z);
+        }
+        /**
+         * 四元数的逆
+         */
+        inverse() {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let mag = w * w + x * x + y * y + z * z;
+            if (mag > 0.0) {
+                let invMag = 1.0 / mag;
+                return new Quaternion(w * invMag, -x * invMag, -y * invMag, -z * invMag);
+            }
+            else {
+                return new Quaternion(0, 0, 0, 0);
+            }
+        }
+        /**
+         * 单位四元数求逆, 必须是单位四元数才能调用此方法
+         */
+        unitInverse() {
+            return new Quaternion(this.w, -this.x, -this.y, -this.z);
+        }
+        /**
+         * 模长
+         */
+        get magnitude() {
+            return this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
+        }
+        /**
+         * 模长平方
+         */
+        get sqrMagnitude() {
+            return Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+        }
+        /**
+         * 正则化
+         */
+        normalize() {
+            // 模长
+            let len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+            console.assert(len != 0);
+            let invLen = 1.0 / len;
+            this.x *= invLen;
+            this.y *= invLen;
+            this.z *= invLen;
+            this.w *= invLen;
+            return this;
+        }
+        /**
+         * 比较两个四元素是否相等
+         * @param other
+         */
+        equal(q) {
+            return this.x == q.x && this.y == q.y && this.z == q.z && this.w == q.w;
+        }
+        //----------------------------------插值操作-------------------------------------
+        /**
+         * 线性插值(Linear Interpolation)
+         * @param lhs
+         * @param rhs
+         * @param t
+         */
+        lerp(lhs, rhs, t) {
+            let w0 = lhs.w, x0 = lhs.x, y0 = lhs.y, z0 = lhs.z;
+            let w1 = rhs.w, x1 = rhs.x, y1 = rhs.y, z1 = rhs.z;
+            // 两四元数点乘
+            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
+            // 点乘为负, 反转四元数以取得短弧
+            if (cosOmega < 0) {
+                w1 = -w1;
+                x1 = -x1;
+                y1 = -y1;
+                z1 = -z1;
+            }
+            let w = w0 + t * (w1 - w0);
+            let x = x0 + t * (x1 - x0);
+            let y = y0 + t * (y1 - y0);
+            let z = z0 + t * (z1 - z0);
+            let invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
+            this.w = w * invLen;
+            this.x = x * invLen;
+            this.y = y * invLen;
+            this.z = z * invLen;
+            return this;
+        }
+        /**
+         * 球面线性插值(Spherical Linear Interpolation)
+         * @param lhs
+         * @param rhs
+         * @param t
+         */
+        slerp(lhs, rhs, t) {
+            let w0, x0, y0, z0;
+            let w1, x1, y1, z1;
+            // 两四元数点乘
+            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
+            // 点乘为负, 反转四元数以取得短弧
+            if (cosOmega < 0) {
+                w1 = -w1;
+                x1 = -x1;
+                y1 = -y1;
+                z1 = -z1;
+                cosOmega = -cosOmega;
+            }
+            let k0 = 0, k1 = 0;
+            if (cosOmega > 1 - s_epsilon) {
+                k0 = 1 - t;
+                k1 = t;
+            }
+            else {
+                let sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
+                let omega = Math.atan2(sinOmega, cosOmega);
+                let invSinOmega = 1 / sinOmega;
+                k0 = Math.sin((1 - t) * omega) * invSinOmega;
+                k1 = Math.sin(t * omega) * invSinOmega;
+            }
+            this.w = w0 * k0 + w1 * k1;
+            this.x = x0 * k0 + x1 * k1;
+            this.y = y0 * k0 + y1 * k1;
+            this.z = z0 * k0 + z1 * k1;
+            return this;
+        }
+        squad(q0, q1, s0, s1, t) {
+            let slerpT = 2 * t * (1 - t);
+            let slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
+            let slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
+            return this.slerp(slerpQ0, slerpQ1, slerpT);
+        }
+        //------------------------------四元数,矩阵,向量互相转换--------------------------
+        /**
+         * 通过旋转矩阵构造四元数
+         * @param rotMat
+         */
+        FromRotationMatrix(rotMat) {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            return this;
+        }
+        ToRotationMatrix(rotMat) {
+            if (!rotMat) {
+                rotMat = new QuickEngine.Matrix4();
+            }
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            let _2x = x + x, _2y = y + y, _2z = z + z;
+            let _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
+            let _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
+            let _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
+            rotMat._00 = 1.0 - (_2yy + _2zz);
+            rotMat._01 = _2xy + _2zw; /*-----*/
+            rotMat._02 = _2xz - _2yw; /*-----*/
+            rotMat._03 = 0;
+            rotMat._10 = _2xy - _2zw; /*-----*/
+            rotMat._11 = 1.0 - (_2xx + _2zz);
+            rotMat._12 = _2yz + _2xw; /*-----*/
+            rotMat._13 = 0;
+            rotMat._20 = _2xz + _2yw; /*-----*/
+            rotMat._21 = _2yz - _2xw; /*-----*/
+            rotMat._22 = 1.0 - (_2xx + _2yy);
+            rotMat._23 = 0;
+            rotMat._30 = 0; /*---------------*/
+            rotMat._31 = 0; /*---------------*/
+            rotMat._32 = 0; /*---------------*/
+            rotMat._33 = 1;
+            return rotMat;
+        }
+        /**
+         * 创建一个以axis轴为中心旋转rads弧度的四元数
+         * @param axis
+         * @param rads
+         */
+        fromAngleAxis(axis, rads) {
+            let half_rads = rads / 2.0;
+            let cosine = Math.cos(half_rads);
+            let sine = Math.sin(half_rads);
+            this.x = axis.x * sine;
+            this.y = axis.y * sine;
+            this.z = axis.z * sine;
+            this.w = cosine;
+            this.normalize();
+        }
+        /**
+         * 返回四元数绕轴心和角度
+         * @param axis 旋转轴
+         * @returns 弧度
+         */
+        toAngleAxis(axis) {
+            let rads = Math.acos(this.w) * 2.0;
+            const s = Math.sin(rads / 2.0);
+            if (s > 0) {
+                axis.x = this.x / s;
+                axis.y = this.y / s;
+                axis.z = this.z / s;
+            }
+            else {
+                axis.x = 1;
+                axis.y = 0;
+                axis.z = 0;
+            }
+            return rads;
+        }
+        /**
+         * 欧拉角转四元数
+         * @param eulerAngle 欧拉角
+         * @param refQuaternion 欧拉角引用，如果不为空，将会改变传入的四元数，并返回传入的四元数
+         * @return Quaternion 四元数
+         */
+        fromEulerAngle(eulerAngle) {
+            return this.fromEulerAngleScalar(eulerAngle.x, eulerAngle.y, eulerAngle.z);
+        }
+        fromEulerAngleScalar(x, y, z) {
+            let halfX = x * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
+            let sx = Math.sin(halfX);
+            let cx = Math.cos(halfX);
+            let halfY = y * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
+            let sy = Math.sin(halfY);
+            let cy = Math.cos(halfY);
+            let halfZ = z * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
+            let sz = Math.sin(halfZ);
+            let cz = Math.cos(halfZ);
+            this.w = cx * cy * cz + sx * sy * sz;
+            this.x = sx * cy * cz - cx * sy * sz;
+            this.y = cx * sy * cz + sx * cy * sz;
+            this.z = cx * cy * sz - sx * sy * cz;
+            return this;
+        }
+        /**
+         * 四元数转欧拉角
+         */
+        toEulerAngle(refEulerAngle) {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            if (!refEulerAngle) {
+                refEulerAngle = new QuickEngine.Vector3();
+            }
+            refEulerAngle.x = Math.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y));
+            let temp = 2.0 * (w * y - z * x);
+            temp = QuickEngine.MathUtil.clampf(temp, -1.0, 1.0);
+            refEulerAngle.y = Math.asin(temp);
+            refEulerAngle.z = Math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
+            refEulerAngle.x *= QuickEngine.RADIANS_TO_DEGREES;
+            refEulerAngle.y *= QuickEngine.RADIANS_TO_DEGREES;
+            refEulerAngle.z *= QuickEngine.RADIANS_TO_DEGREES;
+            return refEulerAngle;
+        }
+        getRightVector() {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            return new QuickEngine.Vector3(1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + w * z), 2.0 * (x * z - w * y));
+        }
+        getUpVector() {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            return new QuickEngine.Vector3(2.0 * (x * y - w * z), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + w * x));
+        }
+        getDirVector() {
+            let w = this.w, x = this.x, y = this.y, z = this.z;
+            return new QuickEngine.Vector3(2.0 * (w * y + x * z), 2.0 * (y * z - w * x), 1.0 - 2.0 * (x * x + y * y));
+        }
+    }
+    Quaternion.ClassName = "Quaternion";
+    /**
+     * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
+     */
+    Quaternion._TempQuat0 = new Quaternion();
+    Quaternion._TempQuat1 = new Quaternion();
+    QuickEngine.Quaternion = Quaternion;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
     /**
      * 射线, 隐式定义方程
      */
@@ -1553,7 +2585,7 @@ var QuickEngine;
         intersectAABB() {
             return true;
         }
-        IntersectMesh() {
+        intersectMesh() {
             return true;
         }
     }
@@ -1730,13 +2762,13 @@ var QuickEngine;
             this.y = y;
             this.z = z;
         }
-        static get Right() {
+        static get right() {
             return new Vector3(1, 0, 0);
         }
-        static get Up() {
+        static get up() {
             return new Vector3(0, 1, 0);
         }
-        static get Forward() {
+        static get forward() {
             return new Vector3(0, 0, 1);
         }
         /**
@@ -1759,7 +2791,7 @@ var QuickEngine;
          * 是否相同
          * @param other
          */
-        isEqual(other) {
+        equals(other) {
             return other.x === other.x && other.y === other.y && other.z === other.z;
         }
         /**
@@ -1933,20 +2965,23 @@ var QuickEngine;
             return this;
         }
     }
-    Vector3.ClassName = "Vector3";
+    Vector3.ClassName = 'Vector3';
     QuickEngine.Vector3 = Vector3;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
     class Vector4 {
-        constructor(x, y, z, w) {
+        constructor(x = 0, y = 0, z = 0, w = 0) {
+            this.x = 0;
+            this.y = 0;
+            this.z = 0;
+            this.w = 0;
             this.x = x;
             this.y = y;
             this.z = z;
             this.w = w;
         }
     }
-    Vector4.ClassName = "Vector4";
     QuickEngine.Vector4 = Vector4;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
@@ -2172,10 +3207,10 @@ var QuickEngine;
             }
             this._enable = val;
             if (val) {
-                this.enqueComponent();
+                this.enqueueComponent();
             }
             else {
-                this.dequeComponent();
+                this.dequeueComponent();
             }
         }
         onDestroy() {
@@ -2184,16 +3219,16 @@ var QuickEngine;
         }
         // 组件基本逻辑
         static load() {
-            let unstartedCompArr = Component.s_unStartedcomponentArr;
-            for (let i = 0, len = unstartedCompArr.length; i < len; i++) {
-                let comp = unstartedCompArr[i];
+            let unStartedComponentArr = Component.s_unStartedComponentArr;
+            for (let i = 0, len = unStartedComponentArr.length; i < len; i++) {
+                let comp = unStartedComponentArr[i];
                 comp._needCallStart = false;
                 Component.s_startedComponentArr.push(comp);
                 if (comp.onLoad) {
                     comp.onLoad.call(comp);
                 }
             }
-            Component.s_unStartedcomponentArr.length = 0;
+            Component.s_unStartedComponentArr.length = 0;
         }
         static update(deltaTime) {
             let startedCompArr = Component.s_startedComponentArr;
@@ -2230,19 +3265,19 @@ var QuickEngine;
             console.assert(!!val, '挂载节点为空');
             this._node = val;
         }
-        enqueComponent() {
+        enqueueComponent() {
             if (this._needCallStart) {
-                Component.s_unStartedcomponentArr.push(this);
+                Component.s_unStartedComponentArr.push(this);
             }
             else {
                 Component.s_startedComponentArr.push(this);
             }
         }
-        dequeComponent() {
+        dequeueComponent() {
             if (this._needCallStart) {
-                let idx = Component.s_unStartedcomponentArr.indexOf(this);
+                let idx = Component.s_unStartedComponentArr.indexOf(this);
                 if (idx != -1) {
-                    Component.s_unStartedcomponentArr.splice(idx, 1);
+                    Component.s_unStartedComponentArr.splice(idx, 1);
                 }
             }
             else {
@@ -2257,7 +3292,7 @@ var QuickEngine;
     Component.__ClassName__ = "QuickEngine.Component";
     Component.__ClassID__ = NewClassID();
     // 脚本管理
-    Component.s_unStartedcomponentArr = [];
+    Component.s_unStartedComponentArr = [];
     Component.s_startedComponentArr = [];
     QuickEngine.Component = Component;
 })(QuickEngine || (QuickEngine = {}));
@@ -2266,17 +3301,17 @@ var QuickEngine;
 ///<reference path="Component.ts" />
 (function (QuickEngine) {
     ;
-    const DEFAULE_FOV = 45;
+    const DEFAULT_FOV = 45;
     const DEFAULT_ASPECT = 1;
-    const DEFAULE_NEAR = 0.1;
-    const DEFAULE_FAR = 100;
+    const DEFAULT_NEAR = 0.1;
+    const DEFAULT_FAR = 100;
     class Camera extends QuickEngine.Component {
         constructor() {
             super();
-            this._clearFlags = 0 /* Skybox */;
-            this._fovY = DEFAULE_FOV; // fovY: (0, 180) fovY = atan(（(r - l) / 2） / n)
-            this._near = DEFAULE_NEAR;
-            this._far = DEFAULE_FAR;
+            this._clearFlags = 0 /* SkyBox */;
+            this._fovY = DEFAULT_FOV; // fovY: (0, 180) fovY = atan(（(r - l) / 2） / n)
+            this._near = DEFAULT_NEAR;
+            this._far = DEFAULT_FAR;
             this._aspect = DEFAULT_ASPECT;
             this._isDirty = true;
             this._viewportDirty = false;
@@ -2284,11 +3319,8 @@ var QuickEngine;
             this._viewport = {
                 x: 0, y: 0, w: 1, h: 1
             };
-            this._cameraType = 0 /* Prespective */;
+            this._cameraType = 0 /* Perspective */;
             this._renderContext = new QuickEngine.RenderContext(this);
-        }
-        set renderContext(val) {
-            throw new Error("不允许手动设置");
         }
         get renderContext() {
             return this._renderContext;
@@ -2367,7 +3399,7 @@ var QuickEngine;
             this._renderTarget = val;
         }
         _update() {
-            if (!this._isDirty || !this.transform) {
+            if (!this._isDirty) {
                 return;
             }
             let far = this._far;
@@ -2387,26 +3419,19 @@ var QuickEngine;
             }
             switch (this._cameraType) {
                 case 1 /* Orthogonal */:
-                    {
-                        QuickEngine.Matrix4.makeOrthoLH(left, right, top, bottom, near, far, this._projMatrix);
-                    }
+                    QuickEngine.Matrix4.makeOrthoRH(left, right, bottom, top, near, far, this._projMatrix);
                     break;
-                case 0 /* Prespective */:
-                    {
-                        // Matrix4.makePerspectiveFovLH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
-                        QuickEngine.Matrix4.makePerspectiveFovRH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
-                    }
+                case 0 /* Perspective */:
+                    QuickEngine.Matrix4.makePerspectiveFovRH(this._fovY, this._aspect, this._near, this._far, this._projMatrix);
                     break;
                 default:
-                    {
-                        console.warn("unkonw camera type: " + this._cameraType);
-                    }
+                    console.warn('unkonw camera type: ' + this._cameraType);
                     break;
             }
             this._isDirty = false;
         }
     }
-    Camera.__ClassName__ = "QuickEngine.Camera";
+    Camera.__ClassName__ = 'QuickEngine.Camera';
     Camera.__ClassID__ = 0;
     QuickEngine.Camera = Camera;
 })(QuickEngine || (QuickEngine = {}));
@@ -2589,7 +3614,7 @@ var QuickEngine;
             if (this._needTransformUpdate) {
                 this._updateFromParent();
             }
-            this.rotation.ToEulerAngle(this._eulerAngle);
+            this.rotation.toEulerAngle(this._eulerAngle);
             return this._eulerAngle;
         }
         /*
@@ -2598,7 +3623,7 @@ var QuickEngine;
         set eulerAngle(e) {
             this._eulerAngle.copy(e);
             let tempQuat = new QuickEngine.Quaternion();
-            this.rotation = tempQuat.FromEulerAngle(e);
+            this.rotation = tempQuat.fromEulerAngle(e);
             this.needUpdate(false);
         }
         /*
@@ -2608,7 +3633,7 @@ var QuickEngine;
             if (this._needTransformUpdate) {
                 this._updateFromParent();
             }
-            this.localRotation.ToEulerAngle(this._localEulerAngle);
+            this.localRotation.toEulerAngle(this._localEulerAngle);
             return this._localEulerAngle;
         }
         /*
@@ -2616,7 +3641,7 @@ var QuickEngine;
         */
         set localEulerAngle(e) {
             this._localEulerAngle.copy(e);
-            this.localRotation = this._localRotation.FromEulerAngle(e);
+            this.localRotation = this._localRotation.fromEulerAngle(e);
             this.needUpdate(false);
         }
         /*
@@ -3010,7 +4035,7 @@ var QuickEngine;
                 boneTransform.localPosition = new QuickEngine.Vector3(boneData.position[0], boneData.position[1], boneData.position[2]);
                 boneTransform.localScale = new QuickEngine.Vector3(boneData.scale[0], boneData.scale[1], boneData.scale[2]);
                 let eulerAngle = new QuickEngine.Vector3(boneData.eulerAngle[0], boneData.eulerAngle[1], boneData.eulerAngle[2]);
-                let tempQ = boneTransform.localRotation.FromEulerAngle(eulerAngle);
+                let tempQ = boneTransform.localRotation.fromEulerAngle(eulerAngle);
                 boneTransform.localRotation = tempQ;
             }
             // bind pose
@@ -3374,7 +4399,7 @@ var QuickEngine;
                 let interpolationZ = curveZ.getInterpolation(timePos);
                 // TODO: 计算权重
                 // 设置本地坐标                
-                target.localRotation = target.localRotation.FromEulerAngleScalar(interpolationX, interpolationY, interpolationZ, target.localRotation);
+                target.localRotation = target.localRotation.fromEulerAngleScalar(interpolationX, interpolationY, interpolationZ);
             }
         }
         _applyPosition(node, timeIndex, weight) {
@@ -4274,69 +5299,35 @@ var QuickEngine;
             const SPHERE_RADIUS = 1;
             let subMesh = new QuickEngine.SubMesh();
             mesh.addSubMesh(subMesh);
-            let deltaRingAngle = (Math.PI / NUM_RINGS);
-            let deltaSegAngle = (2 * Math.PI / NUM_SEGMENTS);
-            let verticeIndex = 0;
-            let vertices = [], normals = [], uvs = [], colors = [], indices = [];
-            let vCount = 0;
-            for (let ring = 0; ring <= NUM_RINGS; ring++) {
-                let r0 = SPHERE_RADIUS * Math.sin(ring * deltaRingAngle);
-                let y0 = SPHERE_RADIUS * Math.cos(ring * deltaRingAngle);
-                // Generate the group of segments for the current ring
-                for (let seg = 0; seg <= NUM_SEGMENTS; seg++) {
-                    let x0 = r0 * Math.sin(seg * deltaSegAngle);
-                    let z0 = r0 * Math.cos(seg * deltaSegAngle);
-                    // Add one vertex to the strip which makes up the sphere
-                    vertices[vCount * 3 + 0] = x0;
-                    vertices[vCount * 3 + 1] = y0;
-                    vertices[vCount * 3 + 2] = z0;
-                    let vNormal = new QuickEngine.Vector3(x0, y0, z0).normalize();
-                    normals[vCount * 3 + 0] = vNormal.x;
-                    normals[vCount * 3 + 1] = vNormal.y;
-                    normals[vCount * 3 + 2] = vNormal.z;
-                    colors[vCount * 4 + 0] = 255.0;
-                    colors[vCount * 4 + 1] = 255.0;
-                    colors[vCount * 4 + 2] = 255.0;
-                    colors[vCount * 4 + 3] = 255.0;
-                    uvs[vCount * 2 + 0] = seg / NUM_SEGMENTS;
-                    uvs[vCount * 2 + 1] = ring / NUM_RINGS;
-                    if (ring != NUM_RINGS) {
-                        // each vertex (except the last) has six indicies pointing to it
-                        indices[verticeIndex * 6 + 0] = verticeIndex + NUM_SEGMENTS + 1;
-                        indices[verticeIndex * 6 + 1] = verticeIndex;
-                        indices[verticeIndex * 6 + 2] = verticeIndex + NUM_SEGMENTS;
-                        indices[verticeIndex * 6 + 3] = verticeIndex + NUM_SEGMENTS + 1;
-                        indices[verticeIndex * 6 + 4] = verticeIndex + 1;
-                        indices[verticeIndex * 6 + 5] = verticeIndex;
-                        verticeIndex++;
-                    }
-                    vCount++;
-                }
-                ; // end for seg
-            } // end for ring
+            let vertices = [
+                1.0, 1.0, 0.0,
+                -1.0, 1.0, 0.0,
+                1.0, -1.0, 0.0,
+                -1.0, -1.0, 0.0
+            ];
             let posBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
             posBuf.type = QuickEngine.gl.FLOAT;
             posBuf.semantic = 1 /* POSITION */;
-            posBuf.vertexCount = vertices.length;
+            posBuf.vertexCount = Math.floor(vertices.length / 3);
             posBuf.writeData((new Float32Array(vertices)).buffer);
             posBuf.bindBuffer();
             let colorBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, 1 /* STATIC */);
             colorBuf.type = QuickEngine.gl.UNSIGNED_BYTE;
             colorBuf.semantic = 5 /* DIFFUSE */;
-            colorBuf.vertexCount = colors.length;
-            colorBuf.writeData((new Uint8Array(colors)).buffer);
+            colorBuf.vertexCount = CubeMeshData.colors.length;
+            colorBuf.writeData((new Uint8Array(CubeMeshData.colors)).buffer);
             colorBuf.bindBuffer();
             let normalBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
             normalBuf.type = QuickEngine.gl.FLOAT;
             normalBuf.semantic = 4 /* NORMAL */;
-            normalBuf.vertexCount = normals.length;
-            normalBuf.writeData((new Float32Array(normals)).buffer);
+            normalBuf.vertexCount = CubeMeshData.normals.length;
+            normalBuf.writeData((new Float32Array(CubeMeshData.normals)).buffer);
             normalBuf.bindBuffer();
             let uvBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, 1 /* STATIC */);
             uvBuf.type = QuickEngine.gl.FLOAT;
             uvBuf.semantic = 7 /* TEXTURE_COORDINATES */;
-            normalBuf.vertexCount = uvs.length;
-            uvBuf.writeData((new Float32Array(uvs)).buffer);
+            normalBuf.vertexCount = CubeMeshData.uvs.length;
+            uvBuf.writeData((new Float32Array(CubeMeshData.uvs)).buffer);
             uvBuf.bindBuffer();
             let vertexData = [];
             vertexData[0] = posBuf;
@@ -4344,10 +5335,6 @@ var QuickEngine;
             vertexData[2] = normalBuf;
             vertexData[3] = uvBuf;
             subMesh.vertexData = vertexData;
-            let indicesBuf = QuickEngine.WebGLBufferManager.instance.createIndexBuffer(indices.length, 1 /* STATIC */, false);
-            indicesBuf.writeData(indices);
-            indicesBuf.bindBuffer();
-            subMesh.indexData = indicesBuf;
         }
     }
     QuickEngine.PrefabFactory = PrefabFactory;
@@ -4600,35 +5587,227 @@ var QuickEngine;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
+    let GL;
+    (function (GL) {
+        const _matrixStack = [];
+        let _renderOperationType = 1 /* LINE_LIST */;
+        const _arrayBuffer = new ArrayBuffer(100000);
+        const _vertexBuffer = new Int32Array(_arrayBuffer);
+        let VBO;
+        let _init = false;
+        function init() {
+            VBO = QuickEngine.gl.createBuffer();
+            QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, VBO);
+            QuickEngine.gl.bufferData(QuickEngine.gl.ARRAY_BUFFER, _arrayBuffer, QuickEngine.gl.STATIC_DRAW);
+            QuickEngine.gl.viewport(0, 0, 500, 500);
+            // Vertex shader program
+            const vsSource = `
+    attribute vec4 aVertexPosition;
+
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
+
+    void main() {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    }
+  `;
+            const fsSource = `
+    void main() {
+      gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    }
+  `;
+            //
+            //  初始化着色器程序，让WebGL知道如何绘制我们的数据
+            function initShaderProgram(gl, vsSource, fsSource) {
+                const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+                const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+                // 创建着色器程序
+                const shaderProgram = gl.createProgram();
+                gl.attachShader(shaderProgram, vertexShader);
+                gl.attachShader(shaderProgram, fragmentShader);
+                gl.linkProgram(shaderProgram);
+                // 创建失败， alert
+                if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                    alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+                    return null;
+                }
+                return shaderProgram;
+            }
+            //
+            // 创建指定类型的着色器，上传source源码并编译
+            //
+            function loadShader(gl, type, source) {
+                const shader = gl.createShader(type);
+                // Send the source to the shader object
+                gl.shaderSource(shader, source);
+                // Compile the shader program
+                gl.compileShader(shader);
+                // See if it compiled successfully
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    alert('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                    gl.deleteShader(shader);
+                    return null;
+                }
+                return shader;
+            }
+            const shaderProgram = initShaderProgram(QuickEngine.gl, vsSource, fsSource);
+            const programInfo = {
+                program: shaderProgram,
+                attribLocations: {
+                    vertexPosition: QuickEngine.gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+                },
+                uniformLocations: {
+                    projectionMatrix: QuickEngine.gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+                    modelViewMatrix: QuickEngine.gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+                },
+            };
+            const horizAspect = 480.0 / 640.0;
+            let squareVerticesBuffer;
+            function initBuffers() {
+                squareVerticesBuffer = QuickEngine.gl.createBuffer();
+                QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, squareVerticesBuffer);
+                const vertices = [
+                    1.0, 1.0, 0.0,
+                    -1.0, 1.0, 0.0,
+                    1.0, -1.0, 0.0,
+                    -1.0, -1.0, 0.0
+                ];
+                QuickEngine.gl.bufferData(QuickEngine.gl.ARRAY_BUFFER, new Float32Array(vertices), QuickEngine.gl.STATIC_DRAW);
+            }
+            function drawScene(programInfo, buffers) {
+                QuickEngine.gl.clearColor(0.0, 0.0, 0.0, 1.0); // Clear to black, fully opaque
+                QuickEngine.gl.clearDepth(1.0); // Clear everything
+                QuickEngine.gl.enable(QuickEngine.gl.DEPTH_TEST); // Enable depth testing
+                QuickEngine.gl.depthFunc(QuickEngine.gl.LEQUAL); // Near things obscure far things
+                // Clear the canvas before we start drawing on it.
+                QuickEngine.gl.clear(QuickEngine.gl.COLOR_BUFFER_BIT | QuickEngine.gl.DEPTH_BUFFER_BIT);
+                // Create a perspective matrix, a special matrix that is
+                // used to simulate the distortion of perspective in a camera.
+                // Our field of view is 45 degrees, with a width/height
+                // ratio that matches the display size of the canvas
+                // and we only want to see objects between 0.1 units
+                // and 100 units away from the camera.
+                const fieldOfView = 45 * Math.PI / 180; // in radians
+                const aspect = QuickEngine.gl.canvas.clientWidth / QuickEngine.gl.canvas.clientHeight;
+                const zNear = 0.1;
+                const zFar = 100.0;
+                const projectionMatrix1 = QuickEngine.Matrix4.makePerspectiveFovRH(45, aspect, zNear, zFar);
+                const modelViewMatrix1 = new QuickEngine.Matrix4();
+                const transMatrix = QuickEngine.Matrix4.makeTransform(new QuickEngine.Vector3(0, 0, -6), QuickEngine.Quaternion.IDENTITY, new QuickEngine.Vector3(1, 1, 1));
+                modelViewMatrix1.multiply(transMatrix, modelViewMatrix1);
+                const projectionMatrix = mat4.create();
+                // note: glmatrix.js always has the first argument
+                // as the destination to receive the result.
+                mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+                // Set the drawing position to the "identity" point, which is
+                // the center of the scene.
+                const modelViewMatrix = mat4.create();
+                // Now move the drawing position a bit to where we want to
+                // start drawing the square.
+                mat4.translate(modelViewMatrix, // destination matrix
+                modelViewMatrix, // matrix to translate
+                [-0.0, 0.0, -6.0]); // amount to translate
+                {
+                    const numComponents = 2; // pull out 2 values per iteration
+                    const type = QuickEngine.gl.FLOAT; // the data in the buffer is 32bit floats
+                    const normalize = false; // don't normalize
+                    const stride = 0; // how many bytes to get from one set of values to the next
+                    // 0 = use type and numComponents above
+                    const offset = 0; // how many bytes inside the buffer to start from
+                    QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, buffers);
+                    QuickEngine.gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, numComponents, type, normalize, stride, offset);
+                    QuickEngine.gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+                }
+                // Tell WebGL to use our program when drawing
+                QuickEngine.gl.useProgram(programInfo.program);
+                // Set the shader uniforms
+                QuickEngine.gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix1.rawData);
+                QuickEngine.gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix1.rawData);
+                {
+                    const offset = 0;
+                    const vertexCount = 4;
+                    QuickEngine.gl.drawArrays(QuickEngine.gl.TRIANGLE_STRIP, offset, vertexCount);
+                }
+            }
+            initBuffers();
+            function loop() {
+                drawScene(programInfo, squareVerticesBuffer);
+                window.requestAnimationFrame(loop);
+            }
+            window.requestAnimationFrame(loop);
+        }
+        GL.init = init;
+        function pushMatrix() {
+            _matrixStack.push(new QuickEngine.Matrix4());
+        }
+        GL.pushMatrix = pushMatrix;
+        function popMatrix() {
+            _matrixStack.pop();
+        }
+        GL.popMatrix = popMatrix;
+        function multMatrix(matrix) {
+            const topMatrix = _matrixStack[_matrixStack.length - 1];
+            if (!topMatrix) {
+                return;
+            }
+            topMatrix.multiply(matrix);
+        }
+        GL.multMatrix = multMatrix;
+        function loadOrtho() {
+        }
+        GL.loadOrtho = loadOrtho;
+        function loadPrespective() {
+        }
+        GL.loadPrespective = loadPrespective;
+        function begin(rot) {
+            _renderOperationType = rot;
+            if (!_init) {
+                init();
+            }
+        }
+        GL.begin = begin;
+        function end() {
+        }
+        GL.end = end;
+        function setColor() {
+        }
+        GL.setColor = setColor;
+        function vertex3(x, y, z) {
+            GL.begin(0 /* POINT_LIST */);
+            _vertexBuffer.set([-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0, 0.0], 0);
+            QuickEngine.gl.useProgram(QuickEngine.Material.getDefaultCubeMaterial().shader.shaderPasses[0].getProgram().webglProgram);
+            QuickEngine.gl.enableVertexAttribArray(0);
+            QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, VBO);
+            QuickEngine.gl.vertexAttribPointer(0, 3, QuickEngine.gl.FLOAT, false, 0, 0);
+            QuickEngine.gl.drawArrays(QuickEngine.gl.TRIANGLES, 0, 3);
+            QuickEngine.gl.disableVertexAttribArray(0);
+            QuickEngine.gl.flush();
+        }
+        GL.vertex3 = vertex3;
+    })(GL = QuickEngine.GL || (QuickEngine.GL = {}));
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
     class RenderContext {
         constructor(camera, name) {
             this._clearMode = 7 /* ALL */; // 清除缓冲类型
-            this._clearColor = [0, 0, 0, 1]; // 清屏颜色
+            this._clearColor = [255, 255, 255, 255]; // 清屏颜色
             this._name = name;
             this._camera = camera;
             this._renderPipeline = new QuickEngine.RenderPipeline();
+            console.assert(!!camera);
         }
         get name() {
             return this._name;
         }
-        set enable(enable) {
-            this._isEnable = enable;
-        }
-        get enable() {
-            return this._isEnable;
+        get camera() {
+            return this._camera;
         }
         set renderPipeline(renderPipeline) {
             this._renderPipeline = renderPipeline;
         }
         get renderPipeline() {
             return this._renderPipeline;
-        }
-        // TODO: 删除此处
-        set camera(camera) {
-            this._camera = camera;
-        }
-        get camera() {
-            return this._camera;
         }
         setColorClear(clearMode, clearColor, depth = 1, stencil = 0) {
             this._clearMode = clearMode;
@@ -4638,30 +5817,25 @@ var QuickEngine;
         }
         // 渲染步骤
         /**
-        1.设置帧缓冲
-        2.清除缓冲区状态
-        3.使用shader
-        4.绑定顶点和属性
-        5.裁剪测试
-        6.设置混合模式
-        7.提交数据
+         1.设置帧缓冲
+         2.清除缓冲区状态
+         3.使用shader
+         4.绑定顶点和属性
+         5.裁剪测试
+         6.设置混合模式
+         7.提交数据
          */
         doRender() {
             // 没有摄像机就不需要渲染了
             let camera = this._camera;
-            if (!camera) {
-                return;
-            }
             let viewport = camera.viewPort;
             if (viewport.w == 0 || viewport.h == 0) {
                 return;
             }
-            // 剔除不可见物体
-            let children = QuickEngine.SceneManager.instance.currentScene.children;
             let renderSystem = QuickEngine.RenderSystem.instance;
-            // 设置rendertarget
+            // 设置render target
             renderSystem.setRenderTarget(camera.renderTarget);
-            // 清除缓冲区   
+            // 清除缓冲区
             renderSystem.clear(this._clearMode, this._clearColor, this._clearDepth, this._clearStencil);
             // 设置视口
             renderSystem.setViewport(viewport);
@@ -4682,7 +5856,7 @@ var QuickEngine;
 var QuickEngine;
 (function (QuickEngine) {
     /**
-     *
+     * 队列渲染管道
      */
     class RenderPipeline {
         constructor() {
@@ -4694,6 +5868,7 @@ var QuickEngine;
             let renderSystem = QuickEngine.RenderSystem.instance;
             // 清除渲染队列
             renderQueue.clear();
+            // TODO: 封装裁剪
             function doCull() {
                 let outArr = [];
                 function cull(transfrom, outNodeArr) {
@@ -4721,49 +5896,30 @@ var QuickEngine;
             // 设置视图矩阵,投影矩阵,裁剪面
             renderSystem.setViewMatrix(camera.getViewMatrix());
             renderSystem.setProjectionMatrix(camera.getProjMatrix());
-            // #1 渲染不透明物体(完成后渲染透明物体)             
+            // #1 渲染不透明物体(完成后渲染透明物体)
             // 设置shader pass
-            let soildObjs = renderQueue.solidObjects;
-            for (let i = 0, len = soildObjs.length; i < len; i++) {
-                let soildObj = soildObjs[i];
-                let shader = soildObj.getMaterial().shader;
-                if (shader) {
-                    soildObj.CurrentShader = shader;
-                }
-                else {
-                    let fallback;
-                    soildObj.CurrentShader = fallback;
-                }
-            }
+            const solidObjs = renderQueue.solidObjects;
             if (len > 0) {
                 // 排序
             }
             // 设置光照
             renderSystem.setLight();
             // 渲染
-            for (let i = 0, len = soildObjs.length; i < len; i++) {
-                let soildObj = soildObjs[i];
-                renderSystem.render(soildObj.CurrentShader, soildObj);
+            for (let i = 0, len = solidObjs.length; i < len; i++) {
+                const solidObj = solidObjs[i];
+                renderSystem.render(solidObj.getMaterial().shader, solidObj);
             }
             // 执行光照
             this.doLighting();
-            // #2 渲染不透明物体完成后, 开始渲染透明物体)   
-            let alphaObjs = renderQueue.alphaObjects;
+            // #2 渲染不透明物体完成后, 开始渲染透明物体)
+            const alphaObjs = renderQueue.alphaObjects;
             if (len > 0) {
                 // 排序
             }
             // 渲染
             for (let i = 0, len = alphaObjs.length; i < len; i++) {
-                let alphaObj = alphaObjs[i];
-                let shader = alphaObj.getMaterial().shader;
-                if (shader) {
-                    alphaObj.CurrentShader = shader;
-                }
-                else {
-                    let fallback;
-                    alphaObj.CurrentShader = fallback;
-                }
-                renderSystem.render(alphaObj.CurrentShader, alphaObj);
+                const alphaObj = alphaObjs[i];
+                renderSystem.render(alphaObj.getMaterial().shader, alphaObj);
             }
         }
         // 不透明物体绘制完成后, 执行光照.每个物体可以创建一个renderbuffer,避免多次渲染,但是会增加内存.
@@ -4776,26 +5932,436 @@ var QuickEngine;
 (function (QuickEngine) {
     class RenderQueue {
         constructor() {
-            this.solidObjects = [];
-            this.alphaObjects = [];
+            this._solidObjects = [];
+            this._alphaObjects = [];
+        }
+        get solidObjects() {
+            return this._solidObjects;
+        }
+        get alphaObjects() {
+            return this._alphaObjects;
         }
         addRenderable(renderable) {
-            // 不透明对象
             //TODO:添加不透明对象判断
             let mat = renderable.getMaterial();
             if (mat.opacity >= 1) {
-                this.solidObjects.unshift(renderable);
+                this._solidObjects.unshift(renderable);
             }
             else {
-                this.alphaObjects.push(renderable);
+                this._alphaObjects.push(renderable);
             }
         }
         clear() {
-            this.solidObjects = [];
-            this.alphaObjects = [];
+            this._solidObjects.length = 0;
+            this._alphaObjects.length = 0;
         }
     }
     QuickEngine.RenderQueue = RenderQueue;
+})(QuickEngine || (QuickEngine = {}));
+var QuickEngine;
+(function (QuickEngine) {
+    QuickEngine.MAX_NUM_UNIFORM = 32;
+    QuickEngine.MAX_NUM_SAMPLER = 8;
+    QuickEngine.MAX_NUM_VELEMENT = 16;
+    QuickEngine.MAX_NUM_USER_CONST = 64;
+    QuickEngine.MAX_NUM_SHADER_PASS = 8;
+    QuickEngine.MAX_NUM_VERTEX_STREAM = 4;
+    class RenderSystem {
+        constructor(div) {
+            this._worldViewTM = new QuickEngine.Matrix4(); // 世界视图矩阵
+            this._viewProjTM = new QuickEngine.Matrix4(); // 视图投影矩阵
+            this._worldViewProjTM = new QuickEngine.Matrix4(); // 世界视图投影矩阵
+            this._currentRenderState = new QuickEngine.RenderState();
+            this._renderStatedChanged = true;
+            this._textureChanged = [];
+            for (let i = 0; i < QuickEngine.MAX_NUM_SAMPLER; i++) {
+                this._textureChanged.push(true);
+            }
+            this._currentTextures = [];
+            this._currentTextures.length = QuickEngine.MAX_NUM_SAMPLER;
+            this._shaderPassChanged = true;
+            RenderSystem._sInstance = this;
+            let canvas = document.createElement('canvas');
+            canvas.width = 1280;
+            canvas.height = 720;
+            canvas.style.position = 'absolute';
+            QuickEngine.gl = canvas.getContext('experimental-webgl', {
+                alpha: false
+            });
+            if (!QuickEngine.gl) {
+                return;
+            }
+            this._canvas = canvas;
+            div.appendChild(canvas);
+        }
+        static get instance() {
+            return RenderSystem._sInstance;
+        }
+        _clearState() {
+        }
+        onInit() {
+        }
+        onShutdown() {
+        }
+        beginScene() {
+        }
+        endScene() {
+        }
+        clear(mask, color, depth, stencil) {
+            if (mask == 0 /* None */) {
+                return;
+            }
+            let glMask = 0;
+            if (mask & 1 /* COLOR_BUFFER_BIT */) {
+                glMask |= QuickEngine.gl.COLOR_BUFFER_BIT;
+            }
+            if (mask & 2 /* DEPTH_BUFFER_BIT */) {
+                glMask |= QuickEngine.gl.DEPTH_BUFFER_BIT;
+            }
+            if (mask & 4 /* STENCIL_BUFFER_BIT */) {
+                glMask |= QuickEngine.gl.STENCIL_BUFFER_BIT;
+            }
+            QuickEngine.gl.clear(glMask);
+            QuickEngine.gl.clearColor(color[0], color[1], color[2], color[3]);
+            QuickEngine.gl.clearDepth(depth);
+            QuickEngine.gl.clearStencil(stencil);
+            QuickEngine.GL_CHECK_ERROR();
+        }
+        setViewport(viewPort) {
+            this._viewport = viewPort;
+            let rtWidth = QuickEngine.Screen.screenWidth;
+            let rtHeight = QuickEngine.Screen.screenHeight;
+            let currentRenderTarget = this._currentRenderTarget;
+            if (currentRenderTarget) {
+                rtWidth = currentRenderTarget.width;
+                rtHeight = currentRenderTarget.height;
+            }
+            // 是否替换为限制vp在窗口大小内
+            console.assert(viewPort.x >= 0 && viewPort.x + viewPort.w * rtWidth <= rtWidth &&
+                viewPort.y >= 0 && viewPort.y + viewPort.h * rtHeight <= rtHeight);
+            // 窗口坐标系原点为左下角
+            let x = viewPort.x;
+            let y = rtHeight - (viewPort.y + viewPort.h);
+            let w = viewPort.w * rtWidth;
+            let h = viewPort.h * rtHeight;
+            QuickEngine.gl.viewport(x, y, w, h);
+            QuickEngine.GL_CHECK_ERROR();
+        }
+        setRenderTarget(renderTarget) {
+            this._currentRenderTarget = renderTarget;
+            QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, renderTarget);
+        }
+        _setTexture(unit, enable, tex) {
+            // 纹理未加载完成时,使用默认纹理
+            if (!tex.getWebGLTexture()) {
+                tex = QuickEngine.ResourceManager.instance.get(QuickEngine.ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
+            }
+            if (!tex.getWebGLTexture()) {
+                return;
+            }
+            QuickEngine.gl.activeTexture(QuickEngine.gl.TEXTURE0 + unit);
+            if (enable) {
+                QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, tex.getWebGLTexture());
+            }
+            else {
+                QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, null);
+            }
+            QuickEngine.GL_CHECK_ERROR();
+        }
+        _bindRenderState() {
+            if (!this._renderStatedChanged) {
+                return;
+            }
+            let currentRenderState = this._currentRenderState;
+            let cullMode = currentRenderState.cullMode;
+            switch (cullMode) {
+                case 1 /* FRONT */:
+                    {
+                        QuickEngine.gl.enable(QuickEngine.gl.FRONT_FACE);
+                        QuickEngine.gl.cullFace(QuickEngine.gl.FRONT);
+                    }
+                    break;
+                case 2 /* BACK */:
+                    {
+                        QuickEngine.gl.enable(QuickEngine.gl.CULL_FACE);
+                        QuickEngine.gl.cullFace(QuickEngine.gl.BACK);
+                    }
+                    break;
+                case 0 /* NONE */:
+                default:
+                    {
+                        QuickEngine.gl.disable(QuickEngine.gl.CULL_FACE);
+                    }
+                    break;
+            }
+            let depthTest = currentRenderState.depthCheck;
+            switch (depthTest) {
+                case 1 /* CHECK_ONLY */:
+                    {
+                        QuickEngine.gl.enable(QuickEngine.gl.DEPTH_TEST);
+                        QuickEngine.gl.depthMask(false);
+                        QuickEngine.gl.depthFunc(QuickEngine.gl.LEQUAL);
+                    }
+                    break;
+                case 2 /* CHECK_WRITE */:
+                    {
+                        QuickEngine.gl.enable(QuickEngine.gl.DEPTH_TEST);
+                        QuickEngine.gl.depthMask(true);
+                        QuickEngine.gl.depthFunc(QuickEngine.gl.LEQUAL);
+                    }
+                    break;
+                case 0 /* NONE */:
+                default:
+                    {
+                        QuickEngine.gl.disable(QuickEngine.gl.DEPTH_TEST);
+                        QuickEngine.gl.depthMask(false);
+                    }
+                    break;
+            }
+            let blendMode = currentRenderState.blendMode;
+            switch (blendMode) {
+                case 1 /* OPACITY */:
+                case 2 /* ALPHA_TEST */:
+                    {
+                        QuickEngine.gl.disable(QuickEngine.gl.BLEND);
+                    }
+                    break;
+                case 3 /* ALPHA_BLEND */:
+                    {
+                        QuickEngine.gl.enable(QuickEngine.gl.BLEND);
+                        QuickEngine.gl.blendFunc(QuickEngine.gl.SRC_ALPHA, QuickEngine.gl.ONE_MINUS_SRC_ALPHA);
+                    }
+                    break;
+                case 4 /* ADD */:
+                    {
+                        QuickEngine.gl.enable(QuickEngine.gl.BLEND);
+                        QuickEngine.gl.blendFunc(QuickEngine.gl.ONE, QuickEngine.gl.ONE);
+                    }
+                    break;
+                case 5 /* MUL */:
+                    {
+                        QuickEngine.gl.enable(QuickEngine.gl.BLEND);
+                        QuickEngine.gl.blendFunc(QuickEngine.gl.ZERO, QuickEngine.gl.SRC_COLOR);
+                    }
+                    break;
+            }
+            let colorMask = currentRenderState.colorMask;
+            QuickEngine.gl.colorMask(!!(colorMask & 1 /* RED */), !!(colorMask & 2 /* GREEN */), !!(colorMask & 4 /* BLUE */), !!(colorMask & 8 /* ALPHA */));
+            QuickEngine.GL_CHECK_ERROR();
+            this._renderStatedChanged = false;
+        }
+        bindGpuProgram(gpuProgram) {
+            QuickEngine.gl.useProgram(gpuProgram.webglProgram);
+        }
+        _bindVertexElement(vertexBuffer, shaderPass) {
+            QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, vertexBuffer.getGLBuffer());
+            QuickEngine.gl.enableVertexAttribArray(vertexBuffer.semantic);
+        }
+        renderOperation(renderOp) {
+            console.assert(!!this._currentShaderPass && !!renderOp.vertexBuffers);
+            // begin render
+            this.begin();
+            this._bindRenderState();
+            let currentShaderPass = this._currentShaderPass;
+            if (this._shaderPassChanged) {
+                this.bindGpuProgram(currentShaderPass.getProgram());
+                this._shaderPassChanged = false;
+            }
+            currentShaderPass.uploadUniforms();
+            currentShaderPass.uploadSamplers();
+            let primType;
+            switch (renderOp.renderOpType) {
+                case 0 /* POINT_LIST */:
+                    primType = QuickEngine.gl.POINTS;
+                    break;
+                case 1 /* LINE_LIST */:
+                    primType = QuickEngine.gl.LINES;
+                    break;
+                case 2 /* LINE_STRIP */:
+                    primType = QuickEngine.gl.LINE_STRIP;
+                    break;
+                case 3 /* TRIANGLE_LIST */:
+                    primType = QuickEngine.gl.TRIANGLES;
+                    break;
+                case 4 /* TRIANGLE_STRIP */:
+                    primType = QuickEngine.gl.TRIANGLE_STRIP;
+                    break;
+                case 5 /* TRIANGLE_FAN */:
+                    primType = QuickEngine.gl.TRIANGLE_FAN;
+                    break;
+                default:
+                    primType = QuickEngine.gl.TRIANGLES;
+                    break;
+            }
+            let renderAttribsBound = [];
+            // 绑定顶点属性
+            let vbBuffers = renderOp.vertexBuffers;
+            for (let i = 0, len = vbBuffers.length; i < len; i++) {
+                let vb = vbBuffers[i];
+                let location = currentShaderPass.getAttribute(vb.semantic);
+                if (location === undefined) {
+                    continue;
+                }
+                QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, vb.getGLBuffer());
+                QuickEngine.gl.bufferData(QuickEngine.gl.ARRAY_BUFFER, vb._data, QuickEngine.WebGLBufferManager.getGLUsage(vb._usage));
+                QuickEngine.GL_CHECK_ERROR();
+                QuickEngine.gl.enableVertexAttribArray(location);
+                QuickEngine.gl.vertexAttribPointer(location, vb._size, vb.type, vb._normalized, 0, 0);
+                QuickEngine.GL_CHECK_ERROR();
+                renderAttribsBound.push(location);
+            }
+            let indexBuffer = renderOp.indexBuffer;
+            if (indexBuffer) {
+                QuickEngine.gl.bindBuffer(QuickEngine.gl.ELEMENT_ARRAY_BUFFER, indexBuffer.getGLIndexBuffer());
+                QuickEngine.GL_CHECK_ERROR();
+                QuickEngine.gl.drawElements(primType, indexBuffer.count, QuickEngine.gl.UNSIGNED_SHORT, 0);
+            }
+            else {
+                QuickEngine.gl.drawArrays(QuickEngine.gl.TRIANGLE_STRIP, 0, vbBuffers[0].vertexCount);
+            }
+            QuickEngine.GL_CHECK_ERROR();
+            // end render
+            // 清除属性绑定
+            let len = renderAttribsBound.length;
+            if (len > 0) {
+                for (let i = 0; i < len; i++) {
+                    QuickEngine.gl.disableVertexAttribArray(renderAttribsBound[i]);
+                }
+            }
+            this.end();
+        }
+        static getGLDrawCount(type, primCount) {
+            switch (type) {
+                case 3 /* TRIANGLE_LIST */:
+                    return primCount * 3;
+                case 4 /* TRIANGLE_STRIP */:
+                    return primCount + 2;
+                case 1 /* LINE_LIST */:
+                    return primCount * 2;
+                case 2 /* LINE_STRIP */:
+                    return primCount + 1;
+                case 0 /* POINT_LIST */:
+                    return primCount;
+            }
+            return 0;
+        }
+        onResize(w, h) {
+            let thisCanvas = this._canvas;
+            thisCanvas.width = w;
+            thisCanvas.height = h;
+        }
+        setWorldMatrix(worldMatrix) {
+            this._worldMatrix = worldMatrix;
+            this._isTransformDirty = true;
+        }
+        getWorldMatrix() {
+            return this._worldMatrix;
+        }
+        setViewMatrix(viewMatrix) {
+            this._viewMatrix = viewMatrix;
+            this._isTransformDirty = true;
+        }
+        getViewMatrix() {
+            return this._viewMatrix;
+        }
+        setProjectionMatrix(projectionMatrix) {
+            this._projectionMatrix = projectionMatrix;
+            this._isTransformDirty = true;
+        }
+        getProjectionMatrix() {
+            return this._projectionMatrix;
+        }
+        getWorldViewMatrix() {
+            return this._worldViewTM;
+        }
+        getViewProjMatrix() {
+            return this._viewProjTM;
+        }
+        getWorldViewProjMatrix() {
+            return this._worldViewProjTM;
+        }
+        setCamera(camera) {
+        }
+        setMaterial(material) {
+        }
+        setLight() {
+        }
+        setFog(fogColor, fogNear, fogFar) {
+        }
+        setClipPlane(near, far) {
+        }
+        _setTextureUnitSettings(unit, tex) {
+            this._setTexture(unit, true, tex);
+        }
+        setShaderPass(pass) {
+            if (this._currentShaderPass != pass) {
+                this._currentShaderPass = pass;
+                this._shaderPassChanged = true;
+            }
+        }
+        setRenderState(cullMode, blendMode, depthCheck, colorMask) {
+            this._currentRenderState.cullMode = cullMode;
+            this._currentRenderState.blendMode = blendMode;
+            this._currentRenderState.depthCheck = depthCheck;
+            this._currentRenderState.colorMask = colorMask;
+        }
+        getCurrentTextures() {
+            return this._currentTextures;
+        }
+        begin() {
+            if (this._isTransformDirty) {
+                this._worldViewTM.identity();
+                this._viewProjTM.identity();
+                this._worldViewProjTM.identity();
+                this._viewMatrix.multiply(this._worldMatrix, this._worldViewTM);
+                this._projectionMatrix.multiply(this._viewMatrix, this._viewProjTM);
+                this._projectionMatrix.multiply(this._worldViewTM, this._worldViewProjTM);
+                this._isTransformDirty = false;
+            }
+        }
+        end() {
+        }
+        render(shader, renderable) {
+            if (!shader) {
+                return;
+            }
+            // 准备渲染事件
+            let material = renderable.getMaterial();
+            let renderOp = renderable.getRenderOperation();
+            this.setMaterial(material);
+            let worldMatrix = renderable.getWorldTransforms();
+            let tempWM = new QuickEngine.Matrix4();
+            tempWM.copyFrom(worldMatrix);
+            this.setWorldMatrix(tempWM);
+            // ShaderPass
+            let passes = shader.shaderPasses;
+            for (let i = 0, len = passes.length; i < len; ++i) {
+                let pass = passes[i];
+                let renderState = pass.getRenderState();
+                // 设置当前shader pass
+                this.setShaderPass(pass);
+                // 设置渲染状态
+                this.setRenderState(renderState.cullMode, renderState.blendMode, renderState.depthCheck, renderState.colorMask);
+                // 设置纹理
+                let samplers = pass.getSamplers();
+                for (let ii = 0, len2 = samplers; ii < samplers.length; ii++) {
+                    let sampler = samplers[ii];
+                    switch (sampler.bindType) {
+                        case 10 /* SAMPLER */:
+                            this._setTextureUnitSettings(ii, sampler.samplerTex);
+                            break;
+                        default:
+                            // this.setTexture(sampler.index, sampler.samplerTex);
+                            break;
+                    }
+                }
+                this.renderOperation(renderOp);
+            }
+        }
+        readPixels(x, y, width, height, format, type, pixels) {
+        }
+    }
+    QuickEngine.RenderSystem = RenderSystem;
 })(QuickEngine || (QuickEngine = {}));
 var QuickEngine;
 (function (QuickEngine) {
@@ -5085,7 +6651,7 @@ var QuickEngine;
                 }
             },
             floats:{
-                
+
             },
             colors: {
 
@@ -5163,14 +6729,14 @@ var QuickEngine;
                 pass.setAttribute(5 /* DIFFUSE */, QuickEngine.gl.getAttribLocation(program.webglProgram, "a_color"));
                 pass.setAttribute(4 /* NORMAL */, QuickEngine.gl.getAttribLocation(program.webglProgram, "a_normal"));
                 pass.setAttribute(7 /* TEXTURE_COORDINATES */, QuickEngine.gl.getAttribLocation(program.webglProgram, "a_texCoord0"));
-                let sampelers = ["texture0"];
-                for (let i = 0, len = sampelers.length; i < len; i++) {
-                    let sname = sampelers[i];
+                let samplers = ["texture0"];
+                for (let i = 0, len = samplers.length; i < len; i++) {
+                    let sampler = samplers[i];
                     let s = {
                         index: 0,
-                        name: sname,
+                        name: sampler,
                         samplerTex: Material._defMatGLTex,
-                        location: QuickEngine.gl.getUniformLocation(program.webglProgram, sname),
+                        location: QuickEngine.gl.getUniformLocation(program.webglProgram, sampler),
                         bindType: 10 /* SAMPLER */
                     };
                     pass.addSampler(s);
@@ -5389,32 +6955,31 @@ var QuickEngine;
             let viewMat = QuickEngine.RenderSystem.instance.getViewMatrix();
             let projMat = QuickEngine.RenderSystem.instance.getProjectionMatrix();
             let mvpMat = QuickEngine.RenderSystem.instance.getWorldViewProjMatrix();
+            // this._viewMatrix.multiply(this._worldMatrix, this._worldViewTM);
+            // this._projectionMatrix.multiply(this._viewMatrix, this._viewProjTM);
+            // this._projectionMatrix.multiply(this._worldViewTM, this._worldViewProjTM);
+            //
+            // const projectionMatrix1 = Matrix4.makePerspectiveFovRH(45, aspect, zNear, zFar);
+            const modelViewMatrix1 = new QuickEngine.Matrix4();
+            const transMatrix = QuickEngine.Matrix4.makeTransform(new QuickEngine.Vector3(0, 0, -6), QuickEngine.Quaternion.IDENTITY, new QuickEngine.Vector3(1, 1, 1));
+            modelViewMatrix1.multiply(transMatrix, modelViewMatrix1);
+            mvpMat = projMat.multiply(modelViewMatrix1);
             let uniforms = this._uniforms;
             for (let i = 0, len = uniforms.length; i < len; i++) {
                 let uniform = uniforms[i];
                 switch (uniform.type) {
                     case 2 /* WORLD_MATRIX */:
-                        {
-                            QuickEngine.gl.uniformMatrix4fv(uniform.location, false, mvpMat.toArrayBuffer());
-                        }
-                        ;
+                        QuickEngine.gl.uniformMatrix4fv(uniform.location, false, mvpMat.rawData);
                         break;
                     case 13 /* LIGHT_DIRECTION */:
-                        {
-                            QuickEngine.gl.uniform3f(uniform.location, 0.5, 3.0, 4.0);
-                        }
-                        ;
+                        QuickEngine.gl.uniform3f(uniform.location, 0.5, 3.0, 4.0);
                         break;
                     case 18 /* DIFFUSE */:
-                        {
-                            QuickEngine.gl.uniform3f(uniform.location, 1, 1, 1);
-                        }
-                        ;
+                        QuickEngine.gl.uniform3f(uniform.location, 1, 1, 1);
                         break;
                     default:
-                        {
-                            //gl.uniform1f(uniform.location, 0);
-                        }
+                        console.error(`unknow type: ${uniform.type}`);
+                        //gl.uniform1f(uniform.location, 0);
                         break;
                 }
                 if (QuickEngine.__DEBUG__) {
@@ -5561,7 +7126,8 @@ var QuickEngine;
         varying vec4 v_color;
         void main(void){
             v_texCoord0 = a_texCoord0;
-	        gl_Position = mvpMatrix * vec4(a_position, 1.0);
+	        // gl_Position = mvpMatrix * vec4(a_position, 1.0);
+	        gl_Position = vec4(a_position, 1.0);
             vec3 normal = normalize(vec3(mvpMatrix * vec4(a_normal, 1.0)));
             float nDotL = max(dot(u_lightDirection, normal), 0.0);
             vec3 diffuse = u_lightColor * a_color.rgb * nDotL;
@@ -5578,7 +7144,8 @@ var QuickEngine;
         void main(void) {
             vec4 col = texture2D(texture0, v_texCoord0);
 	        //gl_FragColor = v_color;
-            gl_FragColor = col * v_color;
+            // gl_FragColor = col * v_color;
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
         }`;
     })(ShaderChunks = QuickEngine.ShaderChunks || (QuickEngine.ShaderChunks = {}));
 })(QuickEngine || (QuickEngine = {}));
@@ -5663,152 +7230,6 @@ var QuickEngine;
     }
     QuickEngine.WebGLIndexBuffer = WebGLIndexBuffer;
 })(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    QuickEngine.MAX_NUM_UNIFORM = 32;
-    QuickEngine.MAX_NUM_SAMPLER = 8;
-    QuickEngine.MAX_NUM_VELEMENT = 16;
-    QuickEngine.MAX_NUM_USER_CONST = 64;
-    QuickEngine.MAX_NUM_SHADER_PASS = 8;
-    QuickEngine.MAX_NUM_VERTEX_STREAM = 4;
-    class RenderSystem {
-        constructor() {
-            this._worldViewTM = new QuickEngine.Matrix4(); // 世界视图矩阵
-            this._viewProjTM = new QuickEngine.Matrix4(); // 视图投影矩阵
-            this._worldViewProjTM = new QuickEngine.Matrix4(); // 世界视图投影矩阵
-            this._currentRenderState = new QuickEngine.RenderState();
-            this._renderStatedChanged = true;
-            this._textureChanged = [];
-            for (let i = 0; i < QuickEngine.MAX_NUM_SAMPLER; i++) {
-                this._textureChanged.push(true);
-            }
-            this._currentTextures = [];
-            this._currentTextures.length = QuickEngine.MAX_NUM_SAMPLER;
-            this._shaderPassChanged = true;
-        }
-        static get instance() {
-            return RenderSystem._sInstance;
-        }
-        _clearState() {
-        }
-        onInit() {
-        }
-        onShutdown() {
-        }
-        beginScene() {
-        }
-        endScene() {
-        }
-        setWorldMatrix(worldMatrix) {
-            this._worldMatrix = worldMatrix;
-            this._isTransformDirty = true;
-        }
-        getWorldMatrix() {
-            return this._worldMatrix;
-        }
-        setViewMatrix(viewMatrix) {
-            this._viewMatrix = viewMatrix;
-            this._isTransformDirty = true;
-        }
-        getViewMatrix() {
-            return this._viewMatrix;
-        }
-        setProjectionMatrix(projectionMatrix) {
-            this._projectionMatrix = projectionMatrix;
-            this._isTransformDirty = true;
-        }
-        getProjectionMatrix() {
-            return this._projectionMatrix;
-        }
-        getWorldViewMatrix() {
-            return this._worldViewTM;
-        }
-        getViewProjMatrix() {
-            return this._viewProjTM;
-        }
-        getWorldViewProjMatrix() {
-            return this._worldViewProjTM;
-        }
-        setCamera(camera) {
-        }
-        setMaterial(material) {
-        }
-        setLight() {
-        }
-        setFog(fogColor, fogNear, fogFar) {
-        }
-        setClipPlane(near, far) {
-        }
-        _setTextureUnitSettings(unit, tex) {
-            this._setTexture(unit, true, tex);
-        }
-        setShaderPass(pass) {
-            if (this._currentShaderPass != pass) {
-                this._currentShaderPass = pass;
-                this._shaderPassChanged = true;
-            }
-        }
-        setRenderState(cullMode, blendMode, depthCheck, colorMask) {
-            this._currentRenderState.cullMode = cullMode;
-            this._currentRenderState.blendMode = blendMode;
-            this._currentRenderState.depthCheck = depthCheck;
-            this._currentRenderState.colorMask = colorMask;
-        }
-        getCurrentTextures() {
-            return this._currentTextures;
-        }
-        begin() {
-            if (this._isTransformDirty) {
-                QuickEngine.Matrix4.multiply(this._viewMatrix, this._worldMatrix, this._worldViewTM);
-                QuickEngine.Matrix4.multiply(this._projectionMatrix, this._viewMatrix, this._viewProjTM);
-                QuickEngine.Matrix4.multiply(this._projectionMatrix, this._worldViewTM, this._worldViewProjTM);
-                this._isTransformDirty = false;
-            }
-        }
-        end() {
-        }
-        render(shader, renderable) {
-            if (!shader) {
-                return;
-            }
-            // 准备渲染事件
-            let material = renderable.getMaterial();
-            let renderOp = renderable.getRenderOperation();
-            this.setMaterial(material);
-            let worldMatrix = renderable.getWorldTransforms();
-            let tempWM = new QuickEngine.Matrix4();
-            tempWM.copyFrom(worldMatrix);
-            this.setWorldMatrix(tempWM);
-            // ShaderPass
-            let passes = shader.shaderPasses;
-            for (let i = 0, len = passes.length; i < len; ++i) {
-                let pass = passes[i];
-                let renderState = pass.getRenderState();
-                // 设置当前shader pass
-                this.setShaderPass(pass);
-                // 设置渲染状态
-                this.setRenderState(renderState.cullMode, renderState.blendMode, renderState.depthCheck, renderState.colorMask);
-                // 设置纹理
-                let samplers = pass.getSamplers();
-                for (let ii = 0, len2 = samplers; ii < samplers.length; ii++) {
-                    let sampler = samplers[ii];
-                    switch (sampler.bindType) {
-                        case 10 /* SAMPLER */:
-                            this._setTextureUnitSettings(ii, sampler.samplerTex);
-                            break;
-                        default:
-                            // this.setTexture(sampler.index, sampler.samplerTex);
-                            break;
-                    }
-                }
-                this.renderOperation(renderOp);
-            }
-        }
-        readPixels(x, y, width, height, format, type, pixels) {
-        }
-    }
-    QuickEngine.RenderSystem = RenderSystem;
-})(QuickEngine || (QuickEngine = {}));
 ///<reference path="../RenderSystem.ts" />
 var QuickEngine;
 ///<reference path="../RenderSystem.ts" />
@@ -5819,270 +7240,10 @@ var QuickEngine;
         }
     }
     QuickEngine.GL_CHECK_ERROR = GL_CHECK_ERROR;
+    /**
+     * @deprecated 不会有多种类型渲染器
+     */
     class WebGLRendererSystem extends QuickEngine.RenderSystem {
-        constructor(div) {
-            super();
-            QuickEngine.RenderSystem._sInstance = this;
-            let canvas = document.createElement("canvas");
-            canvas.width = 1280;
-            canvas.height = 720;
-            canvas.style.position = "absolute";
-            QuickEngine.gl = canvas.getContext("experimental-webgl", {
-            // alpha: false
-            });
-            if (!QuickEngine.gl) {
-                return;
-            }
-            this._canvas = canvas;
-            div.appendChild(canvas);
-        }
-        clear(mask, color, depth, stencil) {
-            if (mask == 0 /* None */) {
-                return;
-            }
-            let glMask = 0;
-            if (mask & 1 /* COLOR_BUFFER_BIT */) {
-                glMask |= QuickEngine.gl.COLOR_BUFFER_BIT;
-            }
-            if (mask & 2 /* DEPTH_BUFFER_BIT */) {
-                glMask |= QuickEngine.gl.DEPTH_BUFFER_BIT;
-            }
-            if (mask & 4 /* STENCIL_BUFFER_BIT */) {
-                glMask |= QuickEngine.gl.STENCIL_BUFFER_BIT;
-            }
-            QuickEngine.gl.clear(glMask);
-            QuickEngine.gl.clearColor(color[0], color[1], color[2], color[3]);
-            QuickEngine.gl.clearDepth(depth);
-            QuickEngine.gl.clearStencil(stencil);
-            GL_CHECK_ERROR();
-        }
-        setViewport(viewPort) {
-            this._viewport = viewPort;
-            let rtWidth = QuickEngine.Screen.screenWidth;
-            let rtHeight = QuickEngine.Screen.screenHeight;
-            let currentRenderTarget = this._currentRenderTarget;
-            if (currentRenderTarget) {
-                rtWidth = currentRenderTarget.width;
-                rtHeight = currentRenderTarget.height;
-            }
-            // 是否替换为限制vp在窗口大小内
-            console.assert(viewPort.x >= 0 && viewPort.x + viewPort.w * rtWidth <= rtWidth &&
-                viewPort.y >= 0 && viewPort.y + viewPort.h * rtHeight <= rtHeight);
-            // 窗口坐标系原点为左下角
-            let x = viewPort.x;
-            let y = rtHeight - (viewPort.y + viewPort.h);
-            let w = viewPort.w;
-            let h = viewPort.h;
-            QuickEngine.gl.viewport(x, y, w, h);
-            GL_CHECK_ERROR();
-        }
-        setRenderTarget(renderTarget) {
-            this._currentRenderTarget = renderTarget;
-            QuickEngine.gl.bindFramebuffer(QuickEngine.gl.FRAMEBUFFER, renderTarget);
-        }
-        _setTexture(unit, enable, tex) {
-            // 纹理未加载完成时,使用默认纹理
-            if (!tex.getWebGLTexture()) {
-                tex = QuickEngine.ResourceManager.instance.get(QuickEngine.ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
-            }
-            if (!tex.getWebGLTexture()) {
-                return;
-            }
-            QuickEngine.gl.activeTexture(QuickEngine.gl.TEXTURE0 + unit);
-            if (enable) {
-                QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, tex.getWebGLTexture());
-            }
-            else {
-                QuickEngine.gl.bindTexture(QuickEngine.gl.TEXTURE_2D, null);
-            }
-            GL_CHECK_ERROR();
-        }
-        _bindRenderState() {
-            if (!this._renderStatedChanged) {
-                return;
-            }
-            let currentRenderState = this._currentRenderState;
-            let cullMode = currentRenderState.cullMode;
-            switch (cullMode) {
-                case 1 /* FRONT */:
-                    {
-                        QuickEngine.gl.enable(QuickEngine.gl.FRONT_FACE);
-                        QuickEngine.gl.cullFace(QuickEngine.gl.FRONT);
-                    }
-                    break;
-                case 2 /* BACK */:
-                    {
-                        QuickEngine.gl.enable(QuickEngine.gl.CULL_FACE);
-                        QuickEngine.gl.cullFace(QuickEngine.gl.BACK);
-                    }
-                    break;
-                case 0 /* NONE */:
-                default:
-                    {
-                        QuickEngine.gl.disable(QuickEngine.gl.CULL_FACE);
-                    }
-                    break;
-            }
-            let depthTest = currentRenderState.depthCheck;
-            switch (depthTest) {
-                case 1 /* CHECK_ONLY */:
-                    {
-                        QuickEngine.gl.enable(QuickEngine.gl.DEPTH_TEST);
-                        QuickEngine.gl.depthMask(false);
-                        QuickEngine.gl.depthFunc(QuickEngine.gl.LEQUAL);
-                    }
-                    break;
-                case 2 /* CHECK_WRITE */:
-                    {
-                        QuickEngine.gl.enable(QuickEngine.gl.DEPTH_TEST);
-                        QuickEngine.gl.depthMask(true);
-                        QuickEngine.gl.depthFunc(QuickEngine.gl.LEQUAL);
-                    }
-                    break;
-                case 0 /* NONE */:
-                default:
-                    {
-                        QuickEngine.gl.disable(QuickEngine.gl.DEPTH_TEST);
-                        QuickEngine.gl.depthMask(false);
-                    }
-                    break;
-            }
-            let blendMode = currentRenderState.blendMode;
-            switch (blendMode) {
-                case 1 /* OPACITY */:
-                case 2 /* ALPHA_TEST */:
-                    {
-                        QuickEngine.gl.disable(QuickEngine.gl.BLEND);
-                    }
-                    break;
-                case 3 /* ALPHA_BLEND */:
-                    {
-                        QuickEngine.gl.enable(QuickEngine.gl.BLEND);
-                        QuickEngine.gl.blendFunc(QuickEngine.gl.SRC_ALPHA, QuickEngine.gl.ONE_MINUS_SRC_ALPHA);
-                    }
-                    break;
-                case 4 /* ADD */:
-                    {
-                        QuickEngine.gl.enable(QuickEngine.gl.BLEND);
-                        QuickEngine.gl.blendFunc(QuickEngine.gl.ONE, QuickEngine.gl.ONE);
-                    }
-                    break;
-                case 5 /* MUL */:
-                    {
-                        QuickEngine.gl.enable(QuickEngine.gl.BLEND);
-                        QuickEngine.gl.blendFunc(QuickEngine.gl.ZERO, QuickEngine.gl.SRC_COLOR);
-                    }
-                    break;
-            }
-            let colorMask = currentRenderState.colorMask;
-            QuickEngine.gl.colorMask(!!(colorMask & 1 /* RED */), !!(colorMask & 2 /* GREEN */), !!(colorMask & 4 /* BLUE */), !!(colorMask & 8 /* ALPHA */));
-            GL_CHECK_ERROR();
-            this._renderStatedChanged = false;
-        }
-        bindGpuProgram(gpuProgram) {
-            QuickEngine.gl.useProgram(gpuProgram.webglProgram);
-        }
-        _bindVertexElement(vertexBuffer, shaderPass) {
-            QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, vertexBuffer.getGLBuffer());
-            QuickEngine.gl.enableVertexAttribArray(vertexBuffer.semantic);
-        }
-        renderOperation(renderOp) {
-            console.assert(!!this._currentShaderPass && !!renderOp.vertexBuffers);
-            // begin render
-            this.begin();
-            this._bindRenderState();
-            let currentShaderPass = this._currentShaderPass;
-            if (this._shaderPassChanged) {
-                this.bindGpuProgram(currentShaderPass.getProgram());
-                this._shaderPassChanged = false;
-            }
-            currentShaderPass.uploadUniforms();
-            currentShaderPass.uploadSamplers();
-            let primType;
-            switch (renderOp.renderOpType) {
-                case 0 /* POINT_LIST */:
-                    primType = QuickEngine.gl.POINTS;
-                    break;
-                case 1 /* LINE_LIST */:
-                    primType = QuickEngine.gl.LINES;
-                    break;
-                case 2 /* LINE_STRIP */:
-                    primType = QuickEngine.gl.LINE_STRIP;
-                    break;
-                case 3 /* TRIANGLE_LIST */:
-                    primType = QuickEngine.gl.TRIANGLES;
-                    break;
-                case 4 /* TRIANGLE_STRIP */:
-                    primType = QuickEngine.gl.TRIANGLE_STRIP;
-                    break;
-                case 5 /* TRIANGLE_FAN */:
-                    primType = QuickEngine.gl.TRIANGLE_FAN;
-                    break;
-                default:
-                    primType = QuickEngine.gl.TRIANGLES;
-                    break;
-            }
-            let renderAttribsBound = [];
-            // 绑定顶点属性
-            let vbBuffers = renderOp.vertexBuffers;
-            for (let i = 0, len = vbBuffers.length; i < len; i++) {
-                let vb = vbBuffers[i];
-                let location = currentShaderPass.getAttribute(vb.semantic);
-                if (location === undefined) {
-                    continue;
-                }
-                QuickEngine.gl.bindBuffer(QuickEngine.gl.ARRAY_BUFFER, vb.getGLBuffer());
-                QuickEngine.gl.bufferData(QuickEngine.gl.ARRAY_BUFFER, vb._data, QuickEngine.WebGLBufferManager.getGLUsage(vb._usage));
-                GL_CHECK_ERROR();
-                QuickEngine.gl.enableVertexAttribArray(location);
-                QuickEngine.gl.vertexAttribPointer(location, vb._size, vb.type, vb._normalized, vb._stride, 0);
-                GL_CHECK_ERROR();
-                renderAttribsBound.push(location);
-            }
-            let indexBuffer = renderOp.indexBuffer;
-            if (indexBuffer) {
-                QuickEngine.gl.bindBuffer(QuickEngine.gl.ELEMENT_ARRAY_BUFFER, indexBuffer.getGLIndexBuffer());
-                GL_CHECK_ERROR();
-                QuickEngine.gl.drawElements(primType, indexBuffer.count, QuickEngine.gl.UNSIGNED_SHORT, 0);
-            }
-            else {
-                QuickEngine.gl.drawArrays(primType, 0, vbBuffers[0].vertexCount);
-            }
-            GL_CHECK_ERROR();
-            // end render
-            // 清除属性绑定
-            let len = renderAttribsBound.length;
-            if (len > 0) {
-                for (let i = 0; i < len; i++) {
-                    QuickEngine.gl.disableVertexAttribArray(renderAttribsBound[i]);
-                }
-            }
-            this.end();
-        }
-        static getGLDrawCount(type, primCount) {
-            switch (type) {
-                case 3 /* TRIANGLE_LIST */:
-                    return primCount * 3;
-                case 4 /* TRIANGLE_STRIP */:
-                    return primCount + 2;
-                case 1 /* LINE_LIST */:
-                    return primCount * 2;
-                case 2 /* LINE_STRIP */:
-                    return primCount + 1;
-                case 0 /* POINT_LIST */:
-                    return primCount;
-            }
-            return 0;
-        }
-        beginScene() {
-        }
-        endScene() {
-        }
-        onResize(w, h) {
-            let thisCanvas = this._canvas;
-            thisCanvas.width = w;
-            thisCanvas.height = h;
-        }
     }
     QuickEngine.WebGLRendererSystem = WebGLRendererSystem;
 })(QuickEngine || (QuickEngine = {}));
@@ -6139,1225 +7300,5 @@ var QuickEngine;
         }
     }
     QuickEngine.WebGLVertexBuffer = WebGLVertexBuffer;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    QuickEngine.ResponseType_Default = ""; //""(空字符串)	字符串(默认值)
-    QuickEngine.ResponseType_ArrayBuffer = "arraybuffer"; //"arraybuffer"	ArrayBuffer
-    QuickEngine.ResponseType_Blob = "blob"; //"blob"	    Blob
-    QuickEngine.ResponseType_Document = "document"; //"document"	Document
-    QuickEngine.ResponseType_Json = "json"; //"json"	    JavaScript 对象，解析自服务器传递回来的JSON 字符串。
-    QuickEngine.ResponseType_Text = "text"; //"text"	    字符串
-    let DownloadHelper;
-    (function (DownloadHelper) {
-        const MaxDownloadCount = 4;
-        let _downloadQueue = [];
-        let _taskCount = 0;
-        function download(task) {
-            _downloadQueue.push(task);
-            _download();
-        }
-        DownloadHelper.download = download;
-        function _download() {
-            if (_taskCount >= MaxDownloadCount || _downloadQueue.length == 0) {
-                return;
-            }
-            _taskCount++;
-            let task = _downloadQueue.pop();
-            let request = new XMLHttpRequest();
-            request.responseType = !!!task.responseType ? QuickEngine.ResponseType_Default : task.responseType;
-            request.open('GET', task.url, true);
-            request.onload = function (event) {
-                let response = request.response;
-                if (request.status === 200 || request.status === 0) {
-                    if (task.callback && task.callback.onSuccess) {
-                        task.callback.onSuccess(response);
-                    }
-                }
-                else {
-                    if (task.callback && task.callback.onFail) {
-                        task.callback.onFail(request.status, request.statusText);
-                    }
-                }
-                _taskCount--;
-                _download();
-                task = undefined;
-            };
-            request.onerror = function () {
-                if (task.callback && task.callback.onFail) {
-                    task.callback.onFail(request.status, request.statusText);
-                }
-                _taskCount--;
-                _download();
-                task = undefined;
-            };
-        }
-    })(DownloadHelper = QuickEngine.DownloadHelper || (QuickEngine.DownloadHelper = {}));
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    // 复用的单位矩阵
-    const identifyMatrixArray = [
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1,
-    ];
-    /**
-     * 学习资料:
-     * http://www.euclideanspace.com/maths/algebra/matrix/
-     * https://www.geometrictools.com/GTEngine/Include/Mathematics/GteMatrix4x4.h
-     * 线性代数课本
-     * 矩阵是列向量矩阵
-     | 0 2 |     | 0 3 6 |       | 0 4 8  12 |      | 00 01 02 03 |
-     | 1 3 |     | 1 4 7 |       | 1 5 9  13 |      | 10 11 12 13 |
-     | 2 5 8 |       | 2 6 10 14 |      | 20 21 22 23 |
-     | 3 7 11 15 |      | 30 31 32 33 |
-     */
-    /**
-     * TODO: 矩阵数据使用array buffer, 数组计算更缓存友好
-     */
-    class Matrix4 {
-        constructor() {
-            this._00 = 1;
-            this._10 = 0;
-            this._20 = 0;
-            this._30 = 0;
-            this._01 = 0;
-            this._11 = 1;
-            this._21 = 0;
-            this._31 = 0;
-            this._02 = 0;
-            this._12 = 0;
-            this._22 = 1;
-            this._32 = 0;
-            this._03 = 0;
-            this._13 = 0;
-            this._23 = 0;
-            this._33 = 1;
-            this._rawData = new Float32Array(16);
-        }
-        static create(_00, _01, _02, _03, _10, _11, _12, _13, _20, _21, _22, _23, _30, _31, _32, _33) {
-            let matrix = new Matrix4();
-            matrix._00 = _00, matrix._01 = _01, matrix._02 = _02, matrix._03 = _03;
-            matrix._10 = _10, matrix._11 = _11, matrix._12 = _12, matrix._13 = _13;
-            matrix._20 = _20, matrix._21 = _21, matrix._22 = _22, matrix._23 = _23;
-            matrix._30 = _30, matrix._31 = _31, matrix._32 = _32, matrix._33 = _33;
-            return matrix;
-        }
-        set(_00, _01, _02, _03, _10, _11, _12, _13, _20, _21, _22, _23, _30, _31, _32, _33) {
-            this._00 = _00, this._01 = _01, this._02 = _02, this._03 = _03;
-            this._10 = _10, this._11 = _11, this._12 = _12, this._13 = _13;
-            this._20 = _20, this._21 = _21, this._22 = _22, this._23 = _23;
-            this._30 = _30, this._31 = _31, this._32 = _32, this._33 = _33;
-            return this;
-        }
-        copyFrom(other) {
-            this._00 = other._00, this._01 = other._01, this._02 = other._02, this._03 = other._03;
-            this._10 = other._10, this._11 = other._11, this._12 = other._12, this._13 = other._13;
-            this._20 = other._20, this._21 = other._21, this._22 = other._22, this._23 = other._23;
-            this._30 = other._30, this._31 = other._31, this._32 = other._32, this._33 = other._33;
-            return this;
-        }
-        clone() {
-            let matrix = new Matrix4();
-            matrix._00 = this._00, matrix._01 = this._01, matrix._02 = this._02, matrix._03 = this._03;
-            matrix._10 = this._10, matrix._11 = this._11, matrix._12 = this._12, matrix._13 = this._13;
-            matrix._20 = this._20, matrix._21 = this._21, matrix._22 = this._22, matrix._23 = this._23;
-            matrix._30 = this._30, matrix._31 = this._31, matrix._32 = this._32, matrix._33 = this._33;
-            return matrix;
-        }
-        /**
-         * 矩阵相乘
-         a00 a01 a02 a03     b00 b01 b02 b03     a00*b00+a01*b10+a02*b20+a03*b30 a00*b01+a01*b11+a02*b21+a03*b31 a00*b02+a01*b12+a02*b22+a03*b32 a00*b03+a01*b13+a02*b23+a03*b33
-         a10 a11 a12 a13  *  b10 b11 b12 b13  =  a10*b00+a11*b10+a12*b20+a13*b30 a10*b01+a11*b11+a12*b21+a13*b31 a10*b02+a11*b12+a12*b22+a13*b32 a10*b03+a11*b13+a12*b23+a13*b33
-         a20 a21 a22 a23     b20 b21 b22 b23     a20*b00+a21*b10+a22*b20+a23*b30 a20*b01+a21*b11+a22*b21+a23*b31 a20*b02+a21*b12+a22*b22+a23*b32 a20*b03+a21*b13+a22*b23+a23*b33
-         a30 a31 a32 a33     b30 b31 b32 b33     a30*b00+a31*b10+a32*b20+a33*b30 a30*b01+a31*b11+a32*b21+a33*b31 a30*b02+a31*b12+a32*b22+a33*b32 a30*b03+a31*b13+a32*b23+a33*b33
-         */
-        multiply(v, out) {
-            if (!out) {
-                out = new Matrix4();
-            }
-            let a00 = this._00, a01 = this._01, a02 = this._02, a03 = this._03;
-            let a10 = this._10, a11 = this._11, a12 = this._12, a13 = this._13;
-            let a20 = this._20, a21 = this._21, a22 = this._22, a23 = this._23;
-            let a30 = this._30, a31 = this._31, a32 = this._32, a33 = this._33;
-            let b00 = v._00, b01 = v._01, b02 = v._02, b03 = v._03;
-            let b10 = v._10, b11 = v._11, b12 = v._12, b13 = v._13;
-            let b20 = v._20, b21 = v._21, b22 = v._22, b23 = v._23;
-            let b30 = v._30, b31 = v._31, b32 = v._32, b33 = v._33;
-            // #1
-            out._00 = a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30;
-            out._01 = a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31;
-            out._02 = a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32;
-            out._03 = a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33;
-            // #2
-            out._10 = a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30;
-            out._11 = a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31;
-            out._12 = a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32;
-            out._13 = a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33;
-            // #3
-            out._20 = a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30;
-            out._21 = a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31;
-            out._22 = a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32;
-            out._23 = a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33;
-            // #4
-            out._30 = a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30;
-            out._31 = a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31;
-            out._32 = a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32;
-            out._33 = a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33;
-            return out;
-        }
-        static multiply(v1, v2, out) {
-            if (!out) {
-                out = new Matrix4();
-            }
-            let a00 = v1._00, a01 = v1._01, a02 = v1._02, a03 = v1._03;
-            let a10 = v1._10, a11 = v1._11, a12 = v1._12, a13 = v1._13;
-            let a20 = v1._20, a21 = v1._21, a22 = v1._22, a23 = v1._23;
-            let a30 = v1._30, a31 = v1._31, a32 = v1._32, a33 = v1._33;
-            let b00 = v2._00, b01 = v2._01, b02 = v2._02, b03 = v2._03;
-            let b10 = v2._10, b11 = v2._11, b12 = v2._12, b13 = v2._13;
-            let b20 = v2._20, b21 = v2._21, b22 = v2._22, b23 = v2._23;
-            let b30 = v2._30, b31 = v2._31, b32 = v2._32, b33 = v2._33;
-            // #1
-            out._00 = a00 * b00 + a01 * b10 + a02 * b20 + a03 * b30;
-            out._01 = a00 * b01 + a01 * b11 + a02 * b21 + a03 * b31;
-            out._02 = a00 * b02 + a01 * b12 + a02 * b22 + a03 * b32;
-            out._03 = a00 * b03 + a01 * b13 + a02 * b23 + a03 * b33;
-            // #2
-            out._10 = a10 * b00 + a11 * b10 + a12 * b20 + a13 * b30;
-            out._11 = a10 * b01 + a11 * b11 + a12 * b21 + a13 * b31;
-            out._12 = a10 * b02 + a11 * b12 + a12 * b22 + a13 * b32;
-            out._13 = a10 * b03 + a11 * b13 + a12 * b23 + a13 * b33;
-            // #3
-            out._20 = a20 * b00 + a21 * b10 + a22 * b20 + a23 * b30;
-            out._21 = a20 * b01 + a21 * b11 + a22 * b21 + a23 * b31;
-            out._22 = a20 * b02 + a21 * b12 + a22 * b22 + a23 * b32;
-            out._23 = a20 * b03 + a21 * b13 + a22 * b23 + a23 * b33;
-            // #4
-            out._30 = a30 * b00 + a31 * b10 + a32 * b20 + a33 * b30;
-            out._31 = a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31;
-            out._32 = a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32;
-            out._33 = a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33;
-            return out;
-        }
-        /**
-         * 矩阵向量相乘, 列向量应该右乘矩阵
-         * @param vec
-         a00 a01 a02 a03    x
-         a10 a11 a12 a13 *  y
-         a20 a21 a22 a23    z
-         a30 a31 a32 a33    w=0
-         */
-        transformVector3(v) {
-            let x = v.x;
-            let y = v.y;
-            let z = v.z;
-            let x1 = this._00 * x + this._10 * y + this._20 * z;
-            let y1 = this._01 * x + this._11 * y + this._21 * z;
-            let z1 = this._02 * x + this._12 * y + this._22 * z;
-            return new QuickEngine.Vector3(x1, y1, z1);
-        }
-        /**
-         * 单位矩阵
-         */
-        identity() {
-            this._00 = 1, this._01 = 0, this._02 = 0, this._03 = 0;
-            this._10 = 0, this._11 = 1, this._12 = 0, this._20 = 0;
-            this._20 = 0, this._21 = 0, this._22 = 1, this._23 = 0;
-            this._30 = 0, this._31 = 0, this._32 = 0, this._33 = 1;
-            return this;
-        }
-        static identity() {
-            return new Matrix4();
-        }
-        /**
-         * 矩阵求逆
-         */
-        inverse() {
-            let m00 = this._00, m01 = this._01, m02 = this._02, m03 = this._03;
-            let m10 = this._10, m11 = this._11, m12 = this._12, m13 = this._13;
-            let m20 = this._20, m21 = this._21, m22 = this._22, m23 = this._23;
-            let m30 = this._30, m31 = this._31, m32 = this._32, m33 = this._33;
-            let v0 = m20 * m31 - m21 * m30;
-            let v1 = m20 * m32 - m22 * m30;
-            let v2 = m20 * m33 - m23 * m30;
-            let v3 = m21 * m32 - m22 * m31;
-            let v4 = m21 * m33 - m23 * m31;
-            let v5 = m22 * m33 - m23 * m32;
-            let t00 = +(v5 * m11 - v4 * m12 + v3 * m13);
-            let t10 = -(v5 * m10 - v2 * m12 + v1 * m13);
-            let t20 = +(v4 * m10 - v2 * m11 + v0 * m13);
-            let t30 = -(v3 * m10 - v1 * m11 + v0 * m12);
-            let invDet = 1 / (t00 * m00 + t10 * m01 + t20 * m02 + t30 * m03);
-            let d00 = t00 * invDet;
-            let d10 = t10 * invDet;
-            let d20 = t20 * invDet;
-            let d30 = t30 * invDet;
-            let d01 = -(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d11 = +(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d21 = -(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d31 = +(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
-            v0 = m10 * m31 - m11 * m30;
-            v1 = m10 * m32 - m12 * m30;
-            v2 = m10 * m33 - m13 * m30;
-            v3 = m11 * m32 - m12 * m31;
-            v4 = m11 * m33 - m13 * m31;
-            v5 = m12 * m33 - m13 * m32;
-            let d02 = +(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d12 = -(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d22 = +(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d32 = -(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
-            v0 = m21 * m10 - m20 * m11;
-            v1 = m22 * m10 - m20 * m12;
-            v2 = m23 * m10 - m20 * m13;
-            v3 = m22 * m11 - m21 * m12;
-            v4 = m23 * m11 - m21 * m13;
-            v5 = m23 * m12 - m22 * m13;
-            let d03 = -(v5 * m01 - v4 * m02 + v3 * m03) * invDet;
-            let d13 = +(v5 * m00 - v2 * m02 + v1 * m03) * invDet;
-            let d23 = -(v4 * m00 - v2 * m01 + v0 * m03) * invDet;
-            let d33 = +(v3 * m00 - v1 * m01 + v0 * m02) * invDet;
-            return Matrix4.create(d00, d01, d02, d03, d10, d11, d12, d13, d20, d21, d22, d23, d30, d31, d32, d33);
-        }
-        /**
-         * 矩阵转置
-         每一列变成每一行
-         | a b |  T   | a c |
-         | c d | ===> | b d |
-         */
-        transpose() {
-            let newMat = new Matrix4();
-            newMat._00 = this._00, newMat._01 = this._10, newMat._02 = this._20, newMat._03 = this._30;
-            newMat._10 = this._01, newMat._11 = this._11, newMat._12 = this._21, newMat._20 = this._31;
-            newMat._20 = this._02, newMat._21 = this._12, newMat._22 = this._22, newMat._23 = this._32;
-            newMat._30 = this._03, newMat._31 = this._13, newMat._32 = this._23, newMat._33 = this._33;
-            return newMat;
-        }
-        static transpose(target) {
-            let a00 = target._00, a01 = target._01, a02 = target._02, a03 = target._03;
-            let a10 = target._10, a11 = target._11, a12 = target._12, a13 = target._13;
-            let a20 = target._20, a21 = target._21, a22 = target._22, a23 = target._23;
-            let a30 = target._30, a31 = target._31, a32 = target._32, a33 = target._33;
-            target._00 = a00, target._01 = a10, target._02 = a20, target._03 = a30;
-            target._10 = a01, target._11 = a11, target._12 = a21, target._20 = a31;
-            target._20 = a02, target._21 = a12, target._22 = a22, target._23 = a32;
-            target._30 = a03, target._31 = a13, target._32 = a23, target._33 = a33;
-            return target;
-        }
-        isAffine() {
-            return this._30 === 0 && this._31 === 0 && this._32 === 0 && this._33 === 1;
-        }
-        /**
-         * 绕任意轴旋转
-         */
-        rotateByAxis(angle, axis) {
-            let x = axis.x, y = axis.y, z = axis.z;
-            let ca = Math.cos(angle), sa = Math.sin(angle), c1 = 1 - ca;
-            let x2 = x * x, y2 = y * y, z2 = z * z;
-            let xz = x * z, xy = x * y, yz = y * z;
-            let xs = x * sa, ys = y * sa, zs = z * sa;
-            this._00 = x2 * c1 + ca;
-            this._01 = xy * c1 + zs;
-            this._02 = xz * c1 - ys;
-            this._03 = 0;
-            this._10 = xy * c1 - zs;
-            this._11 = y2 * c1 + ca;
-            this._12 = yz * c1 + xs;
-            this._13 = 0;
-            this._20 = xz * c1 + ys;
-            this._21 = yz * c1 - xs;
-            this._22 = z2 * c1 + ca;
-            this._23 = 0;
-            this._30 = 0;
-            this._31 = 0;
-            this._32 = 0;
-            this._33 = 1;
-            return this;
-        }
-        rotateByScalar(x, y, z) {
-            let yaw = y, pitch = x, roll = z;
-            let sinx = Math.sin(pitch);
-            let cosx = Math.cos(pitch);
-            let siny = Math.sin(yaw);
-            let cosy = Math.cos(yaw);
-            let sinz = Math.sin(roll);
-            let cosz = Math.cos(roll);
-            this._00 = cosy * cosz + siny * sinx * sinz;
-            this._01 = sinz * cosx;
-            this._02 = -siny * sinz + cosy * sinx * sinz;
-            this._03 = 0;
-            this._10 = -cosy * sinz + siny * sinx * cosz;
-            this._11 = cosz * cosx;
-            this._12 = sinz * siny + cosy * sinx * cosz;
-            this._13 = 0;
-            this._20 = siny * cosx;
-            this._21 = -sinx;
-            this._22 = cosy * cosx;
-            this._23 = 0;
-            this._30 = 0;
-            this._31 = 0;
-            this._32 = 0;
-            this._33 = 1;
-            return this;
-        }
-        /**
-         * 矩阵分解, 可分解为position,scale,quaternion
-         */
-        decompose() {
-            let position, scale, orientation;
-            console.assert(this.isAffine());
-        }
-        // openGL是列向量矩阵
-        toArrayBuffer() {
-            if (QuickEngine.__USE_COLUMN_MATRIX__) {
-                this._rawData.set([
-                    this._00, this._01, this._02, this._03,
-                    this._10, this._11, this._12, this._13,
-                    this._20, this._21, this._22, this._23,
-                    this._30, this._31, this._32, this._33
-                ]);
-            }
-            else {
-                this._rawData.set([
-                    this._00, this._10, this._20, this._30,
-                    this._01, this._11, this._21, this._31,
-                    this._02, this._12, this._22, this._32,
-                    this._03, this._13, this._23, this._33
-                ]);
-            }
-            return this._rawData;
-        }
-        /**
-         *
-         a00 a01 a02 a03    x
-         a10 a11 a12 a13 *  y
-         a20 a21 a22 a23    z
-         a30 a31 a32 a33    w=0
-         * @param position
-         * @param rotation
-         * @param scale
-         * @param out
-         */
-        static makeTransform(position, rotation, scale, out) {
-            if (!out) {
-                out = new Matrix4();
-            }
-            // Ordering:
-            //    1. Scale
-            //    2. Rotate
-            //    3. Translate
-            // 右乘
-            // M = Mt * Mr * Ms
-            let rot4x4 = rotation.ToRotationMatrix();
-            out._00 = rot4x4._00 * scale.x;
-            out._01 = rot4x4._01 * scale.y;
-            out._02 = rot4x4._02 * scale.z;
-            out._03 = 0;
-            out._10 = rot4x4._10 * scale.x;
-            out._11 = rot4x4._11 * scale.y;
-            out._12 = rot4x4._12 * scale.z;
-            out._13 = 0;
-            out._20 = rot4x4._20 * scale.x;
-            out._21 = rot4x4._21 * scale.y;
-            out._22 = rot4x4._22 * scale.z;
-            out._23 = 0;
-            out._30 = position.x;
-            out._31 = position.y;
-            out._32 = position.z;
-            out._33 = 1;
-            return out;
-        }
-        /**
-         * 构造平移矩阵
-         * @param v
-         * @param out
-         * @example
-         *          |1, 0, 0, x|
-         *          |0, 1, 0, y|
-         *          |0, 0, 1, z|
-         *          |0, 0, 0, 1|
-         */
-        static makeTranslate(v) {
-            let out = new Matrix4();
-            out._03 = v.x;
-            out._13 = v.y;
-            out._23 = v.z;
-            return out;
-        }
-        /**
-         * 根据x，y，z标量构造平移矩阵
-         * @param t_x
-         * @param t_y
-         * @param t_z
-         * @param out
-         */
-        static makeTranslateByScalar(t_x, t_y, t_z) {
-            let out = new Matrix4();
-            out._03 = t_x;
-            out._13 = t_y;
-            out._23 = t_z;
-            return out;
-        }
-        /**
-         * 构造缩放矩阵
-         * @param s_x
-         * @param s_y
-         * @param s_z
-         * @param out 如果传入out，则不创建新的matrix，返回out
-         * @example
-         *          |sx, 0 , 0 , 0|
-         *          |0 , sy, 0 , 0|
-         *          |0 , 0 , sz, 0|
-         *          |0 , 0 , 0 , 1|
-         */
-        static makeScale(s_x, s_y, s_z) {
-            let out = new Matrix4();
-            out._00 = s_x;
-            out._11 = s_y;
-            out._22 = s_z;
-            return out;
-        }
-        /**
-         * 根据标量, 绕任意轴旋转构造旋转矩阵
-         * @param a
-         * @param x
-         * @param y
-         * @param z
-         * @param out
-         */
-        static makeRotation(a, x, y, z) {
-            let out = new Matrix4();
-            let ca = Math.cos(a), sa = Math.sin(a), c1 = 1 - ca;
-            let x2 = x * x, y2 = y * y, z2 = z * z;
-            let xz = x * z, xy = x * y, yz = y * z;
-            let xs = x * sa, ys = y * sa, zs = z * sa;
-            out._00 = x2 * c1 + ca;
-            out._01 = xy * c1 + zs;
-            out._02 = xz * c1 - ys;
-            out._10 = xy * c1 - zs;
-            out._11 = y2 * c1 + ca;
-            out._12 = yz * c1 + xs;
-            out._20 = xz * c1 + ys;
-            out._21 = yz * c1 - xs;
-            out._22 = z2 * c1 + ca;
-            return out;
-        }
-        /**
-         * 根据向量，绕任意轴构造旋转矩阵
-         * @param angle
-         * @param axis
-         */
-        static makeRotationByAxis(angle, axis) {
-            let out = new Matrix4();
-            out.rotateByAxis(angle, axis);
-            return out;
-        }
-        static makeRotationEulerAngle(eulerAngle) {
-            let yaw = eulerAngle.y, pitch = eulerAngle.x, roll = eulerAngle.z;
-            let out = new Matrix4();
-            out.rotateByScalar(yaw, pitch, roll);
-            return out;
-        }
-        static makeRotationQuaternion(q, out) {
-            let w = q.w, x = q.x, y = q.y, z = q.z;
-            if (!out) {
-                out = new Matrix4();
-            }
-            else {
-                out.identity();
-            }
-            let _2xx = 2.0 * x * x;
-            let _2yy = 2.0 * y * y;
-            let _2zz = 2.0 * z * z;
-            let _2xy = 2.0 * x * y;
-            let _2xz = 2.0 * x * z;
-            let _2yz = 2.0 * y * z;
-            let _2wx = 2.0 * w * x;
-            let _2wy = 2.0 * w * y;
-            let _2wz = 2.0 * w * z;
-            out._11 = 1.0 - _2yy - _2zz;
-            out._12 = _2xy + _2wz;
-            out._13 = _2xz - _2wy;
-            out._21 = _2xy - _2wz;
-            out._22 = 1.0 - _2xx - _2zz;
-            out._23 = _2yz + _2wx;
-            out._31 = _2xz + _2wy;
-            out._32 = _2yz - _2wx;
-            out._33 = 1.0 - _2xx - _2yy;
-            return out;
-        }
-        /**
-         * 绕X轴旋转，也叫做俯仰角
-         * @param a
-         * @param out
-         */
-        static pitch(a, out) {
-            if (!out) {
-                out = new Matrix4();
-            }
-            let ca = Math.cos(a);
-            let sa = Math.sin(a);
-            out._11 = ca;
-            out._12 = sa;
-            out._21 = -sa;
-            out._22 = ca;
-            return out;
-        }
-        /**
-         * 绕Y轴旋转，也叫偏航角
-         */
-        static yaw(a, out) {
-            if (!out) {
-                out = new Matrix4();
-            }
-            let ca = Math.cos(a);
-            let sa = Math.sin(a);
-            out._00 = ca;
-            out._02 = -sa;
-            out._20 = sa;
-            out._22 = ca;
-            return out;
-        }
-        /**
-         * 绕Z轴旋转，也叫翻滚角
-         */
-        static roll(a, out) {
-            if (!out) {
-                out = new Matrix4();
-            }
-            let ca = Math.cos(a);
-            let sa = Math.sin(a);
-            out._00 = ca;
-            out._01 = sa;
-            out._10 = -sa;
-            out._11 = ca;
-            return out;
-        }
-        /**
-         * 生成左手视图矩阵
-         * @param position
-         * @param orientation
-         * @param reflectMatrix
-         * @param viewMatrix
-         */
-        static makeViewMatrixLH(position, orientation, reflectMatrix, viewMatrix) {
-            if (!viewMatrix) {
-                viewMatrix = new Matrix4();
-            }
-            // View matrix is:
-            //
-            //  [ Lx  Uy  Dz  Tx  ]
-            //  [ Lx  Uy  Dz  Ty  ]
-            //  [ Lx  Uy  Dz  Tz  ]
-            //  [ 0   0   0   1   ]
-            //
-            // Where T = -(Transposed(Rot) * Pos)
-            return viewMatrix;
-        }
-        /**
-         * 构造左手正交视图矩阵
-         * 生成正交投影矩阵 矩阵推导可以参考 http://www.codeguru.com/cpp/misc/misc/graphics/article.php/c10123/Deriving-Projection-Matrices.htm
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         * @example
-         * |2 / (right - left), 0,                  0,                -(right + left) / (right - left) |
-         * |0,                  2 / (top - bottom), 0,                -(top + bottom) / (top - bottom) |
-         * |0,                  0,                  2 / (far - near), -(far + near) / (far - near)     |
-         * |0,                  0,                  0,                1                                |
-         */
-        static makeOrthoLH(left, right, top, bottom, near, far, target) {
-            target = target ? target.identity() : new Matrix4();
-            let w = right - left;
-            let h = top - bottom;
-            let d = far - near;
-            let x = (right + left) / w;
-            let y = (top + bottom) / h;
-            let z = (far + near) / d;
-            target._00 = 2 / w;
-            target._11 = 2 / h;
-            target._22 = -2 / d;
-            target._30 = -x;
-            target._31 = -y;
-            target._32 = -z;
-            return target;
-        }
-        /**
-         * TODO:
-         * @param w
-         * @param h
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makeOrthoFovLH(w, h, near, far, target) {
-            if (!target) {
-                target = new Matrix4();
-            }
-            else {
-                target.identity();
-            }
-            let inv = 1.0 / (far - near);
-            target._00 = 2.0 / w;
-            target._11 = 2.0 / h;
-            target._22 = inv;
-            //  target._23 = -near * inv;
-            target._33 = 1.0;
-            return target;
-        }
-        /**
-         * 生成正交视图矩阵
-         * @param w
-         * @param h
-         * @param zn
-         * @param zf
-         * @param target
-         */
-        static makeOrthoRH(left, right, top, bottom, near, far, target) {
-            if (!target) {
-                target = new Matrix4();
-            }
-            else {
-                target.identity();
-            }
-            let inv_d = 1 / (far - near);
-            let w = right - left;
-            let h = top - bottom;
-            let d = far - near;
-            let x = (right + left) / w;
-            let y = (top + bottom) / h;
-            let z = (far + near) / d;
-            target._00 = 2 / w;
-            target._03 = -x;
-            target._11 = 2 / h;
-            target._13 = -y;
-            target._22 = -2 / d;
-            target._23 = -z;
-            return target;
-        }
-        /**
-         * 构造左手投影矩阵
-         * @param left
-         * @param right
-         * @param top
-         * @param bottom
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveLH(left, right, top, bottom, near, far, target) {
-            if (!target) {
-                target = new Matrix4();
-            }
-            else {
-                target.identity();
-            }
-            let inv_w = 1 / (right - left);
-            let inv_h = 1 / (top - bottom);
-            let inv_d = 1 / (far - near);
-            let A = 2 * near * inv_w;
-            let B = 2 * near * inv_h;
-            let C = (right + left) * inv_w;
-            let D = (top + bottom) * inv_h;
-            let q, qn;
-            if (far == 0) {
-                // Infinite far plane
-                q = 0.00001 - 1;
-                qn = near * (0.00001 - 2);
-            }
-            else {
-                q = far * inv_d;
-                qn = -(far * near) * inv_d;
-            }
-            target._00 = A;
-            target._02 = C;
-            target._11 = B;
-            target._12 = D;
-            target._22 = q;
-            target._23 = qn;
-            target._32 = 1;
-            target._33 = 0;
-            return target;
-        }
-        /**
-         * 根据fov构造左手透视投影矩阵
-         * @param fov
-         * @param aspect
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveFovLH(fov, aspect, near, far, target) {
-            let ymax = far * Math.tan(fov * Math.PI / 360);
-            let ymin = -ymax;
-            let xmin = ymin * aspect;
-            let xmax = ymax * aspect;
-            return Matrix4.makePerspectiveLH(xmin, xmax, ymax, ymin, near, far, target);
-        }
-        /**
-         * 构造右手投影矩阵
-         * @param left
-         * @param right
-         * @param top
-         * @param bottom
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveRH(left, right, top, bottom, near, far, target) {
-            if (!target) {
-                target = new Matrix4();
-            }
-            else {
-                target.identity();
-            }
-            let inv_w = 1 / (right - left);
-            let inv_h = 1 / (top - bottom);
-            let inv_d = 1 / (far - near);
-            let A = 2 * near * inv_w;
-            let B = 2 * near * inv_h;
-            let C = (right + left) * inv_w;
-            let D = (top + bottom) * inv_h;
-            let q, qn;
-            if (far == 0) {
-                // Infinite far plane
-                q = Number.EPSILON - 1;
-                qn = near * (Number.EPSILON - 2);
-            }
-            else {
-                q = -(far + near) * inv_d;
-                qn = -2 * (far * near) * inv_d;
-            }
-            target._00 = A;
-            target._02 = C;
-            target._11 = B;
-            target._12 = D;
-            target._22 = q;
-            target._23 = qn;
-            target._32 = -1;
-            target._33 = 0;
-            return target;
-        }
-        /**
-         * 根据fov构造右手透视投影矩阵
-         * @param fov
-         * @param aspect
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveFovRH(fov, aspect, near, far, target) {
-            let ymax = near * Math.tan(fov * Math.PI / 360);
-            let ymin = -ymax;
-            let xmin = ymin * aspect;
-            let xmax = ymax * aspect;
-            return Matrix4.makePerspectiveRH(xmin, xmax, ymax, ymin, near, far, target);
-        }
-    }
-    Matrix4.ClassName = 'Matrix4';
-    QuickEngine.Matrix4 = Matrix4;
-})(QuickEngine || (QuickEngine = {}));
-var QuickEngine;
-(function (QuickEngine) {
-    const s_epsilon = 1e-03;
-    /**
-     * 四元数 [w, x, y, z]
-     * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
-     */
-    class Quaternion {
-        constructor(w = 1, x = 0, y = 0, z = 0) {
-            this.w = w;
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-        copyFrom(q) {
-            this.w = q.w;
-            this.x = q.x;
-            this.y = q.y;
-            this.z = q.z;
-            return this;
-        }
-        clone() {
-            return new Quaternion(this.w, this.x, this.y, this.z);
-        }
-        //----------------------------------基本计算-------------------------------------
-        /**
-         * 加法
-         * @param q
-         */
-        add(q) {
-            return new Quaternion(this.w + q.w, this.x + q.x, this.y + q.y, this.z + q.z);
-        }
-        /**
-         * 减法
-         * @param q
-         */
-        minus(q) {
-            return new Quaternion(this.w - q.w, this.x - q.x, this.y - q.y, this.z - q.z);
-        }
-        /**
-         * 点乘
-         * @param q
-         */
-        dot(q) {
-            return this.w * q.w + this.x * q.x + this.y * q.y + this.z * q.z;
-        }
-        /**
-         * 叉乘
-         * @param q
-         */
-        multiply(q) {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            return new Quaternion(w * q.w - x * q.x - y * q.y - z * q.z, w * q.x + x * q.w + z * q.y - y * q.z, w * q.y + y * q.w + x * q.z - z * q.x, w * q.z + z * q.w + y * q.x - x * q.y);
-        }
-        /**
-         * 乘以一个标量
-         * @param s
-         */
-        multiplyScalar(s) {
-            return new Quaternion(this.w * s, this.x * s, this.y * s, this.z * s);
-        }
-        static multiplyScalar(s, q) {
-            return new Quaternion(q.w * s, q.x * s, q.y * s, q.z * s);
-        }
-        multiplyVector(vector) {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let x2 = vector.x;
-            let y2 = vector.y;
-            let z2 = vector.z;
-            return new Quaternion(-x * x2 - y * y2 - z * z2, w * x2 + y * z2 - z * y2, w * y2 - x * z2 + z * x2, w * z2 + x * y2 - y * x2);
-        }
-        rotateVector3(v) {
-            let qvec = new QuickEngine.Vector3(this.x, this.y, this.z);
-            let uv = qvec.cross(v);
-            let uuv = qvec.cross(uv);
-            uv = uv.multiplyScalar(2.0 * this.w);
-            uuv = uuv.multiplyScalar(2.0);
-            return new QuickEngine.Vector3(v.x + uv.x + uuv.x, v.y + uv.y + uuv.y, v.z + uv.z + uuv.z);
-            //let out = new Vector3();
-            //let src = this;
-            //let vector = v;
-            //let x1: number, y1: number, z1: number, w1: number;
-            //let x2: number = vector.x, y2: number = vector.y, z2: number = vector.z;
-            //w1 = -src.x * x2 - src.y * y2 - src.z * z2;
-            //x1 = src.w * x2 + src.y * z2 - src.z * y2;
-            //y1 = src.w * y2 - src.x * z2 + src.z * x2;
-            //z1 = src.w * z2 + src.x * y2 - src.y * x2;
-            //out.x = -w1 * src.x + x1 * src.w - y1 * src.z + z1 * src.y;
-            //out.y = -w1 * src.y + x1 * src.z + y1 * src.w - z1 * src.x;
-            //out.z = -w1 * src.z - x1 * src.y + y1 * src.x + z1 * src.w;
-            //  return out;
-        }
-        /**
-         * 对数. 公式: log(q) = [0, αN], N 为单位向量
-         */
-        log() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
-            // w = cos(θ / 2)
-            if (Math.abs(w) < 1.0) {
-                let angle = Math.acos(w);
-                let sina = Math.sin(angle);
-                if (Math.abs(sina) >= s_epsilon) {
-                    let fCoeff = angle / sina;
-                    rx = fCoeff * x;
-                    ry = fCoeff * y;
-                    rz = fCoeff * z;
-                }
-            }
-            return new Quaternion(rw, rx, ry, rz);
-        }
-        /**
-         * 指数. 公式: exp(p) = [cos() ]
-         */
-        exp() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
-            let fAngle = Math.sqrt(x * x + y * y + z * z);
-            let fSin = Math.sin(fAngle);
-            rw = Math.cos(fAngle);
-            if (Math.abs(fSin) >= s_epsilon) {
-                let fCoeff = fSin / (fAngle);
-                rx = fCoeff * x;
-                ry = fCoeff * y;
-                rz = fCoeff * z;
-            }
-            else {
-                rx = x;
-                ry = y;
-                rz = z;
-            }
-            return new Quaternion(rw, rx, ry, rz);
-        }
-        /**
-         * 共轭四元数, 四元数逆q-1 = 它的共轭除以模长
-         */
-        conjugate() {
-            return new Quaternion(this.w, -this.x, -this.y, -this.z);
-        }
-        /**
-         * 四元数的逆
-         */
-        inverse() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let mag = w * w + x * x + y * y + z * z;
-            if (mag > 0.0) {
-                let invMag = 1.0 / mag;
-                return new Quaternion(w * invMag, -x * invMag, -y * invMag, -z * invMag);
-            }
-            else {
-                return new Quaternion(0, 0, 0, 0);
-            }
-        }
-        /**
-         * 单位四元数求逆, 必须是单位四元数才能调用此方法
-         */
-        unitInverse() {
-            return new Quaternion(this.w, -this.x, -this.y, -this.z);
-        }
-        /**
-         * 模长
-         */
-        get magnitude() {
-            return this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
-        }
-        /**
-         * 模长平方
-         */
-        get sqrMagnitude() {
-            return Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
-        }
-        /**
-         * 正则化
-         */
-        normalize() {
-            // 模长
-            let len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
-            console.assert(len != 0);
-            let invLen = 1.0 / len;
-            this.x *= invLen;
-            this.y *= invLen;
-            this.z *= invLen;
-            this.w *= invLen;
-            return this;
-        }
-        /**
-         * 比较两个四元素是否相等
-         * @param other
-         */
-        equal(q) {
-            return this.x == q.x && this.y == q.y && this.z == q.z && this.w == q.w;
-        }
-        //----------------------------------插值操作-------------------------------------
-        /**
-         * 线性插值(Linear Interpolation)
-         * @param lhs
-         * @param rhs
-         * @param t
-         */
-        lerp(lhs, rhs, t) {
-            let w0 = lhs.w, x0 = lhs.x, y0 = lhs.y, z0 = lhs.z;
-            let w1 = rhs.w, x1 = rhs.x, y1 = rhs.y, z1 = rhs.z;
-            // 两四元数点乘
-            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
-            // 点乘为负, 反转四元数以取得短弧
-            if (cosOmega < 0) {
-                w1 = -w1;
-                x1 = -x1;
-                y1 = -y1;
-                z1 = -z1;
-            }
-            let w = w0 + t * (w1 - w0);
-            let x = x0 + t * (x1 - x0);
-            let y = y0 + t * (y1 - y0);
-            let z = z0 + t * (z1 - z0);
-            let invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
-            this.w = w * invLen;
-            this.x = x * invLen;
-            this.y = y * invLen;
-            this.z = z * invLen;
-            return this;
-        }
-        /**
-         * 球面线性插值(Spherical Linear Interpolation)
-         * @param lhs
-         * @param rhs
-         * @param t
-         */
-        slerp(lhs, rhs, t) {
-            let w0, x0, y0, z0;
-            let w1, x1, y1, z1;
-            // 两四元数点乘
-            let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
-            // 点乘为负, 反转四元数以取得短弧
-            if (cosOmega < 0) {
-                w1 = -w1;
-                x1 = -x1;
-                y1 = -y1;
-                z1 = -z1;
-                cosOmega = -cosOmega;
-            }
-            let k0 = 0, k1 = 0;
-            if (cosOmega > 1 - s_epsilon) {
-                k0 = 1 - t;
-                k1 = t;
-            }
-            else {
-                let sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
-                let omega = Math.atan2(sinOmega, cosOmega);
-                let invSinOmega = 1 / sinOmega;
-                k0 = Math.sin((1 - t) * omega) * invSinOmega;
-                k1 = Math.sin(t * omega) * invSinOmega;
-            }
-            this.w = w0 * k0 + w1 * k1;
-            this.x = x0 * k0 + x1 * k1;
-            this.y = y0 * k0 + y1 * k1;
-            this.z = z0 * k0 + z1 * k1;
-            return this;
-        }
-        squad(q0, q1, s0, s1, t) {
-            let slerpT = 2 * t * (1 - t);
-            let slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
-            let slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
-            return this.slerp(slerpQ0, slerpQ1, slerpT);
-        }
-        //------------------------------四元数,矩阵,向量互相转换--------------------------
-        /**
-         * 通过旋转矩阵构造四元数
-         * @param rotMat
-         */
-        FromRotationMatrix(rotMat) {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            return this;
-        }
-        ToRotationMatrix(rotMat) {
-            if (!rotMat) {
-                rotMat = new QuickEngine.Matrix4();
-            }
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            let _2x = x + x, _2y = y + y, _2z = z + z;
-            let _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
-            let _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
-            let _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
-            rotMat._00 = 1.0 - (_2yy + _2zz);
-            rotMat._01 = _2xy + _2zw; /*-----*/
-            rotMat._02 = _2xz - _2yw; /*-----*/
-            rotMat._03 = 0;
-            rotMat._10 = _2xy - _2zw; /*-----*/
-            rotMat._11 = 1.0 - (_2xx + _2zz);
-            rotMat._12 = _2yz + _2xw; /*-----*/
-            rotMat._13 = 0;
-            rotMat._20 = _2xz + _2yw; /*-----*/
-            rotMat._21 = _2yz - _2xw; /*-----*/
-            rotMat._22 = 1.0 - (_2xx + _2yy);
-            rotMat._23 = 0;
-            rotMat._30 = 0; /*---------------*/
-            rotMat._31 = 0; /*---------------*/
-            rotMat._32 = 0; /*---------------*/
-            rotMat._33 = 1;
-            return rotMat;
-        }
-        /**
-         * 创建一个以axis轴为中心旋转rads弧度的四元数
-         * @param axis
-         * @param rads
-         */
-        FromAngleAxis(axis, rads) {
-            let half_rads = rads / 2.0;
-            let cosine = Math.cos(half_rads);
-            let sine = Math.sin(half_rads);
-            this.x = axis.x * sine;
-            this.y = axis.y * sine;
-            this.z = axis.z * sine;
-            this.w = cosine;
-        }
-        /**
-         * 返回四元数绕轴心和角度
-         * @param axis 旋转轴
-         * @returns 弧度
-         */
-        ToAngleAxis(axis) {
-            let rads = Math.acos(this.w);
-            let sin_theta_inv = 1.0 / Math.sin(rads);
-            axis.x = this.x * sin_theta_inv;
-            axis.y = this.y * sin_theta_inv;
-            axis.z = this.z * sin_theta_inv;
-            // acos(w) 求出的是角度的一半
-            rads *= 2;
-            return rads;
-        }
-        /**
-         * 欧拉角转四元数
-         * @param eulerAngle 欧拉角
-         * @param refQuaternion 欧拉角引用，如果不为空，将会改变传入的四元数，并返回传入的四元数
-         * @return Quaternion 四元数
-         */
-        FromEulerAngle(eulerAngle, refQuaternion) {
-            return this.FromEulerAngleScalar(eulerAngle.x, eulerAngle.y, eulerAngle.z, refQuaternion);
-        }
-        FromEulerAngleScalar(x, y, z, refQuaternion) {
-            if (!refQuaternion) {
-                refQuaternion = new Quaternion();
-            }
-            let half_x = x * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
-            let sinx = Math.sin(half_x);
-            let cosx = Math.cos(half_x);
-            let half_y = y * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
-            let siny = Math.sin(half_y);
-            let cosy = Math.cos(half_y);
-            let half_z = z * 0.5 * QuickEngine.DEGREES_TO_RADIANS;
-            let sinz = Math.sin(half_z);
-            let cosz = Math.cos(half_z);
-            refQuaternion.w = cosx * cosy * cosz + sinx * siny * sinz;
-            refQuaternion.x = sinx * cosy * cosz + cosx * siny * sinz;
-            refQuaternion.y = cosx * siny * cosz - sinx * cosy * sinz;
-            refQuaternion.z = cosx * cosy * sinz - sinx * siny * cosz;
-            return refQuaternion;
-        }
-        /**
-         * 四元数转欧拉角
-         */
-        ToEulerAngle(refEulerAngle) {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            if (!refEulerAngle) {
-                refEulerAngle = new QuickEngine.Vector3();
-            }
-            refEulerAngle.x = Math.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y));
-            let temp = 2.0 * (w * y - z * x);
-            temp = QuickEngine.MathUtil.clampf(temp, -1.0, 1.0);
-            refEulerAngle.y = Math.asin(temp);
-            refEulerAngle.z = Math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z));
-            refEulerAngle.x *= QuickEngine.RADIANS_TO_DEGREES;
-            refEulerAngle.y *= QuickEngine.RADIANS_TO_DEGREES;
-            refEulerAngle.z *= QuickEngine.RADIANS_TO_DEGREES;
-            return refEulerAngle;
-        }
-        getRightVector() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            return new QuickEngine.Vector3(1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + w * z), 2.0 * (x * z - w * y));
-        }
-        getUpVector() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            return new QuickEngine.Vector3(2.0 * (x * y - w * z), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + w * x));
-        }
-        getDirVector() {
-            let w = this.w, x = this.x, y = this.y, z = this.z;
-            return new QuickEngine.Vector3(2.0 * (w * y + x * z), 2.0 * (y * z - w * x), 1.0 - 2.0 * (x * x + y * y));
-        }
-    }
-    Quaternion.ClassName = "Quaternion";
-    Quaternion.ZERO = new Quaternion(1, 0, 0, 0);
-    Quaternion.IDENTITY = new Quaternion(1, 0, 0, 0);
-    /**
-     * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
-     */
-    Quaternion._TempQuat0 = new Quaternion();
-    Quaternion._TempQuat1 = new Quaternion();
-    QuickEngine.Quaternion = Quaternion;
 })(QuickEngine || (QuickEngine = {}));
 //# sourceMappingURL=quick.js.map

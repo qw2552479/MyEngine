@@ -2,6 +2,11 @@
   <dictionary name="qw2552479">
     <words>
       <w>aabb</w>
+      <w>ortho</w>
+      <w>proj</w>
+      <w>renderable</w>
+      <w>scriptable</w>
+      <w>skined</w>
     </words>
   </dictionary>
 </component>

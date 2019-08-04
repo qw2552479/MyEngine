@@ -31,7 +31,7 @@
             return true;
         }
 
-        public IntersectMesh(): boolean {
+        public intersectMesh(): boolean {
             return true;
         }
     }

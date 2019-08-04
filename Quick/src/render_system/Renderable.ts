@@ -30,8 +30,7 @@
 
     export abstract class Renderable extends Component {
 
-        public RenderOp: RenderOperation;
-        public CurrentShader: Shader;
+        public renderOp: RenderOperation;
 
         private _isLighting: boolean;
         private _castShadow: boolean;

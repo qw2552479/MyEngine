@@ -49,9 +49,9 @@ namespace QuickEngine {
             this._enable = val;
 
             if (val) {
-                this.enqueComponent();
+                this.enqueueComponent();
             } else {
-                this.dequeComponent();
+                this.dequeueComponent();
             }
 
         }
@@ -77,11 +77,11 @@ namespace QuickEngine {
         // 组件基本逻辑
         public static load() {
 
-            let unstartedCompArr = Component.s_unStartedcomponentArr;
+            let unStartedComponentArr = Component.s_unStartedComponentArr;
 
-            for (let i = 0, len = unstartedCompArr.length; i < len; i++) {
+            for (let i = 0, len = unStartedComponentArr.length; i < len; i++) {
 
-                let comp = unstartedCompArr[i];
+                let comp = unStartedComponentArr[i];
 
                 comp._needCallStart = false;
                 Component.s_startedComponentArr.push(comp);
@@ -91,7 +91,7 @@ namespace QuickEngine {
                 }                                
             }
 
-            Component.s_unStartedcomponentArr.length = 0;
+            Component.s_unStartedComponentArr.length = 0;
 
         }
 
@@ -146,27 +146,27 @@ namespace QuickEngine {
         }
 
         // 脚本管理
-        private static s_unStartedcomponentArr: Component[] = [];
+        private static s_unStartedComponentArr: Component[] = [];
         private static s_startedComponentArr: Component[] = [];
 
-        private enqueComponent() {
+        private enqueueComponent() {
 
             if (this._needCallStart) {
-                Component.s_unStartedcomponentArr.push(this);
+                Component.s_unStartedComponentArr.push(this);
             } else {
                 Component.s_startedComponentArr.push(this);
             }
 
         }
 
-        private dequeComponent() {
+        private dequeueComponent() {
 
             if (this._needCallStart) {
 
-                let idx = Component.s_unStartedcomponentArr.indexOf(this);
+                let idx = Component.s_unStartedComponentArr.indexOf(this);
 
                 if (idx != -1) {
-                    Component.s_unStartedcomponentArr.splice(idx, 1);
+                    Component.s_unStartedComponentArr.splice(idx, 1);
                 }
 
             } else {

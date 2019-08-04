@@ -4,17 +4,17 @@ namespace QuickEngine {
 
     export class Vector3 {
 
-        public static ClassName = "Vector3";
+        public static ClassName = 'Vector3';
 
-        public static get Right(): Vector3 {
+        public static get right(): Vector3 {
             return new Vector3(1, 0, 0);
         }
 
-        public static get Up(): Vector3 {
+        public static get up(): Vector3 {
             return new Vector3(0, 1, 0)
         }
 
-        public static get Forward(): Vector3 {
+        public static get forward(): Vector3 {
             return new Vector3(0, 0, 1);
         }
 
@@ -29,7 +29,7 @@ namespace QuickEngine {
         }
 
         /**
-         * 
+         *
          * @param other
          */
         public copy(other: Vector3): Vector3 {
@@ -51,7 +51,7 @@ namespace QuickEngine {
          * 是否相同
          * @param other
          */
-        public isEqual(other: Vector3): boolean {
+        public equals(other: Vector3): boolean {
             return other.x === other.x && other.y === other.y && other.z === other.z;
         }
 
@@ -78,6 +78,7 @@ namespace QuickEngine {
         public add(other: Vector3): Vector3 {
             return new Vector3(this.x + other.x, this.y + other.y, this.z + other.z);
         }
+
         /**
          * 相减
          * @param other
