@@ -1,4 +1,4 @@
-namespace QuickEngine {
+namespace QE {
     export const enum XHRState {
         Uninitialized = 0,  // 初始化状态。XMLHttpRequest 对象已创建或已被 abort() 方法重置。
         Open,               // open() 方法已调用，但是 send() 方法未调用。请求还没有被发送。
@@ -19,11 +19,13 @@ namespace QuickEngine {
         thisObj?: Object;
     }
 
+    export type ResponseCallback = (err: string, data: any, xhr: XMLHttpRequest, status: number) => void;
+
     /**
      * @class
      * @static
      */
-    export class Http /** @lends QuickEngine.Http */ {
+    export class Http /** @lends QE.Http */ {
         static _defaultOptions: IAjaxOptions = {
             url: '', // string
             method: 'GET', // string 'GET' 'POST' 'DELETE'
@@ -34,12 +36,14 @@ namespace QuickEngine {
             timeout: 1000, // string 超时时间:0表示不设置超时
         };
 
+        private static _context = new (window['AudioContext'] || window['webkitAudioContext'])();
+
         // 把参数data转为url查询参数
         static getUrlParam(url, data) {
             if (!data) {
                 return '';
             }
-            let paramsStr = data instanceof Object ? Http.getQueryString(data) : data;
+            const paramsStr = data instanceof Object ? Http.getQueryString(data) : data;
             return (url.indexOf('?') !== -1) ? paramsStr : '?' + paramsStr;
         }
 
@@ -59,14 +63,10 @@ namespace QuickEngine {
 
         // 把对象转为查询字符串
         static getQueryString(data) {
-            let paramsArr = [];
+            const paramsArr = [];
             if (data instanceof Object) {
                 Object.keys(data).forEach(key => {
-                    let val = data[key];
-                    // todo 参数Date类型需要根据后台api酌情处理
-                    if (val instanceof Date) {
-                        // val = dateFormat(val, 'yyyy-MM-dd hh:mm:ss');
-                    }
+                    const val = data[key];
                     paramsArr.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
                 });
             }
@@ -75,9 +75,9 @@ namespace QuickEngine {
 
         public static ajax(options: IAjaxOptions) {
             options = options ? Object.assign(Http._defaultOptions, options) : Http._defaultOptions;
-            QuickEngine.assert(!options.url || !options.method || !options.responseType, '参数有误');
+            QE.assert(!options.url || !options.method || !options.responseType, '参数有误');
 
-            let xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
 
             xhr.onreadystatechange = function (ev: ProgressEvent) {
                 switch (xhr.readyState) {
@@ -110,22 +110,25 @@ namespace QuickEngine {
                                     result = xhr.responseText;
                                     break;
                             }
-                        } else if (status === 408){
+                        } else if (status === 408) {
                             err = 'timeout';
                         } else {
                             err = 'load failed: ' + url;
                         }
-                        options.callback && options.callback.call(options.thisObj, err, result);
+
+                        if (options.callback) {
+                            options.callback.call(options.thisObj, err, result);
+                        }
                         break;
                     default:
-                        QuickEngine.Log.E('todo state: ' + xhr.readyState);
+                        Log.E('todo state: ' + xhr.readyState);
                         break;
                 }
             };
 
             let url = options.url;
             let sendData;
-            let method = options.method.toUpperCase();
+            const method = options.method.toUpperCase();
 
             if (method === 'GET') {
                 url += Http.getUrlParam(options.url, options.data);
@@ -158,7 +161,7 @@ namespace QuickEngine {
          * @param thisObj
          * @param isAsync
          */
-        public static get(url: string, data?: any, callback?: (err: string, data: any, xhr: XMLHttpRequest, status: number) => void, thisObj?: any, isAsync: boolean = true): XMLHttpRequest {
+        public static get(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync: boolean = true): XMLHttpRequest {
             return this.ajax({
                 url: url,
                 method: 'GET',
@@ -170,7 +173,7 @@ namespace QuickEngine {
             });
         }
 
-        public static post(url: string, data?: any, callback?: (err: string, data: any, xhr: XMLHttpRequest, status: number) => void, thisObj?: any, isAsync: boolean = true): XMLHttpRequest {
+        public static post(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync: boolean = true): XMLHttpRequest {
             return this.ajax({
                 url: url,
                 method: 'POST',
@@ -180,6 +183,86 @@ namespace QuickEngine {
                 thisObj: thisObj,
                 async: isAsync
             });
+        }
+
+        public static async loadTxtAsync(url: string): Promise<string> {
+            return await new Promise<string>(function (resolve, reject) {
+                Http.ajax({
+                    url: url,
+                    method: 'GET',
+                    responseType: 'text',
+                    async: true,
+                    callback: (err: string, data: string, xhr: XMLHttpRequest, status: number) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    }
+                });
+            });
+        }
+
+        public static async loadImageAsync(path: string): Promise<HTMLImageElement> {
+            return new Promise<HTMLImageElement>((resolve, reject) => {
+                const image = new Image();
+
+                image.onload = function () {
+                    resolve(image);
+                };
+
+                image.onerror = function () {
+                    reject('load image failed: ' + path);
+                };
+
+                image.src = path;
+            });
+        }
+
+        public static async loadArrayBufferAsync(url: string): Promise<ArrayBuffer> {
+            return new Promise<ArrayBuffer>((resolve, reject) => {
+                Http.ajax({
+                    url: url,
+                    method: 'GET',
+                    responseType: 'arraybuffer',
+                    async: true,
+                    callback: (err: string, data: ArrayBuffer, xhr: XMLHttpRequest, status: number) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    }
+                });
+            });
+        }
+
+        public static async loadAudioBufferAsync(url: string): Promise<AudioBuffer> {
+            let arrayBuffer: ArrayBuffer;
+            try {
+                arrayBuffer = await this.loadArrayBufferAsync(url);
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+
+            if (!arrayBuffer) {
+                console.error('file is not exist: ' + url);
+                return null;
+            }
+
+            try {
+                const buf = await this._context.decodeAudioData(arrayBuffer);
+                if (buf) {
+                    return buf;
+                } else {
+                    console.log('decode audio data failed');
+                    return null;
+                }
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
         }
     }
 }

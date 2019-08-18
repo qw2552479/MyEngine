@@ -1,14 +1,10 @@
-﻿///<reference path="../../Node.ts" />
-namespace QuickEngine {
+///<reference path="../../GameObject.ts" />
+namespace QE {
 
     /**
      * 骨骼
      */
     export class Bone {
-
-        public static __ClassName__ = "QuickEngine.Bone";
-        public static __ClassID__ = 0;
-
         private _skeleton: Skeleton;
 
         private _name: string;
@@ -27,15 +23,15 @@ namespace QuickEngine {
             this._handle = val;
         }
 
-        private _node: Node;
-        public get node(): Node {
+        private _node: GameObject;
+        public get node(): GameObject {
             return this._node;
         }
-        public set node(val: Node) {
+        public set node(val: GameObject) {
             this._node = val;
         }
 
-        private _firstChild: Bone;        
+        private _firstChild: Bone;
 
         constructor(skeleton: Skeleton, name?: string) {
             this._skeleton = skeleton;

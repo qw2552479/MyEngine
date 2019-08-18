@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export enum AnimationBlendMode {
         Add,
@@ -38,11 +38,11 @@
         public AddMixingTransform(mix: Transform, recursive: boolean = true) {
 
         }
-       
+
         public RemoveMixingTransform(mix: Transform) {
 
         }
-       
+
     }
 
 }

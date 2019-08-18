@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
 	export class RenderQueue {
 
@@ -19,8 +19,8 @@
 		}
 
 		public addRenderable(renderable: Renderable) {
-			//TODO:添加不透明对象判断
-			let mat = renderable.getMaterial();
+			// TODO:添加不透明对象判断
+			const mat = renderable.getMaterial();
 			if (mat.opacity >= 1) {
 				this._solidObjects.unshift(renderable);
 			} else {

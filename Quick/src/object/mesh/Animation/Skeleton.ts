@@ -1,14 +1,8 @@
-﻿namespace QuickEngine {
+namespace QE {
 
-    type BoneMap = { [key: string]: Bone };
+    interface BoneMap { [key: string]: Bone; }
 
     export class Skeleton {
-
-        public static __NameSpace__ = "QuickEngine";
-        public static __ClassName__ = "Skeleton";
-        public static __FullClassName__ = "QuickEngine.Skeleton";
-        public static __ClassID__ = 0;
-
         private _name: string;
 
         private _rootBones: Bone[];
@@ -21,9 +15,9 @@
 
         public createBone(name: string, relativePath: string): Bone {
 
-            console.assert(!!this._boneMapByPath[name], "[Skeleton.createBone] A bone with the releativePath " + relativePath + " already exists");
+            console.assert(!!this._boneMapByPath[name], '[Skeleton.createBone] A bone with the releativePath ' + relativePath + ' already exists');
 
-            let bone = new Bone(this, name);
+            const bone = new Bone(this, name);
 
             this._boneMapByName[name] = bone;
             this._boneMapByPath[relativePath] = bone;
@@ -39,11 +33,11 @@
                 rootBones = this._rootBones = [];
             }
 
-            if (rootBones.length == 0) {
-                
+            if (rootBones.length === 0) {
+
                 for (let i = 0; i < rootBones.length; i++) {
 
-                    let bone = rootBones[i];
+                    const bone = rootBones[i];
                     // 没有父节点的骨骼皆为根骨骼
                     if (!bone.node.transform.parent) {
                         rootBones.push(bone);
@@ -52,7 +46,7 @@
                 }
 
             }
-            
+
             return rootBones[0];
         }
 
@@ -70,11 +64,11 @@
 
         public updateTransforms() {
 
-            let rootBones = this._rootBones;
+            const rootBones = this._rootBones;
 
             for (let i = 0, len = rootBones.length; i < len; i++) {
 
-                let rootBone = rootBones[i];
+                const rootBone = rootBones[i];
                 rootBone._update(true, false);
             }
 

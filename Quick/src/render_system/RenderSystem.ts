@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export const MAX_NUM_UNIFORM = 32;
     export const MAX_NUM_SAMPLER = 8;
@@ -9,11 +9,17 @@
 
     export class RenderSystem {
 
-        protected static _sInstance: RenderSystem;
-
         public static get instance(): RenderSystem {
+            if (!RenderSystem._sInstance) {
+                RenderSystem._sInstance = new RenderSystem();
+            }
             return RenderSystem._sInstance;
         }
+
+        public constructor() {
+        }
+
+        protected static _sInstance: RenderSystem;
 
         protected _renderStatedChanged: boolean;
         protected _currentRenderState: RenderState; // 当前渲染状态
@@ -49,11 +55,11 @@
         protected _materialSpecular: Vector4; // 反射颜色
         protected _materialOpacity: Vector4; //
 
-        protected _lightPosition: Vector4;//光源坐标
-        protected _lightDirection: Vector4;//光源方向单位向量
-        protected _lightAmbient: Vector4;//环境光颜色
-        protected _lightDiffuse: Vector4;//漫反射光颜色
-        protected _lightSpecular: Vector4;//反射光颜色
+        protected _lightPosition: Vector4; // 光源坐标
+        protected _lightDirection: Vector4; // 光源方向单位向量
+        protected _lightAmbient: Vector4; // 环境光颜色
+        protected _lightDiffuse: Vector4; // 漫反射光颜色
+        protected _lightSpecular: Vector4; // 反射光颜色
         protected _lightAttenParam: Vector4; // 距离衰减因子K0, K1, K2, K3
         // 点光源参数 说明: Opengl3.0 第八章 顶点着色器 点光源介绍
         // direction: 规范化的点方向向量
@@ -77,7 +83,56 @@
 
         protected _canvas: HTMLCanvasElement;
 
-        public constructor(div?: HTMLElement) {
+        static getGLDrawCount(type: RenderOperationType, primCount: number) {
+            switch (type) {
+                case RenderOperationType.TRIANGLE_LIST:
+                    return primCount * 3;
+
+                case RenderOperationType.TRIANGLE_STRIP:
+                    return primCount + 2;
+
+                case RenderOperationType.LINE_LIST:
+                    return primCount * 2;
+
+                case RenderOperationType.LINE_STRIP:
+                    return primCount + 1;
+
+                case RenderOperationType.POINT_LIST:
+                    return primCount;
+            }
+
+            return 0;
+        }
+
+        static getGLDrawMode(type: RenderOperationType): number {
+            let drawMode: number;
+            switch (type) {
+                case RenderOperationType.POINT_LIST:
+                    drawMode = gl.POINTS;
+                    break;
+                case RenderOperationType.LINE_LIST:
+                    drawMode = gl.LINES;
+                    break;
+                case RenderOperationType.LINE_STRIP:
+                    drawMode = gl.LINE_STRIP;
+                    break;
+                case RenderOperationType.TRIANGLE_LIST:
+                    drawMode = gl.TRIANGLES;
+                    break;
+                case RenderOperationType.TRIANGLE_STRIP:
+                    drawMode = gl.TRIANGLE_STRIP;
+                    break;
+                case RenderOperationType.TRIANGLE_FAN:
+                    drawMode = gl.TRIANGLE_FAN;
+                    break;
+                default:
+                    drawMode = gl.TRIANGLES;
+                    break;
+            }
+            return drawMode;
+        }
+
+        public init(div?: HTMLElement): void {
             this._currentRenderState = new RenderState();
             this._renderStatedChanged = true;
 
@@ -91,9 +146,7 @@
 
             this._shaderPassChanged = true;
 
-            RenderSystem._sInstance = this;
-
-            let canvas = document.createElement('canvas');
+            const canvas = document.createElement('canvas');
             canvas.width = 1280;
             canvas.height = 720;
             canvas.style.position = 'absolute';
@@ -132,7 +185,7 @@
 
         public clear(mask: ClearMask, color: Number4, depth: number, stencil: number) {
 
-            if (mask == ClearMask.None) {
+            if (mask === ClearMask.None) {
                 return;
             }
 
@@ -161,7 +214,7 @@
             let rtWidth = Screen.screenWidth;
             let rtHeight = Screen.screenHeight;
 
-            let currentRenderTarget = this._currentRenderTarget;
+            const currentRenderTarget = this._currentRenderTarget;
             if (currentRenderTarget) {
                 rtWidth = currentRenderTarget.width;
                 rtHeight = currentRenderTarget.height;
@@ -173,10 +226,10 @@
                 viewPort.y >= 0 && viewPort.y + viewPort.h * rtHeight <= rtHeight);
 
             // 窗口坐标系原点为左下角
-            let x = viewPort.x;
-            let y = rtHeight - (viewPort.y + viewPort.h);
-            let w = viewPort.w * rtWidth;
-            let h = viewPort.h * rtHeight;
+            const x = viewPort.x;
+            const y = viewPort.y;
+            const w = viewPort.w * rtWidth;
+            const h = viewPort.h * rtHeight;
 
             gl.viewport(x, y, w, h);
 
@@ -191,7 +244,7 @@
         public _setTexture(unit: number, enable: boolean, tex: Texture) {
             // 纹理未加载完成时,使用默认纹理
             if (!tex.getWebGLTexture()) {
-                tex = ResourceManager.instance.get<Texture>(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
+                tex = ResourceManager.get<Texture>(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
             }
 
             if (!tex.getWebGLTexture()) {
@@ -215,73 +268,63 @@
                 return;
             }
 
-            let currentRenderState = this._currentRenderState;
-            let cullMode = currentRenderState.cullMode;
+            const currentRenderState = this._currentRenderState;
+            const cullMode = currentRenderState.cullMode;
             switch (cullMode) {
-                case CullMode.FRONT: {
+                case CullMode.FRONT:
                     gl.enable(gl.FRONT_FACE);
                     gl.cullFace(gl.FRONT);
-                }
                     break;
-                case CullMode.BACK: {
+                case CullMode.BACK:
                     gl.enable(gl.CULL_FACE);
                     gl.cullFace(gl.BACK);
-                }
                     break;
                 case CullMode.NONE:
-                default: {
+                default:
                     gl.disable(gl.CULL_FACE);
-                }
                     break;
             }
 
-            let depthTest = currentRenderState.depthCheck;
+            const depthTest = currentRenderState.depthCheck;
             switch (depthTest) {
-                case DepthCheck.CHECK_ONLY: {
+                case DepthCheck.CHECK_ONLY:
                     gl.enable(gl.DEPTH_TEST);
                     gl.depthMask(false);
                     gl.depthFunc(gl.LEQUAL);
-                }
                     break;
-                case DepthCheck.CHECK_WRITE: {
+                case DepthCheck.CHECK_WRITE:
                     gl.enable(gl.DEPTH_TEST);
                     gl.depthMask(true);
                     gl.depthFunc(gl.LEQUAL);
-                }
                     break;
                 case DepthCheck.NONE:
-                default: {
+                default:
                     gl.disable(gl.DEPTH_TEST);
                     gl.depthMask(false);
-                }
                     break;
             }
 
-            let blendMode = currentRenderState.blendMode;
+            const blendMode = currentRenderState.blendMode;
             switch (blendMode) {
                 case BlendMode.OPACITY:
-                case BlendMode.ALPHA_TEST: {
+                case BlendMode.ALPHA_TEST:
                     gl.disable(gl.BLEND);
-                }
                     break;
-                case BlendMode.ALPHA_BLEND: {
+                case BlendMode.ALPHA_BLEND:
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                }
                     break;
-                case BlendMode.ADD: {
+                case BlendMode.ADD:
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ONE, gl.ONE);
-                }
                     break;
-                case BlendMode.MUL: {
+                case BlendMode.MUL:
                     gl.enable(gl.BLEND);
                     gl.blendFunc(gl.ZERO, gl.SRC_COLOR);
-                }
                     break;
             }
 
-            let colorMask = currentRenderState.colorMask;
+            const colorMask = currentRenderState.colorMask;
             gl.colorMask(
                 !!(colorMask & ColorMask.RED),
                 !!(colorMask & ColorMask.GREEN),
@@ -302,120 +345,8 @@
             gl.enableVertexAttribArray(vertexBuffer.semantic);
         }
 
-        public renderOperation(renderOp: RenderOperation) {
-
-            console.assert(!!this._currentShaderPass && !!renderOp.vertexBuffers);
-            // begin render
-            this.begin();
-
-            this._bindRenderState();
-
-            let currentShaderPass = this._currentShaderPass;
-            if (this._shaderPassChanged) {
-                this.bindGpuProgram(currentShaderPass.getProgram());
-                this._shaderPassChanged = false;
-            }
-
-            currentShaderPass.uploadUniforms();
-            currentShaderPass.uploadSamplers();
-
-            let primType: number;
-            switch (renderOp.renderOpType) {
-                case RenderOperationType.POINT_LIST:
-                    primType = gl.POINTS;
-                    break;
-                case RenderOperationType.LINE_LIST:
-                    primType = gl.LINES;
-                    break;
-                case RenderOperationType.LINE_STRIP:
-                    primType = gl.LINE_STRIP;
-                    break;
-                case RenderOperationType.TRIANGLE_LIST:
-                    primType = gl.TRIANGLES;
-                    break;
-                case RenderOperationType.TRIANGLE_STRIP:
-                    primType = gl.TRIANGLE_STRIP;
-                    break;
-                case RenderOperationType.TRIANGLE_FAN:
-                    primType = gl.TRIANGLE_FAN;
-                    break;
-                default:
-                    primType = gl.TRIANGLES;
-                    break;
-            }
-
-            let renderAttribsBound: number[] = [];
-            // 绑定顶点属性
-            let vbBuffers = renderOp.vertexBuffers;
-            for (let i = 0, len = vbBuffers.length; i < len; i++) {
-                let vb = vbBuffers[i];
-
-                let location = currentShaderPass.getAttribute(vb.semantic);
-                if (location === undefined) {
-                    continue;
-                }
-
-                gl.bindBuffer(gl.ARRAY_BUFFER, vb.getGLBuffer());
-                gl.bufferData(gl.ARRAY_BUFFER, vb._data, WebGLBufferManager.getGLUsage(vb._usage));
-
-                GL_CHECK_ERROR();
-
-                gl.enableVertexAttribArray(location);
-                gl.vertexAttribPointer(location, vb._size, vb.type, vb._normalized, 0, 0);
-
-                GL_CHECK_ERROR();
-                renderAttribsBound.push(location);
-            }
-
-            let indexBuffer = renderOp.indexBuffer;
-            if (indexBuffer) {
-
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer.getGLIndexBuffer());
-                GL_CHECK_ERROR();
-
-                gl.drawElements(primType, indexBuffer.count, gl.UNSIGNED_SHORT, 0);
-            } else {
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, vbBuffers[0].vertexCount);
-            }
-
-            GL_CHECK_ERROR();
-
-            // end render
-
-            // 清除属性绑定
-            let len = renderAttribsBound.length;
-            if (len > 0) {
-                for (let i = 0; i < len; i++) {
-                    gl.disableVertexAttribArray(renderAttribsBound[i]);
-                }
-            }
-
-            this.end();
-        }
-
-        static getGLDrawCount(type: RenderOperationType, primCount: number) {
-            switch (type) {
-                case RenderOperationType.TRIANGLE_LIST:
-                    return primCount * 3;
-
-                case RenderOperationType.TRIANGLE_STRIP:
-                    return primCount + 2;
-
-                case RenderOperationType.LINE_LIST:
-                    return primCount * 2;
-
-                case RenderOperationType.LINE_STRIP:
-                    return primCount + 1;
-
-                case RenderOperationType.POINT_LIST:
-                    return primCount;
-            }
-
-            return 0;
-        }
-
         public onResize(w: number, h: number): void {
-            let thisCanvas = this._canvas;
+            const thisCanvas = this._canvas;
             thisCanvas.width = w;
             thisCanvas.height = h;
         }
@@ -508,9 +439,9 @@
                 this._viewProjTM.identity();
                 this._worldViewProjTM.identity();
 
-                this._viewMatrix.multiply(this._worldMatrix, this._worldViewTM);
-                this._projectionMatrix.multiply(this._viewMatrix, this._viewProjTM);
-                this._projectionMatrix.multiply(this._worldViewTM, this._worldViewProjTM);
+                this._worldMatrix.multiply(this._viewMatrix, this._worldViewTM);
+                this._viewMatrix.multiply(this._projectionMatrix, this._viewProjTM);
+                this._worldViewTM.multiply(this._projectionMatrix, this._worldViewProjTM);
 
                 this._isTransformDirty = false;
             }
@@ -527,21 +458,21 @@
 
             // 准备渲染事件
 
-            let material = renderable.getMaterial();
-            let renderOp = renderable.getRenderOperation();
+            const material = renderable.getMaterial();
+            const renderOp = renderable.getRenderOperation();
 
             this.setMaterial(material);
 
-            let worldMatrix = renderable.getWorldTransforms();
-            let tempWM = new Matrix4();
+            const worldMatrix = renderable.getWorldTransforms();
+            const tempWM = new Matrix4();
             tempWM.copyFrom(worldMatrix);
             this.setWorldMatrix(tempWM);
 
             // ShaderPass
-            let passes = shader.shaderPasses;
+            const passes = shader.shaderPasses;
             for (let i = 0, len = passes.length; i < len; ++i) {
-                let pass = passes[i];
-                let renderState = pass.getRenderState();
+                const pass = passes[i];
+                const renderState = pass.getRenderState();
 
                 // 设置当前shader pass
                 this.setShaderPass(pass);
@@ -549,9 +480,9 @@
                 this.setRenderState(renderState.cullMode, renderState.blendMode, renderState.depthCheck, renderState.colorMask);
 
                 // 设置纹理
-                let samplers = pass.getSamplers();
-                for (let ii = 0, len2 = samplers; ii < samplers.length; ii++) {
-                    let sampler = samplers[ii];
+                const samplers = pass.getSamplers();
+                for (let ii = 0; ii < samplers.length; ii++) {
+                    const sampler = samplers[ii];
                     switch (sampler.bindType) {
                         case SamplerBindType.SAMPLER:
                             this._setTextureUnitSettings(ii, sampler.samplerTex);
@@ -564,6 +495,75 @@
 
                 this.renderOperation(renderOp);
             }
+        }
+
+        public renderOperation(renderOp: RenderOperation) {
+
+            console.assert(!!this._currentShaderPass && !!renderOp.vertexBuffers);
+            // begin render
+            this.begin();
+
+            this._bindRenderState();
+
+            const currentShaderPass = this._currentShaderPass;
+
+            if (this._shaderPassChanged) {
+                this.bindGpuProgram(currentShaderPass.getProgram());
+                this._shaderPassChanged = false;
+            }
+
+            currentShaderPass.uploadUniforms();
+            currentShaderPass.uploadSamplers();
+
+            const drawMode: number = RenderSystem.getGLDrawMode(renderOp.renderOpType);
+
+            const renderAttribsBound: number[] = [];
+            // 绑定顶点属性
+            const vbBuffers = renderOp.vertexBuffers;
+
+            for (let i = 0, len = vbBuffers.length; i < len; i++) {
+                const vb = vbBuffers[i];
+
+                const location = currentShaderPass.getAttribute(vb.semantic);
+                if (location === undefined) {
+                    continue;
+                }
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, vb.getGLBuffer());
+                gl.bufferData(gl.ARRAY_BUFFER, vb._data, WebGLBufferManager.getGLUsage(vb._usage));
+
+                GL_CHECK_ERROR();
+
+                gl.enableVertexAttribArray(location);
+                gl.vertexAttribPointer(location, vb._size, vb.type, vb._normalized, 0, 0);
+
+                GL_CHECK_ERROR();
+                renderAttribsBound.push(location);
+            }
+
+            const indexBuffer = renderOp.indexBuffer;
+            if (indexBuffer) {
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer.getGLIndexBuffer());
+                GL_CHECK_ERROR();
+
+                gl.drawElements(drawMode, indexBuffer.count, gl.UNSIGNED_SHORT, 0);
+            } else {
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, vbBuffers[0].vertexCount);
+            }
+
+            GL_CHECK_ERROR();
+
+            // end render
+
+            // 清除属性绑定
+            const len = renderAttribsBound.length;
+            if (len > 0) {
+                for (let i = 0; i < len; i++) {
+                    gl.disableVertexAttribArray(renderAttribsBound[i]);
+                }
+            }
+
+            this.end();
         }
 
         public readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView) {

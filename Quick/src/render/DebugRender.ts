@@ -1,13 +1,7 @@
-﻿///<reference path="../render_system/Renderable.ts" />
-namespace QuickEngine {
+///<reference path="../render_system/Renderable.ts" />
+namespace QE {
 
     export class DebugRender extends Renderable {
-
-        public static __ClassName__ = "QuickEngine.DebugRender";
-        public static __ClassID__ = 0;
-
-        private _material: Material;
-        private readonly _renderOp: RenderOperation;
 
         public mesh: Mesh;
 
@@ -17,8 +11,12 @@ namespace QuickEngine {
             this._renderOp = new RenderOperation();
         }
 
+        public isMultiMaterial(): boolean {
+            return false;
+        }
+
         public setMaterial(material: Material) {
-            if (this._material == material) {
+            if (this._material === material) {
                 return;
             }
             this._material = material;

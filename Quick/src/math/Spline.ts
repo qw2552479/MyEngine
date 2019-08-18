@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export class Spline {
 

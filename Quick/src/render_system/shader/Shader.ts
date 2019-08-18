@@ -1,9 +1,9 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export class Shader {
 
         private _name: string;
-        public shaderPasses: WebGLShaderPass[];    
+        public shaderPasses: WebGLShaderPass[];
 
         public getName(): string {
             return this._name;

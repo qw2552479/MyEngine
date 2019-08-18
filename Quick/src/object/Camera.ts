@@ -1,5 +1,5 @@
-﻿///<reference path="Component.ts" />
-namespace QuickEngine {
+///<reference path="Component.ts" />
+namespace QE {
     export const enum CameraType {
         Perspective,
         Orthogonal,
@@ -17,10 +17,10 @@ namespace QuickEngine {
     * 可见性类型
     */
     export const enum VisibilityType {
-        NONE,//完全不可见
-        FULL,//完全可见
-        PARTIAL,//部分可见
-    };
+        NONE, // 完全不可见
+        FULL, // 完全可见
+        PARTIAL, // 部分可见
+    }
 
     const DEFAULT_FOV = 45;
     const DEFAULT_ASPECT = 1;
@@ -28,10 +28,6 @@ namespace QuickEngine {
     const DEFAULT_FAR = 100;
 
     export class Camera extends Component {
-
-        public static __ClassName__ = 'QuickEngine.Camera';
-        public static __ClassID__ = 0;
-
         public static MainCamera: Camera;
 
         protected _cameraType: CameraType;
@@ -60,7 +56,7 @@ namespace QuickEngine {
 
             super();
 
-            this._fovY = DEFAULT_FOV;// fovY: (0, 180) fovY = atan(（(r - l) / 2） / n)
+            this._fovY = DEFAULT_FOV; // fovY: (0, 180) fovY = atan(（(r - l) / 2） / n)
             this._near = DEFAULT_NEAR;
             this._far = DEFAULT_FAR;
             this._aspect = DEFAULT_ASPECT;
@@ -180,18 +176,18 @@ namespace QuickEngine {
                 return;
             }
 
-            let far = this._far;
-            let near = this._near;
-            let viewport = this._viewport;
+            const far = this._far;
+            const near = this._near;
+            const viewport = this._viewport;
 
             let left = viewport.x;
             let right = viewport.x + viewport.w * Screen.screenWidth;
             let top = viewport.y + viewport.h * Screen.screenHeight;
             let bottom = viewport.y;
 
-            if (this._cameraType == CameraType.Orthogonal) {
-                let half_w = this._orthoWidth * 0.5;
-                let half_h = this._orthoHeight * 0.5;
+            if (this._cameraType === CameraType.Orthogonal) {
+                const half_w = this._orthoWidth * 0.5;
+                const half_h = this._orthoHeight * 0.5;
 
                 left = -half_w;
                 right = +half_w;

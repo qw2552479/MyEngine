@@ -1,6 +1,6 @@
-﻿namespace QuickEngine {
+namespace QE {
 
-    export class WebGLVertexBuffer {
+    export class WebGLVertexBuffer implements IDestroyable {
 
         //
         public webGLBuffer: WebGLBuffer;
@@ -14,19 +14,19 @@
 
         public _usage: BufferUsage;
         public _data: ArrayBuffer;
-        
-        public type: VertexElementType;//顶点缓冲数据类型
-        public semantic: VertexElementSemantic;//顶点数据语义, 指明此顶点代表哪种类型的顶点
 
-        public vertexCount: number = 0;
+        public type: VertexElementType; // 顶点缓冲数据类型
+        public semantic: VertexElementSemantic; // 顶点数据语义, 指明此顶点代表哪种类型的顶点
+
+        public vertexCount = 0;
 
         /**
-         * 
+         *
          * @param stride 相邻两个顶点间的字节数
          * @param size 缓冲区中每个顶点分量个数 (1-4)
          * @param usage
          */
-        public constructor(stride: number, size: number, normalize: boolean, usage: BufferUsage) {            
+        public constructor(stride: number, size: number, normalize: boolean, usage: BufferUsage) {
             this._stride = stride;
             this._size = size;
             this._usage = usage;
@@ -35,7 +35,11 @@
             this.createBuffer();
         }
 
-        public dispose() {
+        public isDestroyed(): boolean {
+            return false;
+        }
+
+        public destroy() {
             if (this._data) {
                 this._data = undefined;
             }
@@ -47,11 +51,13 @@
         }
 
         protected createBuffer() {
-            let buf = gl.createBuffer();
-            GL_CHECK_ERROR();
+            const buf = gl.createBuffer();
+            if (__QE_DEBUG__) {
+                GL_CHECK_ERROR();
+            }
 
             if (!buf) {
-                throw new Error("无法创建WebGLBuffer");
+                throw new Error('无法创建WebGLBuffer');
             }
 
             this.webGLBuffer = buf;
@@ -62,7 +68,9 @@
                 gl.deleteBuffer(this.webGLBuffer);
                 this.webGLBuffer = undefined;
 
-                GL_CHECK_ERROR();
+                if (__QE_DEBUG__) {
+                    GL_CHECK_ERROR();
+                }
             }
         }
 

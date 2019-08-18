@@ -1,11 +1,11 @@
-﻿namespace QuickEngine {
+namespace QE {
 
-    const enum IndexType {        
+    const enum IndexType {
         Int16,
         Int32,
     }
 
-    export class WebGLIndexBuffer {      
+    export class WebGLIndexBuffer {
 
         private _buffer: WebGLBuffer;
         public _usage: BufferUsage;
@@ -16,14 +16,10 @@
             return this._count;
         }
 
-        public set count(val: number) {
-
-        }
-
         public _data: Uint16Array;
 
         public constructor(numIndexes: number, usage: BufferUsage, useShadowBuffer: boolean) {
-            
+
             this._data = new Uint16Array(numIndexes);
             this._count = numIndexes;
             this._usage = usage;
@@ -32,9 +28,9 @@
         }
 
         public createBuffer(): void {
-            let buffer = gl.createBuffer();
+            const buffer = gl.createBuffer();
             if (!buffer) {
-                throw new Error("Failed to create buffer");
+                throw new Error('Failed to create buffer');
             }
             this._buffer = buffer;
         }

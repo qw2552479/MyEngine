@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     /// Vertex element semantics, used to identify the meaning of vertex buffer contents
     export const enum VertexElementSemantic {
@@ -20,9 +20,9 @@
         BINORMAL = 8,
         /// Tangent (X axis if normal is Z)
         TANGENT = 9,
-        /// The  number of VertexElementSemantic elements (note - the first value VES_POSITION is 1) 
+        /// The  number of VertexElementSemantic elements (note - the first value VES_POSITION is 1)
         COUNT = 9
-    };
+    }
 
     /// Vertex element type, used to identify the base types of the vertex contents
     export const enum VertexElementType {
@@ -57,7 +57,7 @@
         UINT2 = 25,
         UINT3 = 26,
         UINT4 = 27
-    };
+    }
 
     // ===================== 纹理相关定义 =====================
     // 纹理类型
@@ -128,7 +128,7 @@
         DYNAMIC = 2,
         WRITE_ONLY = 4,
         DISCARDABLE = 8,
-        //Combination of HBU_STATIC and HBU_WRITE_ONLY
+        // Combination of HBU_STATIC and HBU_WRITE_ONLY
         STATIC_WRITE_ONLY = 5,
         DYNAMIC_WRITE_ONLY = 6,
         /// Combination of HBU_DYNAMIC, HBU_WRITE_ONLY and HBU_DISCARDABLE
@@ -140,21 +140,21 @@
         Vertex,
         Fragment
     }
-    
+
     // 裁剪模式
     export const enum CullMode {
         NONE,
         FRONT,
         BACK,
         OVERLAPPED
-    };
+    }
 
     // 填充模式
     export const enum FillMode {
         POINT,
         FRAME,
         SOLID
-    };
+    }
 
     // 混合模式
     export const enum BlendMode {
@@ -165,7 +165,7 @@
         ADD,
         MUL,
         OVERLAPPED,
-    };
+    }
 
     // 深度检测
     export const enum DepthCheck {
@@ -173,7 +173,7 @@
         CHECK_ONLY,
         CHECK_WRITE,
         OVERLAPPED,
-    };
+    }
 
     // 颜色掩码
     export const enum ColorMask {

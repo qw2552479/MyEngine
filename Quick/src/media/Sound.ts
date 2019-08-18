@@ -1,7 +1,6 @@
-namespace QuickEngine {
-
-	export class Sound {
-		public constructor() {
-		}
-	}
+namespace QE {
+    export class Sound {
+        public constructor() {
+        }
+    }
 }

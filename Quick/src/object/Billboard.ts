@@ -1,15 +1,11 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export class Billboard {
 
-      
+
     }
 
-    export class BillboardSet extends Node {
-
-        public static __ClassName__ = "QuickEngine.BillboardSet";
-        public static __ClassID__ = 0;
-
+    export class BillboardSet extends GameObject {
         private _renderable: Renderable;
 
         public constructor() {

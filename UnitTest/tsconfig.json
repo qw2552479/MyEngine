@@ -1,13 +1,19 @@
 {
+  "compileOnSave": true,
   "compilerOptions": {
     "module": "system",
-    "target": "es6",
+    "target": "es5",
     "sourceMap": true,
-    "outFile": "dist/unittest.js"
+    "outFile": "dist/unittest.js",
+    "experimentalDecorators": true,
+    "lib": [
+      "dom",
+      "es2015"
+    ]
   },
   "include": [
     "../Quick/dist/quick.d.ts",
-    "src/**/*"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",

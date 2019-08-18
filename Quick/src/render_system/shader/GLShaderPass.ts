@@ -1,5 +1,5 @@
-﻿///<reference path="../../core/IDisposable.ts" />
-namespace QuickEngine {
+///<reference path="../../core/IDisposable.ts" />
+namespace QE {
 
     export const enum UniformType {
 
@@ -47,14 +47,14 @@ namespace QuickEngine {
         POINT,
         LINEAR,
         ANISOTROPIC,
-    };
+    }
 
     export const enum TexAddress {
         WRAP,
         MIRROR,
         CLAMP,
         BORDER,
-    };
+    }
 
     export const enum SamplerBindType {
         NONE,
@@ -70,14 +70,14 @@ namespace QuickEngine {
         EXTERN3,
 
         SAMPLER,
-    };
+    }
 
     export interface GLUniform {
         name: string;
         type: UniformType;
         location: WebGLUniformLocation;
         data?: any;
-    };
+    }
 
     export interface TextureSampler {
         // 纹理单元名字
@@ -90,11 +90,11 @@ namespace QuickEngine {
         location: WebGLUniformLocation;
 
         // TODO: 是否应放到纹理中,作为纹理格式属性
-        //filter: TexFilter;
-        //address: TexAddress;
-        //borderColor: Number4;
+        // filter: TexFilter;
+        // address: TexAddress;
+        // borderColor: Number4;
         samplerTex: Texture;
-    };
+    }
 
     export class WebGLShaderPass implements IDestroyable {
 
@@ -116,6 +116,9 @@ namespace QuickEngine {
         }
 
         public destroy(): void {
+            if (this.isDestroyed()) {
+                return;
+            }
             this._renderState = undefined;
             this._uniforms = undefined;
             this._samplers = undefined;
@@ -145,6 +148,14 @@ namespace QuickEngine {
             this._samplers.push(sampler);
         }
 
+        public setSampler(index: number, sampler: TextureSampler) {
+            this._samplers[index] = sampler;
+        }
+
+        public getSamplers(): TextureSampler[] {
+            return this._samplers;
+        }
+
         public setAttribute(attrName: VertexElementSemantic, attrLoc: number) {
             this._attributes[attrName] = attrLoc;
         }
@@ -161,35 +172,20 @@ namespace QuickEngine {
             return this._renderState;
         }
 
-        public getSamplers(): TextureSampler[] {
-            return this._samplers;
-        }
-
         public clone(): WebGLShaderPass {
             return new WebGLShaderPass();
         }
 
         public uploadUniforms() {
 
-            let worldMat = RenderSystem.instance.getWorldMatrix();
-            let viewMat = RenderSystem.instance.getViewMatrix();
-            let projMat = RenderSystem.instance.getProjectionMatrix();
-            let mvpMat = RenderSystem.instance.getWorldViewProjMatrix();
+            const worldMat = RenderSystem.instance.getWorldMatrix();
+            const viewMat = RenderSystem.instance.getViewMatrix();
+            const projMat = RenderSystem.instance.getProjectionMatrix();
+            const mvpMat = RenderSystem.instance.getWorldViewProjMatrix();
 
-            // this._viewMatrix.multiply(this._worldMatrix, this._worldViewTM);
-            // this._projectionMatrix.multiply(this._viewMatrix, this._viewProjTM);
-            // this._projectionMatrix.multiply(this._worldViewTM, this._worldViewProjTM);
-            //
-            // const projectionMatrix1 = Matrix4.makePerspectiveFovRH(45, aspect, zNear, zFar);
-            const modelViewMatrix1 = new Matrix4();
-            const transMatrix = Matrix4.makeTransform(new Vector3(0, 0, -6), Quaternion.IDENTITY, new Vector3(1, 1, 1));
-            modelViewMatrix1.multiply(transMatrix, modelViewMatrix1);
-            mvpMat = projMat.multiply(modelViewMatrix1);
-
-            let uniforms = this._uniforms;
+            const uniforms = this._uniforms;
             for (let i = 0, len = uniforms.length; i < len; i++) {
-
-                let uniform = uniforms[i];
+                const uniform = uniforms[i];
                 switch (uniform.type) {
                     case UniformType.WORLD_MATRIX:
                         gl.uniformMatrix4fv(uniform.location, false, mvpMat.rawData);
@@ -202,11 +198,11 @@ namespace QuickEngine {
                         break;
                     default:
                         console.error(`unknow type: ${uniform.type}`);
-                        //gl.uniform1f(uniform.location, 0);
+                        // gl.uniform1f(uniform.location, 0);
                         break;
                 }
 
-                if (__DEBUG__) {
+                if (__QE_DEBUG__) {
                     GL_CHECK_ERROR();
                 }
             }
@@ -214,21 +210,20 @@ namespace QuickEngine {
         }
 
         public uploadSamplers() {
-
-            let samplers = this._samplers;
-            let textures = RenderSystem.instance.getCurrentTextures();
-
+            const samplers = this._samplers;
             for (let i = 0, len = samplers.length; i < len; i++) {
-                let sampler = samplers[i];
+                const sampler = samplers[i];
+
                 if (!sampler.samplerTex || !sampler.samplerTex.getWebGLTexture()) {
                     continue;
                 }
+
                 gl.uniform1i(sampler.location, sampler.index);
-                GL_CHECK_ERROR();
+
+                if (__QE_DEBUG__) {
+                    GL_CHECK_ERROR();
+                }
             }
-
         }
-
     }
-
 }

@@ -1,6 +1,4 @@
-//https://github.com/jsdoc3/jsdoc
-namespace QuickEngine {
-
+namespace QE {
     export interface RunData {
         width: number;
         height: number;
@@ -13,36 +11,36 @@ namespace QuickEngine {
 
     export function run(data: RunData) {
 
-        new WebGLBufferManager();
-        new RenderSystem(data.div);
-        new SceneManager();
+        WebGLBufferManager.instance.init();
+        RenderSystem.instance.init(data.div);
+        SceneManager.instance.init();
 
         window.onresize = (ev: UIEvent) => {
-            let w = window.innerWidth;
-            let h = window.innerHeight;
-            onResize(w, h);  
-        };    
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            onResize(w, h);
+        };
 
         // 准备内置资源
-        ResourceManager.instance.makeBuiltinRes(function () {
+        ResourceManager.init(() => {
             onResize(window.innerWidth, window.innerHeight);
 
             frameUpdate(0);
 
-            data.onEnginePrepared && data.onEnginePrepared();
-        })
+            if (data.onEnginePrepared) {
+                data.onEnginePrepared();
+            }
+        });
     }
-    
+
     function frameUpdate(deltaTime: number) {
-
         renderOneFrame(deltaTime / 1000);
-
         requestAnimationFrame(frameUpdate);
     }
 
     export function renderOneFrame(deltaTime: number) {
 
-        let mainScene = SceneManager.instance.currentScene;
+        const mainScene = SceneManager.instance.currentScene;
 
         if (!mainScene) {
             return;
@@ -56,7 +54,7 @@ namespace QuickEngine {
 
         RenderSystem.instance.endScene();
 
-        //mainScene.fixedUpdate(dt);
+        // mainScene.fixedUpdate(dt);
     }
 
     function onResize(w: number, h: number) {

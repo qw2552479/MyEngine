@@ -1,14 +1,9 @@
-﻿///<reference path="../render_system/Renderable.ts" />
-namespace QuickEngine {
+///<reference path="../render_system/Renderable.ts" />
+namespace QE {
 
     export class MeshRender extends Renderable {
 
-        public static __ClassName__ = "QuickEngine.MeshRender";
-        public static __ClassID__ = 0;
-
-        protected _currentMaterial: Material;
-        protected _materials: Material[];
-        protected _renderOp: RenderOperation;
+        protected _material: Material;
 
         public mesh: Mesh;
 
@@ -18,15 +13,19 @@ namespace QuickEngine {
             this._renderOp = new RenderOperation();
         }
 
+        public isMultiMaterial(): boolean {
+            return true;
+        }
+
         public setMaterial(material: Material) {
-            if (!this._currentMaterial) {
-                this._currentMaterial = material;
+            if (!this._material) {
+                this._material = material;
             }
             this._materials.push(material);
         }
 
         public removeMaterial(material: Material) {
-            let index = this._materials.indexOf(material);
+            const index = this._materials.indexOf(material);
             if (index > 0) {
                 this._materials.splice(index, 1);
             }
@@ -36,19 +35,16 @@ namespace QuickEngine {
             this._materials.splice(index, 1);
         }
 
-        public getMaterial(): Material {
-            return this._currentMaterial;
-        }
-
         public getRenderOperation(): RenderOperation {
-            if (!this.mesh)
+            if (!this.mesh) {
                 return null;
+            }
 
-            let renderOp = this._renderOp;
-            let subMeshes = this.mesh.subMeshes;
+            const renderOp = this._renderOp;
+            const subMeshes = this.mesh.subMeshes;
             for (let i = 0, len = subMeshes.length; i < len; i++) {
-                let subMesh = subMeshes[i];
-                subMesh.getRenderOpreation(renderOp);
+                const subMesh = subMeshes[i];
+                subMesh.getRenderOperation(renderOp);
             }
 
             return renderOp;

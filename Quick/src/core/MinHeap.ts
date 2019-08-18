@@ -1,6 +1,6 @@
-﻿
-namespace QuickEngine {
-    
+
+namespace QE {
+
     export type MinHeapComparer<T> = (x: T, y: T) => number;
 
     /**
@@ -8,12 +8,12 @@ namespace QuickEngine {
      */
     export class MinHeap<T> {
 
-        //元素数组，0号位置也储存元素
-        protected _heap: T[]; 
+        // 元素数组，0号位置也储存元素
+        protected _heap: T[];
         // 元素比较器, 如果不存在,使用js默认比较器
         protected _comparer: MinHeapComparer<T>;
-        //目前元素个数
-        protected _length: number; 
+        // 目前元素个数
+        protected _length: number;
 
         constructor(comparer?: MinHeapComparer<T>) {
             this._heap = [];
@@ -39,13 +39,13 @@ namespace QuickEngine {
          */
         public dequeue(): T {
 
-            let heap = this._heap;
-            let x = heap[0];
+            const heap = this._heap;
+            const x = heap[0];
 
             heap[0] = heap[this._length - 1];
 
             this._length--;
-            this.filterDown(0, this._length - 1); //调整新的根节点
+            this.filterDown(0, this._length - 1); // 调整新的根节点
 
             return x;
         }
@@ -75,9 +75,9 @@ namespace QuickEngine {
         protected filterDown(start: number, end: number) {
 
             let i = start, j = 2 * i + 1;
-            let heap = this._heap;
-            let temp = heap[i];
-            let comparer = this._comparer;
+            const heap = this._heap;
+            const temp = heap[i];
+            const comparer = this._comparer;
 
             if (comparer) {
                 while (j <= end) {
@@ -112,17 +112,16 @@ namespace QuickEngine {
 
         protected filterUp(start: number) {
 
-            let j = start, i = Math.floor((j - 1) * 0.5); //i指向j的双亲节点
-            let heap = this._heap;
-            let temp = heap[j];
-            let comparer = this._comparer;
+            let j = start, i = Math.floor((j - 1) * 0.5); // i指向j的双亲节点
+            const heap = this._heap;
+            const temp = heap[j];
+            const comparer = this._comparer;
 
             if (comparer) {
                 while (j > 0) {
                     if (comparer(heap[i], temp) <= 0) {
                         break;
-                    }
-                    else {
+                    } else {
                         heap[j] = heap[i];
                         j = i;
                         i = Math.floor((i - 1) * 0.5);
@@ -132,8 +131,7 @@ namespace QuickEngine {
                 while (j > 0) {
                     if (heap[i] <= temp) {
                         break;
-                    }
-                    else {
+                    } else {
                         heap[j] = heap[i];
                         j = i;
                         i = Math.floor((i - 1) * 0.5);

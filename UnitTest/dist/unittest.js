@@ -1,131 +1,174 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 var UnitTest;
 (function (UnitTest) {
-    var Animator = QuickEngine.Animator;
-    var AnimationClip = QuickEngine.AnimationClip;
-    var AnimatorController = QuickEngine.AnimatorController;
-    var Transform = QuickEngine.Transform;
+    var Animator = QE.Animator;
+    var AnimationClip = QE.AnimationClip;
+    var AnimatorController = QE.AnimatorController;
+    var Transform = QE.Transform;
     function testAnimation() {
-        let mainScene = QuickEngine.SceneManager.instance.currentScene;
-        let mainCamera = QuickEngine.Camera.MainCamera;
+        var mainScene = QE.SceneManager.instance.currentScene;
+        var mainCamera = QE.Camera.MainCamera;
         mainCamera.setCameraType(0 /* Perspective */);
-        let cameraNode = mainCamera.transform;
-        cameraNode.localPosition = new QuickEngine.Vector3(0, 0, -6);
+        var cameraNode = mainCamera.transform;
+        cameraNode.localPosition = new QE.Vector3(0, 0, -6);
         // mesh
-        let mesh = new QuickEngine.Mesh();
-        mesh.name = "myMesh";
-        QuickEngine.PrefabFactory.createCube(mesh);
-        let node = mainScene.createNode();
-        let meshRender = node.addComponent(QuickEngine.MeshRender);
+        var mesh = new QE.Mesh();
+        mesh.name = 'myMesh';
+        QE.PrefabFactory.createCube(mesh);
+        var node = mainScene.createNode();
+        var meshRender = node.addComponent(QE.MeshRender);
         meshRender.mesh = mesh;
-        meshRender.setMaterial(QuickEngine.Material.getDefaultCubeMaterial());
-        node.transform.localPosition = new QuickEngine.Vector3(0, 0, 0);
-        node.name = "Node";
+        meshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
+        node.transform.localPosition = new QE.Vector3(0, 0, 0);
+        node.name = 'Node';
         // mesh
-        let sphereMesh = new QuickEngine.Mesh();
-        sphereMesh.name = "mySphereMesh";
-        QuickEngine.PrefabFactory.createCube(sphereMesh);
-        let sphereNode = mainScene.createNode(node.transform);
-        sphereNode.name = "sphereNode";
-        let sphereMeshRender = sphereNode.addComponent(QuickEngine.MeshRender);
+        var sphereMesh = new QE.Mesh();
+        sphereMesh.name = 'mySphereMesh';
+        QE.PrefabFactory.createCube(sphereMesh);
+        var sphereNode = mainScene.createNode(node.transform);
+        sphereNode.name = 'sphereNode';
+        var sphereMeshRender = sphereNode.addComponent(QE.MeshRender);
         sphereMeshRender.mesh = sphereMesh;
-        sphereMeshRender.setMaterial(QuickEngine.Material.getDefaultCubeMaterial());
-        let tex = QuickEngine.ResourceManager.instance.load("assets/res/icon.png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
-        sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
-        sphereNode.transform.localPosition = new QuickEngine.Vector3(1, 0, 0);
-        sphereNode.transform.localScale = new QuickEngine.Vector3(0.5, 0.5, 0.5);
-        // 添加Animator组件
-        let animator = node.addComponent(Animator);
-        // 创建动画控制器
-        let animController = new AnimatorController();
-        // 创建动画片段
-        let posClip = new AnimationClip();
-        posClip.name = "move";
-        let curveRX = new QuickEngine.AnimationCurve();
-        curveRX.addKeyFrameByValue(0, 0);
-        curveRX.addKeyFrameByValue(2000, -0);
-        let curveRY = new QuickEngine.AnimationCurve();
-        curveRY.addKeyFrameByValue(0, 0);
-        curveRY.addKeyFrameByValue(2000, 360);
-        let curveRZ = new QuickEngine.AnimationCurve();
-        curveRZ.addKeyFrameByValue(0, 0);
-        curveRZ.addKeyFrameByValue(2000, 0);
-        // 组装动画
-        // curve
-        posClip.addCurve("Node/sphereNode", QuickEngine.Reflection.Type.typeOf(Transform), "localEulerAngle.x", curveRX);
-        posClip.addCurve("Node/sphereNode", QuickEngine.Reflection.Type.typeOf(Transform), "localEulerAngle.y", curveRY);
-        posClip.addCurve("Node/sphereNode", QuickEngine.Reflection.Type.typeOf(Transform), "localEulerAngle.z", curveRZ);
-        let curveTX = new QuickEngine.AnimationCurve();
-        curveTX.addKeyFrameByValue(0, 1);
-        curveTX.addKeyFrameByValue(2000, 2);
-        let curveTY = new QuickEngine.AnimationCurve();
-        curveTY.addKeyFrameByValue(0, 0);
-        curveTY.addKeyFrameByValue(2000, 0);
-        let curveTZ = new QuickEngine.AnimationCurve();
-        curveTZ.addKeyFrameByValue(0, 0);
-        curveTZ.addKeyFrameByValue(2000, 0);
-        //
-        posClip.addCurve("Node/sphereNode", QuickEngine.Reflection.Type.typeOf(Transform), "localPosition.x", curveTX);
-        posClip.addCurve("Node/sphereNode", QuickEngine.Reflection.Type.typeOf(Transform), "localPosition.y", curveTY);
-        posClip.addCurve("Node/sphereNode", QuickEngine.Reflection.Type.typeOf(Transform), "localPosition.z", curveTZ);
-        posClip.length = 2000;
-        animController.addClip(posClip);
-        animator.animController = animController;
-        animator.play("move");
+        sphereMeshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
+        QE.ResourceManager.load('assets/res/icon.png').then(function (tex) {
+            sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
+            sphereNode.transform.localPosition = new QE.Vector3(1, 0, 0);
+            sphereNode.transform.localScale = new QE.Vector3(0.5, 0.5, 0.5);
+            // 添加Animator组件
+            var animator = node.addComponent(Animator);
+            // 创建动画控制器
+            var animController = new AnimatorController();
+            // 创建动画片段
+            var posClip = new AnimationClip();
+            posClip.name = 'move';
+            var curveRX = new QE.AnimationCurve();
+            curveRX.addKeyFrameByValue(0, 0);
+            curveRX.addKeyFrameByValue(2000, -0);
+            var curveRY = new QE.AnimationCurve();
+            curveRY.addKeyFrameByValue(0, 0);
+            curveRY.addKeyFrameByValue(2000, 360);
+            var curveRZ = new QE.AnimationCurve();
+            curveRZ.addKeyFrameByValue(0, 0);
+            curveRZ.addKeyFrameByValue(2000, 0);
+            // 组装动画
+            // curve
+            posClip.addCurve('Node/sphereNode', QE.Reflection.Type.typeOf(Transform), 'localEulerAngle.x', curveRX);
+            posClip.addCurve('Node/sphereNode', QE.Reflection.Type.typeOf(Transform), 'localEulerAngle.y', curveRY);
+            posClip.addCurve('Node/sphereNode', QE.Reflection.Type.typeOf(Transform), 'localEulerAngle.z', curveRZ);
+            var curveTX = new QE.AnimationCurve();
+            curveTX.addKeyFrameByValue(0, 1);
+            curveTX.addKeyFrameByValue(2000, 2);
+            var curveTY = new QE.AnimationCurve();
+            curveTY.addKeyFrameByValue(0, 0);
+            curveTY.addKeyFrameByValue(2000, 0);
+            var curveTZ = new QE.AnimationCurve();
+            curveTZ.addKeyFrameByValue(0, 0);
+            curveTZ.addKeyFrameByValue(2000, 0);
+            //
+            posClip.addCurve('Node/sphereNode', QE.Reflection.Type.typeOf(Transform), 'localPosition.x', curveTX);
+            posClip.addCurve('Node/sphereNode', QE.Reflection.Type.typeOf(Transform), 'localPosition.y', curveTY);
+            posClip.addCurve('Node/sphereNode', QE.Reflection.Type.typeOf(Transform), 'localPosition.z', curveTZ);
+            posClip.length = 2000;
+            animController.addClip(posClip);
+            animator.animController = animController;
+            animator.play('move');
+        });
     }
     UnitTest.testAnimation = testAnimation;
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
-    class TestComponent extends QuickEngine.Component {
-        constructor() {
-            super(...arguments);
-            this.onLoad = function () {
+    var TestComponent = /** @class */ (function (_super) {
+        __extends(TestComponent, _super);
+        function TestComponent() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.onLoad = function () {
                 console.log("UnitTest.TestComponent onLoad");
             };
-            this.onUpdate = function () {
+            _this.onUpdate = function () {
                 console.log("UnitTest.TestComponent onUpdate");
             };
+            return _this;
         }
-    }
-    TestComponent.__ClassName__ = "UnitTest.TestComponent";
-    TestComponent.__ClassID__ = 0;
+        return TestComponent;
+    }(QE.Component));
     function testComponent() {
-        let mainScene = QuickEngine.SceneManager.instance.currentScene;
-        let emptyNode = mainScene.createNode();
-        let testComponent = emptyNode.addComponent(TestComponent);
+        var mainScene = QE.SceneManager.instance.currentScene;
+        var emptyNode = mainScene.createNode();
+        var testComponent = emptyNode.addComponent(TestComponent);
         return testComponent;
     }
     UnitTest.testComponent = testComponent;
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
-    var QuickEvent = QuickEngine.QuickEvent;
-    var QuickListener = QuickEngine.QuickListener;
-    var QuickEvent1 = QuickEngine.QuickEvent1;
-    var QuickListener1 = QuickEngine.QuickListener1;
-    var QuickEvent2 = QuickEngine.QuickEvent2;
-    var QuickListener2 = QuickEngine.QuickListener2;
-    var QuickEvent3 = QuickEngine.QuickEvent3;
-    var QuickListener3 = QuickEngine.QuickListener3;
-    var QuickEvent4 = QuickEngine.QuickEvent4;
-    var QuickListener4 = QuickEngine.QuickListener4;
-    class TestCaller {
-        m() {
-            console.log("TestCaller m");
+    var TestCaller = /** @class */ (function () {
+        function TestCaller() {
         }
-        m1(a) {
-            console.log("TestCaller m1: " + a);
-        }
-        m2(a, b) {
-            console.log("TestCaller m2: " + a + " b:" + b);
-        }
-        m3(a, b, c) {
-            console.log("TestCaller m3: " + a + " b: " + b + " c:" + c);
-        }
-        m4(a, b, c, d) {
-            console.log("TestCaller m4: " + a + " b: " + b + " c:" + c + " d: " + d);
-        }
-    }
+        TestCaller.prototype.m = function () {
+            console.log('TestCaller m');
+        };
+        TestCaller.prototype.m1 = function (a) {
+            console.log('TestCaller m1: ' + a);
+        };
+        TestCaller.prototype.m2 = function (a, b) {
+            console.log('TestCaller m2: ' + a + ' b:' + b);
+        };
+        TestCaller.prototype.m3 = function (a, b, c) {
+            console.log('TestCaller m3: ' + a + ' b: ' + b + ' c:' + c);
+        };
+        TestCaller.prototype.m4 = function (a, b, c, d) {
+            console.log('TestCaller m4: ' + a + ' b: ' + b + ' c:' + c + ' d: ' + d);
+        };
+        return TestCaller;
+    }());
     function testEvent() {
         test();
         test1();
@@ -135,72 +178,85 @@ var UnitTest;
     }
     UnitTest.testEvent = testEvent;
     function test() {
-        let evt = new QuickEvent();
-        let listener = new QuickListener(new TestCaller(), TestCaller.prototype.m);
+        var evt = new QE.QEEvent();
+        var listener = new QE.QEListener(new TestCaller(), TestCaller.prototype.m);
         evt.add(listener);
-        let listener2 = new QuickListener(undefined, () => { console.log("QuickListener<Object, string>"); });
+        var listener2 = new QE.QEListener(undefined, function () {
+            console.log('QEListener<Object, string>');
+        });
         evt.add(listener2);
         evt.dispatchEvent();
     }
     function test1() {
-        let evt = new QuickEvent1();
-        let listener = new QuickListener1(new TestCaller(), TestCaller.prototype.m1);
+        var evt = new QE.QEEvent1();
+        var listener = new QE.QEListener1(new TestCaller(), TestCaller.prototype.m1);
         evt.add(listener);
-        let listener2 = new QuickListener1(undefined, (a) => { console.log("QuickListener1<Object, string>: " + a); });
+        var listener2 = new QE.QEListener1(undefined, function (a) {
+            console.log('QEListener1<Object, string>: ' + a);
+        });
         evt.add(listener2);
-        evt.dispatchEvent("fuck xiaoming");
+        evt.dispatchEvent('fuck xiaoming');
     }
     function test2() {
-        let evt = new QuickEvent2();
-        let listener = new QuickListener2(new TestCaller(), TestCaller.prototype.m2);
+        var evt = new QE.QEEvent2();
+        var listener = new QE.QEListener2(new TestCaller(), TestCaller.prototype.m2);
         evt.add(listener);
-        let listener2 = new QuickListener2(undefined, (a) => { console.log("QuickListener2<Object, string>: " + a); });
+        var listener2 = new QE.QEListener2(undefined, function (a) {
+            console.log('QEListener2<Object, string>: ' + a);
+        });
         evt.add(listener2);
-        evt.dispatchEvent("fuck xiaoming", 1);
+        evt.dispatchEvent('fuck xiaoming', 1);
     }
     function test3() {
-        let evt = new QuickEvent3();
-        let listener = new QuickListener3(new TestCaller(), TestCaller.prototype.m3);
+        var evt = new QE.QEEvent3();
+        var listener = new QE.QEListener3(new TestCaller(), TestCaller.prototype.m3);
         evt.add(listener);
-        let listener2 = new QuickListener3(undefined, (a) => { console.log("QuickListener3<Object, string>: " + a); });
+        var listener2 = new QE.QEListener3(undefined, function (a) {
+            console.log('QEListener3<Object, string>: ' + a);
+        });
         evt.add(listener2);
-        evt.dispatchEvent("fuck xiaoming", 1, 2);
+        evt.dispatchEvent('fuck xiaoming', 1, 2);
     }
     function test4() {
-        let evt = new QuickEvent4();
-        let listener = new QuickListener4(new TestCaller(), TestCaller.prototype.m4);
+        var evt = new QE.QEEvent4();
+        var listener = new QE.QEListener4(new TestCaller(), TestCaller.prototype.m4);
         evt.add(listener);
-        let listener2 = new QuickListener4(undefined, (a) => { console.log("QuickListener4<Object, string>: " + a); });
+        var listener2 = new QE.QEListener4(undefined, function (a) {
+            console.log('QEListener4<Object, string>: ' + a);
+        });
         evt.add(listener2);
-        evt.dispatchEvent("fuck xiaoming", 1, 2, 3);
+        evt.dispatchEvent('fuck xiaoming', 1, 2, 3);
     }
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
-    var SceneManager = QuickEngine.SceneManager;
-    var Camera = QuickEngine.Camera;
-    var Vector3 = QuickEngine.Vector3;
-    var Material = QuickEngine.Material;
+    var SceneManager = QE.SceneManager;
+    var Camera = QE.Camera;
+    var Vector3 = QE.Vector3;
+    var Material = QE.Material;
     function testFbxModel() {
-        let mainScene = SceneManager.instance.currentScene;
-        let mainCamera = Camera.MainCamera;
+        var mainScene = SceneManager.instance.currentScene;
+        var mainCamera = Camera.MainCamera;
         mainCamera.setCameraType(0 /* Perspective */);
-        let cameraNode = mainCamera.transform;
+        var cameraNode = mainCamera.transform;
         cameraNode.localPosition = new Vector3(0, 0, -10);
-        let modelName = "jianshi";
+        var modelName = 'jianshi';
         //    let modelName = "chan";
-        let p = QuickEngine.ResourceManager.instance.loadAsync("assets/res/model/" + modelName + "/" + modelName + ".mesh.json", QuickEngine.Reflection.Type.typeOf(QuickEngine.TextResource));
-        p.then(function (res) {
-            let tex = QuickEngine.ResourceManager.instance.load("assets/res/model/" + modelName + "/" + modelName + ".png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
-            Material.getDefaultCubeMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
-            let rootNode = mainScene.createNode();
-            let model = QuickEngine.MeshSerializer.loadModel(JSON.parse(res.data));
-            let transform = model.transform;
-            transform.localPosition = new Vector3(0, -1, 0);
-            transform.localScale = new Vector3(1, 1, 1);
-            rootNode.transform.parent = model.transform;
-            let eulerAngle = new QuickEngine.Vector3(0, 0, 0);
-            rootNode.transform.localRotation = rootNode.transform.localRotation.fromEulerAngle(eulerAngle);
+        var modelPath = 'UnitTest/assets/res/model/' + modelName + '/' + modelName + '.mesh.json';
+        QE.ResourceManager.load(modelPath)
+            .then(function (res) {
+            QE.ResourceManager.load('UnitTest/assets/res/model/' + modelName + '/' + modelName + '.png')
+                .then(function (tex) {
+                Material.getDefaultCubeMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
+                var rootNode = mainScene.createNode();
+                var model = QE.MeshSerializer.loadModel(JSON.parse(res.text));
+                var transform = model.transform;
+                transform.localPosition = new Vector3(0, -1, 0);
+                transform.localScale = new Vector3(1, 1, 1);
+                rootNode.transform.parent = model.transform;
+                var eulerAngle = new QE.Vector3(0, 0, 0);
+                rootNode.transform.localRotation = rootNode.transform.localRotation.fromEulerAngle(eulerAngle);
+            });
         });
     }
     UnitTest.testFbxModel = testFbxModel;
@@ -208,33 +264,34 @@ var UnitTest;
 var UnitTest;
 (function (UnitTest) {
     function testGeometry() {
-        let mainScene = QuickEngine.SceneManager.instance.currentScene;
-        let mainCamera = QuickEngine.Camera.MainCamera;
+        var mainScene = QE.SceneManager.instance.currentScene;
+        var mainCamera = QE.Camera.MainCamera;
         mainCamera.setCameraType(0 /* Perspective */);
         mainCamera.renderContext.setColorClear(7 /* ALL */, [0, 0, 0, 0], 1, 0);
-        let cameraNode = mainCamera.transform;
-        cameraNode.localPosition = new QuickEngine.Vector3(0, 0, 6);
+        var cameraNode = mainCamera.transform;
+        cameraNode.localPosition = new QE.Vector3(0, 0, -3);
+        cameraNode.localEulerAngle = new QE.Vector3(45, 45, 0);
         // mesh
-        let mesh = new QuickEngine.Mesh();
+        var mesh = new QE.Mesh();
         mesh.name = 'myMesh';
-        QuickEngine.PrefabFactory.createCube(mesh);
+        QE.PrefabFactory.createCube(mesh);
         // mesh
-        let sphereMesh = new QuickEngine.Mesh();
+        var sphereMesh = new QE.Mesh();
         sphereMesh.name = 'mySphereMesh';
-        QuickEngine.PrefabFactory.createSphere(sphereMesh);
-        let node = mainScene.createNode();
-        let meshRender = node.addComponent(QuickEngine.MeshRender);
+        QE.PrefabFactory.createSphere(sphereMesh);
+        var node = mainScene.createNode();
+        var meshRender = node.addComponent(QE.MeshRender);
         meshRender.mesh = sphereMesh;
-        meshRender.setMaterial(QuickEngine.Material.getDefaultCubeMaterial());
-        node.transform.localPosition = new QuickEngine.Vector3(0, 0, 0);
+        meshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
+        node.transform.localPosition = new QE.Vector3(0, 0, 0);
         node.name = 'Node';
-        let rot = new QuickEngine.Quaternion();
-        let x = 0;
-        let y = 0;
-        let z = 0;
+        var rot = new QE.Quaternion();
+        var x = 0;
+        var y = 0;
+        var z = 0;
         setInterval(function () {
-            // node.transform.localRotation = rot.FromEulerAngle(new QuickEngine.Vector3(x, y++, z));
-            // node.transform.localPosition = new QuickEngine.Vector3((x++) * 0.01, 0, 0);
+            // node.transform.localRotation = rot.FromEulerAngle(new QE.Vector3(x, y++, z));
+            // node.transform.localPosition = new QE.Vector3((x++) * 0.01, 0, 0);
         }, 100);
     }
     UnitTest.testGeometry = testGeometry;
@@ -248,37 +305,44 @@ var UnitTest;
         // 2. 直接读取属性
         // 3. 函数取值
         // 结果：第一种和第三中差别不大，这两种耗时约等于第二种的十倍
-        class TestGetSetObj {
-            get hehe() {
+        var TestGetSetObj = /** @class */ (function () {
+            function TestGetSetObj() {
+            }
+            Object.defineProperty(TestGetSetObj.prototype, "hehe", {
+                get: function () {
+                    return this._hehe;
+                },
+                set: function (val) {
+                    this._hehe = val;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            TestGetSetObj.prototype.getHehe = function () {
                 return this._hehe;
-            }
-            set hehe(val) {
-                this._hehe = val;
-            }
-            getHehe() {
-                return this._hehe;
-            }
-        }
+            };
+            return TestGetSetObj;
+        }());
         function run() {
-            let count = 1000;
-            let testObj = new TestGetSetObj();
+            var count = 1000;
+            var testObj = new TestGetSetObj();
             //for (let i = 0; i < count; i++) {
             //    array[i] = i;
             //    floatArray[i] = i;
             //}
             console.time("get function");
-            for (let i = 0; i < count; i++) {
-                let t = testObj.hehe;
+            for (var i = 0; i < count; i++) {
+                var t = testObj.hehe;
             }
             console.timeEnd("get function");
             console.time("property value");
-            for (let i = 0; i < count; i++) {
-                let t = testObj._hehe;
+            for (var i = 0; i < count; i++) {
+                var t = testObj._hehe;
             }
             console.timeEnd("property value");
             console.time("getHehe function");
-            for (let i = 0; i < count; i++) {
-                let t = testObj.getHehe();
+            for (var i = 0; i < count; i++) {
+                var t = testObj.getHehe();
             }
             console.timeEnd("getHehe function");
         }
@@ -290,7 +354,7 @@ var UnitTest;
     //最小堆：根结点的键值是所有堆结点键值中最小者。
     function testMinHeap() {
         //let k, n = 11, a = [0, 5, 2, 4, 9, 7, 3, 1, 10, 8, 6];
-        //let test = new QuickEngine.MinHeap<number>();
+        //let test = new QE.MinHeap<number>();
         //for (k = 0; k < n; k++)
         //    test.enqueue(a[k]);
         //for (k = 0; k < n; k++)
@@ -298,7 +362,7 @@ var UnitTest;
         function comparer(x, y) {
             return x.v - y.v;
         }
-        let k, n = 11, a = [
+        var k, n = 11, a = [
             { v: 0, b: 2 },
             { v: 5, b: 2 },
             { v: 2, b: 2 },
@@ -311,7 +375,7 @@ var UnitTest;
             { v: 8, b: 2 },
             { v: 6, b: 2 }
         ];
-        let test = new QuickEngine.MinHeap(comparer);
+        var test = new QE.MinHeap(comparer);
         for (k = 0; k < n; k++)
             test.enqueue(a[k]);
         for (k = 0; k < n; k++)
@@ -321,12 +385,9 @@ var UnitTest;
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
-    var TextResource = QuickEngine.TextResource;
-    var Type = QuickEngine.Reflection.Type;
     function testTextLoader() {
-        let p = QuickEngine.ResourceManager.instance.loadAsync('assets/res/test.txt', Type.typeOf(TextResource));
-        p.then(function (textRes) {
-            console.log(textRes.data);
+        QE.ResourceManager.load('assets/res/test.txt').then(function (textRes) {
+            console.log(textRes.text);
         });
     }
     UnitTest.testTextLoader = testTextLoader;
@@ -334,27 +395,36 @@ var UnitTest;
 var UnitTest;
 (function (UnitTest) {
     function initScene() {
-        let mainScene = QuickEngine.SceneManager.instance.currentScene;
-        let mainCamera = QuickEngine.Camera.MainCamera;
-        mainCamera.setCameraType(1 /* Orthogonal */);
-        let cameraNode = mainCamera.node.transform;
-        cameraNode.localPosition = new QuickEngine.Vector3(0, 0, -10);
-        cameraNode.localEulerAngle = new QuickEngine.Vector3(1, 1, 1);
+        var mainScene = QE.SceneManager.instance.currentScene;
+        var mainCamera = QE.Camera.MainCamera;
+        mainCamera.setCameraType(0 /* Perspective */);
+        mainCamera.setNearClip(0.1);
+        mainCamera.setFarClip(100);
+        mainCamera.setFOV(45);
+        var cameraNode = mainCamera.node.transform;
+        cameraNode.localPosition = new QE.Vector3(0, 0, -3);
+        cameraNode.localEulerAngle = new QE.Vector3(0, 0, 0);
     }
     function testSprite() {
-        initScene();
-        let mainScene = QuickEngine.SceneManager.instance.currentScene;
-        let i = 0;
-        let meshNode = mainScene.createNode();
-        let spriteRender = meshNode.addComponent(QuickEngine.SpriteRender);
-        let material = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
-        spriteRender.setMaterial(material);
-        let tex = QuickEngine.ResourceManager.instance.load("assets/res/icon.png", QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
-        material.shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
-        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, 1 * 0.1);
-        setTimeout(function () {
-            meshNode.transform.localPosition = new QuickEngine.Vector3(meshNode.transform.localPosition.x + 0.1, meshNode.transform.localPosition.y + 0.1, 1);
-        }, this);
+        return __awaiter(this, void 0, void 0, function () {
+            var mainScene, tex, meshNode, spriteRender, material;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        initScene();
+                        mainScene = QE.SceneManager.instance.currentScene;
+                        return [4 /*yield*/, QE.ResourceManager.load('UnitTest/assets/res/icon.png')];
+                    case 1:
+                        tex = _a.sent();
+                        meshNode = mainScene.createNode();
+                        spriteRender = meshNode.addComponent(QE.SpriteRender);
+                        material = QE.SpriteMaterial.getDefaultSpriteMaterial();
+                        spriteRender.setMaterial(material);
+                        material.shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
+                        return [2 /*return*/];
+                }
+            });
+        });
     }
     UnitTest.testSprite = testSprite;
 })(UnitTest || (UnitTest = {}));
@@ -371,8 +441,8 @@ var UnitTest;
 (function (UnitTest) {
     // TODO: 重构测试框架
     function run() {
-        let div = document.getElementById('gameDiv');
-        QuickEngine.run({
+        var div = document.getElementById('gameDiv');
+        QE.run({
             width: 720,
             height: 1280,
             div: div,
@@ -380,35 +450,34 @@ var UnitTest;
             onEnginePrepared: function () {
                 // testTextLoader();
                 // testEvent();
-                // TestPerformenceArrayBufferAndArray.run();
                 // TestGetSet.run();
                 // testMinHeap();
                 // UnitTest.TestMatrix.run();
-                // testSprite();
+                UnitTest.testSprite();
                 // testAnimation();
-                UnitTest.testGeometry();
+                // testGeometry();
                 // testFbxModel();
             }
         });
     }
     UnitTest.run = run;
 })(UnitTest || (UnitTest = {}));
-window.onload = () => {
+window.onload = function () {
     UnitTest.run();
 };
 function dumpSceneHierarchy() {
-    let obj = {};
-    let animator;
-    let currScene = QuickEngine.SceneManager.instance.currentScene;
-    for (let i = 0; i < currScene.children.length; i++) {
-        let rootChild = currScene.children[i];
-        let childObj = obj[rootChild.name] = {};
+    var obj = {};
+    var animator;
+    var currScene = QE.SceneManager.instance.currentScene;
+    for (var i = 0; i < currScene.children.length; i++) {
+        var rootChild = currScene.children[i];
+        var childObj = obj[rootChild.name] = {};
         childObj['pos'] = [rootChild.transform.localPosition.x, rootChild.transform.localPosition.y, rootChild.transform.localPosition.z];
-        animator = rootChild.getComponent(QuickEngine.Animator);
+        animator = rootChild.getComponent(QE.Animator);
         function searchChild(rootNode, dict) {
-            for (let ii = 0; ii < rootNode.childCount; ii++) {
-                let subChild = rootNode.getChildByIndex(ii);
-                let subChildObj = dict[subChild.node.name] = {};
+            for (var ii = 0; ii < rootNode.childCount; ii++) {
+                var subChild = rootNode.getChildByIndex(ii);
+                var subChildObj = dict[subChild.node.name] = {};
                 subChildObj['node'] = subChild.node;
                 subChildObj['pos'] = [subChild.localPosition.x, subChild.localPosition.y, subChild.localPosition.z];
                 searchChild(subChild, subChildObj);
@@ -419,19 +488,16 @@ function dumpSceneHierarchy() {
     return obj;
 }
 function step(timePos) {
-    let rootChild = QuickEngine.SceneManager.instance.currentScene.children[1].transform.getChildByIndex(0).node;
-    let animator = QuickEngine.SceneManager.instance.currentScene.children[1].transform.getChildByIndex(0).node.getComponent(QuickEngine.Animator);
-    ;
+    var rootChild = QE.SceneManager.instance.currentScene.children[1].transform.getChildByIndex(0).node;
+    var animator = QE.SceneManager.instance.currentScene.children[1].transform.getChildByIndex(0).node.getComponent(QE.Animator);
     animator.animController.animationClips[0].apply(rootChild, timePos);
 }
 function play() {
-    let rootChild = QuickEngine.SceneManager.instance.currentScene.children[1].transform.node;
-    let animator = QuickEngine.SceneManager.instance.currentScene.children[1].getComponent(QuickEngine.Animator);
-    ;
+    var rootChild = QE.SceneManager.instance.currentScene.children[1].transform.node;
+    var animator = QE.SceneManager.instance.currentScene.children[1].getComponent(QE.Animator);
     animator.play('Take 001');
 }
 function findChild(name) {
-    let rootChild = QuickEngine.SceneManager.instance.currentScene.children[1].transform.node;
+    var rootChild = QE.SceneManager.instance.currentScene.children[1].transform.node;
     return rootChild.transform.find(name);
 }
-//# sourceMappingURL=unittest.js.map

@@ -1,17 +1,26 @@
-namespace QuickEngine {
+namespace QE {
 
     export type Number2 = [number, number];
 
 	export class Vector2 {
 
-        public static ClassName = "Vector2";
+        constructor(x: number = 0, y: number = 0) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public static ClassName = 'Vector2';
 
         public x: number;
         public y: number;
 
-        constructor(x: number = 0, y: number = 0) {
-            this.x = x;
-            this.y = y;
+        /**
+         * ���
+         * @param lhs
+         * @param rhs
+         */
+        public static dot(lhs: Vector2, rhs: Vector2) {
+            return lhs.x * rhs.x + lhs.y * rhs.y;
         }
 
     	/**
@@ -66,15 +75,6 @@ namespace QuickEngine {
             return this.x * other.x + this.y * other.y;
         }
 
-        /**
-         * ���
-         * @param lhs
-         * @param rhs
-         */
-        public static dot(lhs: Vector2, rhs: Vector2) {
-            return lhs.x * rhs.x + lhs.y * rhs.y;
-        }
-
         public divide(val: number): Vector2 {
 
             console.assert(val > 0);
@@ -100,10 +100,10 @@ namespace QuickEngine {
          */
         public normalize(): Vector2 {
 
-            let len = this.x * this.x + this.y * this.y;
+            const len = this.x * this.x + this.y * this.y;
 
             if (len) {
-                let t = 1 / Math.sqrt(len);
+                const t = 1 / Math.sqrt(len);
                 this.x *= t;
                 this.y *= t;
             } else {
@@ -135,9 +135,9 @@ namespace QuickEngine {
          */
         public distance(v0: Vector2, v1: Vector2) {
 
-            let dx = v0.x - v1.x;
-            let dy = v0.y - v1.y;
-            let distSquare = dx * dx + dy * dy;
+            const dx = v0.x - v1.x;
+            const dy = v0.y - v1.y;
+            const distSquare = dx * dx + dy * dy;
 
             return Math.sqrt(distSquare);
         }
@@ -149,16 +149,16 @@ namespace QuickEngine {
          */
         public distanceSquare(v0: Vector2, v1: Vector2): number {
 
-            let dx = v0.x - v1.x;
-            let dy = v0.y - v1.y;
+            const dx = v0.x - v1.x;
+            const dy = v0.y - v1.y;
 
             return dx * dx + dy * dy;
         }
 
         public lerp(v0: Vector2, v1: Vector2, t: number): Vector2 {
 
-            let x0: number = v0.x, y0: number = v0.y;
-            let x1: number = v1.x, y1: number = v1.y;
+            const x0: number = v0.x, y0: number = v0.y;
+            const x1: number = v1.x, y1: number = v1.y;
 
             this.x = (x1 - x0) * t + x0;
             this.y = (y1 - y0) * t + y0;

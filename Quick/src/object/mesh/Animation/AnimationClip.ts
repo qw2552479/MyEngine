@@ -1,6 +1,5 @@
-﻿///<reference path="../../../core/HashObject.ts" />
-namespace QuickEngine {
-
+///<reference path="../../../core/HashObject.ts" />
+namespace QE {
     export const enum VertexAnimationType {
         /// No animation
         NONE = 0,
@@ -15,20 +14,16 @@ namespace QuickEngine {
      * 动画片段包含一组动画曲线.每个曲线对应节点路径
      */
     export class AnimationClip extends HashObject {
-
-        public static __ClassName__ = "QuickEngine.AnimationClip";
-        public static __ClassID__ = 0;
-
-        private _frameRate: number = 0;
+        private _frameRate = 0;
         public get frameRate(): number {
             return this._frameRate;
         }
 
         public set frameRate(val: number) {
             this._frameRate = val;
-        }        
+        }
 
-        private _length: number = 0;
+        private _length = 0;
         public get length(): number {
             return this._length;
         }
@@ -75,44 +70,44 @@ namespace QuickEngine {
             curve._valueType = type;
 
             if (type.equal(Reflection.Type.typeOf(Transform))) {
-               
-                let segmentProp = splitProperty(propertyName);
-                console.assert(segmentProp.length == 2, "Transform属性长度为2");
+
+                const segmentProp = splitProperty(propertyName);
+                console.assert(segmentProp.length === 2, 'Transform属性长度为2');
 
                 let transCurveArr: AnimationCurve[];
 
-                if (segmentProp[0] == 'localPosition') {
+                if (segmentProp[0] === 'localPosition') {
 
                     transCurveArr = this._positionCurveDict[relativePath];
                     if (!transCurveArr) {
                         this._positionCurveDict[relativePath] = transCurveArr = [];
-                    } 
+                    }
 
-                } else if (segmentProp[0] == "localEulerAngle") {
+                } else if (segmentProp[0] === 'localEulerAngle') {
 
                     transCurveArr = this._eulerCurveDict[relativePath];
                     if (!transCurveArr) {
                         this._eulerCurveDict[relativePath] = transCurveArr = [];
-                    } 
+                    }
 
-                } else if (segmentProp[0] == "localScale") {
+                } else if (segmentProp[0] === 'localScale') {
 
                     transCurveArr = this._scaleCurveDict[relativePath];
                     if (!transCurveArr) {
                         this._scaleCurveDict[relativePath] = transCurveArr = [];
-                    } 
+                    }
 
                 } else {
-                    console.error("不支持的变换属性：" + segmentProp[0]);
+                    console.error('不支持的变换属性：' + segmentProp[0]);
                 }
 
-                if (segmentProp[1] == 'x') {
+                if (segmentProp[1] === 'x') {
                     transCurveArr.splice(0, 1, curve);
-                } else if (segmentProp[1] == 'y') {
+                } else if (segmentProp[1] === 'y') {
                     transCurveArr.splice(1, 1, curve);
-                } else if (segmentProp[1] == 'z') {
+                } else if (segmentProp[1] === 'z') {
                     transCurveArr.splice(2, 1, curve);
-                }                
+                }
 
             } else if (type.equal(Reflection.Type.typeOf(Number))) {
 
@@ -120,7 +115,7 @@ namespace QuickEngine {
 
                 if (!numberCurveArr) {
                     this._numberCurveDict[relativePath] = numberCurveArr = [];
-                } 
+                }
 
                 numberCurveArr.push(curve);
 
@@ -130,7 +125,7 @@ namespace QuickEngine {
 
                 if (objCurveArr) {
                     this._objCurveDict[relativePath] = objCurveArr = [];
-                } 
+                }
 
                 objCurveArr.push(curve);
 
@@ -138,7 +133,7 @@ namespace QuickEngine {
         }
 
         public removeCurve(relativePath: string, type: string, propertyName: string) {
-            let curveArr = this._objCurveDict[relativePath];
+            const curveArr = this._objCurveDict[relativePath];
             if (!curveArr) {
                 console.warn('[AnimationClip.removeCurve] 删除的curve不存在. path: ' + relativePath + '  propertyName: ' + propertyName);
                 return;
@@ -146,8 +141,8 @@ namespace QuickEngine {
 
             for (let i = 0, len = curveArr.length; i < len; i++) {
 
-                let curve = curveArr[i];
-                if (curve._propName == propertyName) {
+                const curve = curveArr[i];
+                if (curve._propName === propertyName) {
                     curveArr.splice(i, 1);
                     return;
                 }
@@ -167,9 +162,9 @@ namespace QuickEngine {
             this._objCurveDict = {};
         }
 
-        public apply(node: Node, timePos: number) {
+        public apply(node: GameObject, timePos: number) {
 
-            let timeIndex = this.getTimeIndex(timePos);
+            const timeIndex = this.getTimeIndex(timePos);
 
             // 变换缩放
             this._applyScale(node, timeIndex, 1);
@@ -185,12 +180,12 @@ namespace QuickEngine {
                 return;
             }
 
-            let meshFilter = node.transform.getComponent<MeshFilter>(MeshFilter);
+            const meshFilter = node.transform.getComponent<MeshFilter>(MeshFilter);
             if (!meshFilter) {
                 return;
             }
 
-            let mesh = meshFilter.mesh;
+            const mesh = meshFilter.mesh;
             if (!mesh) {
                 return;
             }
@@ -199,14 +194,14 @@ namespace QuickEngine {
 
         }
 
-        private _applyScale(node: Node, timeIndex: TimeIndex, weight: number): void {
+        private _applyScale(node: GameObject, timeIndex: TimeIndex, weight: number): void {
 
-            let curveDict = this._scaleCurveDict;
-            let timePos = timeIndex.timePos;
-            let keyIndex = timeIndex.keyIndex;
+            const curveDict = this._scaleCurveDict;
+            const timePos = timeIndex.timePos;
+            const keyIndex = timeIndex.keyIndex;
 
             // apply position
-            for (let path in curveDict) {
+            for (const path in curveDict) {
 
                 let target: Transform;
                 // 如果路径为空，此曲线应用在动画根节点上
@@ -217,35 +212,35 @@ namespace QuickEngine {
                 }
 
                 if (!target) {
-                    console.warn("[AnimationClip._applyScale] 动画对象节点不存在： " + path);
+                    console.warn('[AnimationClip._applyScale] 动画对象节点不存在： ' + path);
                     continue;
                 }
 
-                let objCurves = curveDict[path];
+                const objCurves = curveDict[path];
 
-                let curveX = objCurves[0];
-                let curveY = objCurves[1];
-                let curveZ = objCurves[2];
+                const curveX = objCurves[0];
+                const curveY = objCurves[1];
+                const curveZ = objCurves[2];
 
-                let interpolationX = curveX.getInterpolation(timePos, keyIndex);
-                let interpolationY = curveY.getInterpolation(timePos, keyIndex);
-                let interpolationZ = curveZ.getInterpolation(timePos, keyIndex);
+                const interpolationX = curveX.getInterpolation(timePos, keyIndex);
+                const interpolationY = curveY.getInterpolation(timePos, keyIndex);
+                const interpolationZ = curveZ.getInterpolation(timePos, keyIndex);
 
                 // TODO: 计算权重
-               
+
                 // 设置本地坐标
                 target.localScale = target.localScale.set(interpolationX, interpolationY, interpolationZ);
             }
         }
 
-        private _applyRotation(node: Node, timeIndex: TimeIndex, weight: number): void {
+        private _applyRotation(node: GameObject, timeIndex: TimeIndex, weight: number): void {
 
-            let curveDict = this._eulerCurveDict;
-            let timePos = timeIndex.timePos;
-            let keyIndex = undefined;//timeIndex.keyIndex;
+            const curveDict = this._eulerCurveDict;
+            const timePos = timeIndex.timePos;
+            let keyIndex; // timeIndex.keyIndex;
 
             // apply position
-            for (let path in curveDict) {
+            for (const path in curveDict) {
 
                 let target: Transform;
                 // 如果路径为空，此曲线应用在动画根节点上
@@ -256,35 +251,35 @@ namespace QuickEngine {
                 }
 
                 if (!target) {
-                    console.warn("[AnimationClip._applyRotation] 动画对象节点不存在： " + path);
+                    console.warn('[AnimationClip._applyRotation] 动画对象节点不存在： ' + path);
                     continue;
                 }
 
-                let objCurves = curveDict[path];
+                const objCurves = curveDict[path];
 
-                let curveX = objCurves[0];
-                let curveY = objCurves[1];
-                let curveZ = objCurves[2];
+                const curveX = objCurves[0];
+                const curveY = objCurves[1];
+                const curveZ = objCurves[2];
 
-                let interpolationX = curveX.getInterpolation(timePos);
-                let interpolationY = curveY.getInterpolation(timePos);
-                let interpolationZ = curveZ.getInterpolation(timePos);
+                const interpolationX = curveX.getInterpolation(timePos);
+                const interpolationY = curveY.getInterpolation(timePos);
+                const interpolationZ = curveZ.getInterpolation(timePos);
 
                 // TODO: 计算权重
-               
-                // 设置本地坐标                
+
+                // 设置本地坐标
                 target.localRotation = target.localRotation.fromEulerAngleScalar(interpolationX, interpolationY, interpolationZ);
             }
         }
 
-        private _applyPosition(node: Node, timeIndex: TimeIndex, weight: number): void {
+        private _applyPosition(node: GameObject, timeIndex: TimeIndex, weight: number): void {
 
-            let curveDict = this._positionCurveDict;
-            let timePos = timeIndex.timePos;
-            let keyIndex = timeIndex.keyIndex;
+            const curveDict = this._positionCurveDict;
+            const timePos = timeIndex.timePos;
+            const keyIndex = timeIndex.keyIndex;
 
             // apply position
-            for (let path in curveDict) {
+            for (const path in curveDict) {
 
                 let target: Transform;
                 // 如果路径为空，此曲线应用在动画根节点上
@@ -292,37 +287,37 @@ namespace QuickEngine {
                     target = node.transform;
                 } else {
                     target = node.transform.find(path);
-                }                
+                }
 
                 if (!target) {
-                    console.warn("[AnimationClip._applyPosition] 动画对象节点不存在： " + path);
+                    console.warn('[AnimationClip._applyPosition] 动画对象节点不存在： ' + path);
                     continue;
                 }
 
-                let objCurves = curveDict[path];
+                const objCurves = curveDict[path];
 
-                let curveX = objCurves[0];
-                let curveY = objCurves[1];
-                let curveZ = objCurves[2];
+                const curveX = objCurves[0];
+                const curveY = objCurves[1];
+                const curveZ = objCurves[2];
 
-                let interpolationX = curveX.getInterpolation(timePos);
-                let interpolationY = curveY.getInterpolation(timePos);
-                let interpolationZ = curveZ.getInterpolation(timePos);
+                const interpolationX = curveX.getInterpolation(timePos);
+                const interpolationY = curveY.getInterpolation(timePos);
+                const interpolationZ = curveZ.getInterpolation(timePos);
 
                 // TODO: 计算权重
-               
+
                 // 设置本地坐标
                 target.localPosition = target.localPosition.set(interpolationX, interpolationY, interpolationZ);
             }
-        }     
+        }
 
-        private _applyObj(node: Node, timeIndex: TimeIndex, weight: number): void {
+        private _applyObj(node: GameObject, timeIndex: TimeIndex, weight: number): void {
 
-            let curveDict = this._objCurveDict;
-            let timePos = timeIndex.timePos;
-            let keyIndex = timeIndex.keyIndex;
-            
-            for (let path in curveDict) {
+            const curveDict = this._objCurveDict;
+            const timePos = timeIndex.timePos;
+            const keyIndex = timeIndex.keyIndex;
+
+            for (const path in curveDict) {
 
                 let target: Transform;
                 // 如果路径为空，此曲线应用在动画根节点上
@@ -333,28 +328,24 @@ namespace QuickEngine {
                 }
 
                 if (!target) {
-                    console.warn("[AnimationClip._applyObj] 动画对象节点不存在： " + path);
+                    console.warn('[AnimationClip._applyObj] 动画对象节点不存在： ' + path);
                     continue;
                 }
 
-                let objCurveArr = curveDict[path];
+                const objCurveArr = curveDict[path];
                 for (let i = 0, len = objCurveArr.length; i < len; i++) {
-                    let objCurve = objCurveArr[i];
+                    const objCurve = objCurveArr[i];
 
-                    if (!objCurve._valueType.hasOwnProperty(objCurve._propName)) {
+                    if (!objCurve._objInstance || !objCurve._objInstance.hasOwnProperty(objCurve._propName)) {
                         console.error('脚本属性不存在. PropName: ' + objCurve._propName);
                         continue;
                     }
-                    
-                    let comp = target.getComponent<Component>(Component.__ClassName__);
-                    let interpolation = objCurve.getInterpolation(timePos, keyIndex);
-                    // TODO: 计算权重
-               
-                    // 设置脚本属性
-                    comp[objCurve._propName] = comp;
+
+                    const interpolation = objCurve.getInterpolation(timePos, keyIndex);
+                    objCurve._objInstance[objCurve._propName] = interpolation;
                 }
             }
-        }    
+        }
 
         public getTimeIndex(timePos: number): TimeIndex {
 
@@ -362,44 +353,44 @@ namespace QuickEngine {
                 this.buildKeyFrameTimeList();
             }
 
-            let totalAnimationLength = this.length;
-           
+            const totalAnimationLength = this.length;
+
             if (timePos > totalAnimationLength && totalAnimationLength > 0.0) {
                 timePos = timePos % totalAnimationLength;
             }
 
-            let keyFrameTimes = this._keyFrameTimes;
+            const keyFrameTimes = this._keyFrameTimes;
             let index = 0;
 
             for (let i = 0, len = this._keyFrameTimes.length; i < len - 1; i++) {
-                let prev = keyFrameTimes[i];
-                let next = keyFrameTimes[i + 1];
+                const prev = keyFrameTimes[i];
+                const next = keyFrameTimes[i + 1];
                 if (timePos < prev) {
                     index = i;
                     break;
                 } else if (timePos >= prev && timePos < next) {
                     index = i + 1;
                     break;
-                } 
+                }
 
                 index = i + 1;
             }
 
-            return { timePos: timePos, keyIndex: index };
+            return {timePos: timePos, keyIndex: index};
         }
 
         private buildKeyFrameTimeList() {
 
-            let thisKeyFrameTimes = this._keyFrameTimes;
-            let thisCurveDict = this._positionCurveDict;
-            //let keys = Object.keys(thisCurveDict);
+            const thisKeyFrameTimes = this._keyFrameTimes;
+            const thisCurveDict = this._positionCurveDict;
+            // let keys = Object.keys(thisCurveDict);
 
-            for (let key in thisCurveDict) {
+            for (const key in thisCurveDict) {
 
-                let val = thisCurveDict[key];
+                const val = thisCurveDict[key];
                 for (let i = 0, len = val.length; i < len; i++) {
 
-                    let curve = val[i];
+                    const curve = val[i];
                     curve._collectKeyFrameTimes(thisKeyFrameTimes);
                 }
             }

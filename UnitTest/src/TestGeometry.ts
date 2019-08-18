@@ -2,40 +2,41 @@
 
     export function testGeometry() {
 
-        let mainScene = QuickEngine.SceneManager.instance.currentScene;
-        let mainCamera = QuickEngine.Camera.MainCamera;
-        mainCamera.setCameraType(QuickEngine.CameraType.Perspective);
-        mainCamera.renderContext.setColorClear(QuickEngine.ClearMask.ALL, [0, 0, 0, 0], 1, 0);
+        let mainScene = QE.SceneManager.instance.currentScene;
+        let mainCamera = QE.Camera.MainCamera;
+        mainCamera.setCameraType(QE.CameraType.Perspective);
+        mainCamera.renderContext.setColorClear(QE.ClearMask.ALL, [0, 0, 0, 0], 1, 0);
 
         let cameraNode = mainCamera.transform;
-        cameraNode.localPosition = new QuickEngine.Vector3(0, 0, 6);
+        cameraNode.localPosition = new QE.Vector3(0, 0, -3);
+        cameraNode.localEulerAngle = new QE.Vector3(45, 45, 0);
 
         // mesh
-        let mesh = new QuickEngine.Mesh();
+        let mesh = new QE.Mesh();
         mesh.name = 'myMesh';
-        QuickEngine.PrefabFactory.createCube(mesh);
+        QE.PrefabFactory.createCube(mesh);
         // mesh
-        let sphereMesh = new QuickEngine.Mesh();
+        let sphereMesh = new QE.Mesh();
         sphereMesh.name = 'mySphereMesh';
 
-        QuickEngine.PrefabFactory.createSphere(sphereMesh);
+        QE.PrefabFactory.createSphere(sphereMesh);
 
         let node = mainScene.createNode();
-        let meshRender = node.addComponent<QuickEngine.MeshRender>(QuickEngine.MeshRender);
+        let meshRender = node.addComponent<QE.MeshRender>(QE.MeshRender);
         meshRender.mesh = sphereMesh;
-        meshRender.setMaterial(QuickEngine.Material.getDefaultCubeMaterial());
+        meshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
 
-        node.transform.localPosition = new QuickEngine.Vector3(0, 0, 0);
+        node.transform.localPosition = new QE.Vector3(0, 0, 0);
         node.name = 'Node';
-        let rot = new QuickEngine.Quaternion();
+        let rot = new QE.Quaternion();
 
         let x = 0;
         let y = 0;
         let z = 0;
 
         setInterval(function () {
-            // node.transform.localRotation = rot.FromEulerAngle(new QuickEngine.Vector3(x, y++, z));
-            // node.transform.localPosition = new QuickEngine.Vector3((x++) * 0.01, 0, 0);
+            // node.transform.localRotation = rot.FromEulerAngle(new QE.Vector3(x, y++, z));
+            // node.transform.localPosition = new QE.Vector3((x++) * 0.01, 0, 0);
         }, 100);
     }
 

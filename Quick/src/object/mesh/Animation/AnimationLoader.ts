@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     class AnimationLoader {
 
@@ -8,6 +8,6 @@
 
         }
 
-    } 
+    }
 
 }

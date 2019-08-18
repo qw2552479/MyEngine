@@ -1,4 +1,4 @@
-namespace QuickEngine {
+namespace QE {
     export class Log {
         public static D(...args): void {
             console.log.apply(this, arguments);

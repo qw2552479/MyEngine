@@ -1,13 +1,9 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     /**
-     * 
+     *
      */
     export class KeyFrame {
-
-        public static __ClassName__ = "QuickEngine.KeyFrame";
-        public static __ClassID__ = 0;
-
         protected _time: number;
         /**
          * 返回关键帧所在时间，以毫秒为单位
@@ -55,7 +51,7 @@
         }
         public set interpolationMode(val: AnimationCurve.InterpolationMode) {
             this._interpolationMode = val;
-        }    
+        }
 
         protected _parentTrack;
 

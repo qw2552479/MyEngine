@@ -1,9 +1,9 @@
-declare namespace QuickEngine {
-    let __EDITOR_MODE__: boolean;
-    let __DEBUG__: boolean;
+declare namespace QE {
+    let __QE_EDITOR_MODE__: boolean;
+    let __QE_DEBUG__: boolean;
     let __PROFILER__: boolean;
 }
-declare namespace QuickEngine {
+declare namespace QE {
     interface RunData {
         width: number;
         height: number;
@@ -16,24 +16,35 @@ declare namespace QuickEngine {
     function run(data: RunData): void;
     function renderOneFrame(deltaTime: number): void;
 }
-declare namespace QuickEngine {
+declare namespace QE {
+    enum HideFlags {
+        None = 0,
+        HideInHierarchy = 1,
+        HideInInspector = 2,
+        DontSaveInEditor = 4,
+        NotEditable = 8,
+        DontSaveInBuild = 16,
+        DontUnloadUnusedAsset = 32,
+        DontSave = 52,
+        HideAndDontSave = 61
+    }
     class HashObject implements IDestroyable {
-        private readonly _hashCode;
-        private readonly _instanceId;
-        protected _isDestroyed: boolean;
         readonly hashCode: number;
         readonly instanceId: number;
         constructor();
+        private readonly _hashCode;
+        private readonly _instanceId;
+        protected _isDestroyed: boolean;
+        static destroy(object: HashObject): void;
+        static clone<T extends HashObject>(original: T): T;
         isDestroyed(): boolean;
         destroy(): void;
         protected onDestroy(): void;
         copy(object: HashObject): void;
         clone(): HashObject;
-        static destroy(object: HashObject): void;
-        static clone<T extends HashObject>(original: T): T;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Scene3D extends HashObject {
         private _mainCamera;
         private _currentCamera;
@@ -41,16 +52,16 @@ declare namespace QuickEngine {
         private _frameId;
         private _rootChildren;
         constructor();
-        readonly children: Node[];
-        createNode(parent?: Transform): Node;
-        insertNode(node: Node, index?: number): void;
-        removeNode(node: Node): void;
+        readonly children: GameObject[];
+        createNode(parent?: Transform): GameObject;
+        insertNode(node: GameObject, index?: number): void;
+        removeNode(node: GameObject): void;
         onResize(w: number, h: number): void;
         render(): void;
         update(deltaTime: number): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class SceneManager {
         private static _sInstance;
         static readonly instance: SceneManager;
@@ -58,9 +69,10 @@ declare namespace QuickEngine {
         readonly currentScene: Scene3D;
         static createScene(): Scene3D;
         constructor();
+        init(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     interface Resolution {
         height: number;
         width: number;
@@ -74,10 +86,10 @@ declare namespace QuickEngine {
         static fullScreen: boolean;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     function assert(cond: any, msg: any): void;
 }
-declare namespace QuickEngine {
+declare namespace QE {
     interface IStringDictionary<TValue> {
         [key: string]: TValue;
     }
@@ -97,7 +109,7 @@ declare namespace QuickEngine {
         dispose(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     type Action = () => void;
     type Action1<T> = (t: T) => void;
     type Action2<T1, T2> = (t: T1, t2: T2) => void;
@@ -108,99 +120,99 @@ declare namespace QuickEngine {
     type Func2<T1, T2, TResult> = (t: T1, t2: T2) => TResult;
     type Func3<T1, T2, T3, TResult> = (t: T1, t2: T2, t3: T3) => TResult;
     type Func4<T1, T2, T3, T4, TResult> = (t: T1, t2: T2, t3: T3, t4: T4) => TResult;
-    interface IQuickListener {
+    interface IQEListener {
         _func: Action;
         onCall: Action;
     }
-    class QuickListener<T> implements IQuickListener {
+    class QEListener<T> implements IQEListener {
         _listener: T;
         _func: Action;
         constructor(listener: T, func: Action);
         onCall(): void;
     }
-    class QuickEvent {
+    class QEEvent {
         private _listeners;
-        add(listener: IQuickListener): void;
-        del(listener: IQuickListener): void;
+        add(listener: IQEListener): void;
+        del(listener: IQEListener): void;
         clear(): void;
         dispatchEvent(): void;
     }
-    interface IQuickListener1<P> {
+    interface IQEListener1<P> {
         _func: Action1<P>;
         onCall: Action1<P>;
     }
-    class QuickListener1<T, P> implements IQuickListener1<P> {
+    class QEListener1<T, P> implements IQEListener1<P> {
         _listener: T;
         _func: Action1<P>;
         constructor(listener: T, func: Action1<P>);
         onCall(p: P): void;
     }
-    class QuickEvent1<P> {
+    class QEEvent1<P> {
         private _listeners;
-        add(listener: IQuickListener1<P>): void;
-        del(listener: IQuickListener1<P>): void;
+        add(listener: IQEListener1<P>): void;
+        del(listener: IQEListener1<P>): void;
         clear(): void;
         dispatchEvent(t: P): void;
     }
-    interface IQuickListener2<P1, P2> {
+    interface IQEListener2<P1, P2> {
         _func: Action2<P1, P2>;
         onCall: Action2<P1, P2>;
     }
-    class QuickListener2<T, P1, P2> implements IQuickListener2<P1, P2> {
+    class QEListener2<T, P1, P2> implements IQEListener2<P1, P2> {
         _listener: T;
         _func: Action2<P1, P2>;
         constructor(listener: T, func: Action2<P1, P2>);
         onCall(p1: P1, p2: P2): void;
     }
-    class QuickEvent2<P1, P2> {
+    class QEEvent2<P1, P2> {
         private _listeners;
-        add(listener: IQuickListener2<P1, P2>): void;
-        del(listener: IQuickListener2<P1, P2>): void;
+        add(listener: IQEListener2<P1, P2>): void;
+        del(listener: IQEListener2<P1, P2>): void;
         clear(): void;
         dispatchEvent(p1: P1, p2: P2): void;
     }
-    interface IQuickListener3<P1, P2, P3> {
+    interface IQEListener3<P1, P2, P3> {
         _func: Action3<P1, P2, P3>;
         onCall: Action3<P1, P2, P3>;
     }
-    class QuickListener3<T, P1, P2, P3> implements IQuickListener3<P1, P2, P3> {
+    class QEListener3<T, P1, P2, P3> implements IQEListener3<P1, P2, P3> {
         _listener: T;
         _func: Action3<P1, P2, P3>;
         constructor(listener: T, func: Action3<P1, P2, P3>);
         onCall(p1: P1, p2: P2, p3: P3): void;
     }
-    class QuickEvent3<P1, P2, P3> {
+    class QEEvent3<P1, P2, P3> {
         private _listeners;
-        add(listener: IQuickListener3<P1, P2, P3>): void;
-        del(listener: IQuickListener3<P1, P2, P3>): void;
+        add(listener: IQEListener3<P1, P2, P3>): void;
+        del(listener: IQEListener3<P1, P2, P3>): void;
         clear(): void;
         dispatchEvent(p1: P1, p2: P2, p3: P3): void;
     }
-    interface IQuickListener4<P1, P2, P3, P4> {
+    interface IQEListener4<P1, P2, P3, P4> {
         _func: Action4<P1, P2, P3, P4>;
         onCall: Action4<P1, P2, P3, P4>;
     }
-    class QuickListener4<T, P1, P2, P3, P4> implements IQuickListener4<P1, P2, P3, P4> {
+    class QEListener4<T, P1, P2, P3, P4> implements IQEListener4<P1, P2, P3, P4> {
         _listener: T;
         _func: Action4<P1, P2, P3, P4>;
         constructor(listener: T, func: Action4<P1, P2, P3, P4>);
         onCall(p1: P1, p2: P2, p3: P3, p4: P4): void;
     }
-    class QuickEvent4<P1, P2, P3, P4> {
+    class QEEvent4<P1, P2, P3, P4> {
         private _listeners;
-        add(listener: IQuickListener4<P1, P2, P3, P4>): void;
-        del(listener: IQuickListener4<P1, P2, P3, P4>): void;
+        add(listener: IQEListener4<P1, P2, P3, P4>): void;
+        del(listener: IQEListener4<P1, P2, P3, P4>): void;
         clear(): void;
         dispatchEvent(p1: P1, p2: P2, p3: P3, p4: P4): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     interface IDestroyable {
         isDestroyed(): boolean;
         destroy(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Log {
         static D(...args: any[]): void;
         static I(...args: any[]): void;
@@ -209,7 +221,7 @@ declare namespace QuickEngine {
         static F(...args: any[]): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     type MinHeapComparer<T> = (x: T, y: T) => number;
     /**
      * 最小堆
@@ -244,113 +256,22 @@ declare namespace QuickEngine {
         protected filterUp(start: number): void;
     }
 }
-declare namespace QuickEngine {
-    module Reflection {
-        class Type {
-            private readonly _cls;
-            /**
-             * 返回当前类型的上一层继承类型
-             *@return {Function}
-             */
-            readonly baseType: Function;
-            getConstructor(): Function;
-            constructor(cls: Function);
-            static getType(instance: Object): Type;
-            static typeOf(cls: Function): Type;
-            isSubClassOf(superClass: Type): boolean;
-            equal(type: Type): boolean;
-        }
-    }
-}
-declare namespace QuickEngine {
-    import Type = QuickEngine.Reflection.Type;
-    class ResourceManager {
-        static readonly BUILTIN_DEF_WHITE_TEX_NAME: string;
-        private _resourceCacheMap;
-        static readonly instance: ResourceManager;
-        constructor();
-        /**
-         * 构建引擎内置资源
-         * @param onFinished
-         */
-        makeBuiltinRes(onFinished: Function): void;
-        get<T extends Resource>(path: string): T;
-        load<T extends Resource>(path: string, type: Type): T;
-        loadAsync<T extends Resource>(path: string, type: Type): Promise<T>;
-        reload<T extends Resource>(url: string, type: Type): T;
-        unload(url: string): void;
-    }
-}
-declare namespace QuickEngine {
-    /**
-     * 资源加载状态
-     */
-    const enum ResState {
-        UnLoaded = 0,
-        Loading = 1,
-        Loaded = 2,
-        Prepared = 3,
-        Preparing = 4
-    }
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+declare namespace QE {
     class RefObj extends HashObject {
         private _retainCount;
         readonly retainCount: number;
         constructor();
         retain(): void;
         release(): void;
-        dispose(): void;
-    }
-    class ResourceDependence extends HashObject {
-        _mainRes: Resource;
-        _subRes: Resource;
-        _listener: QuickListener<ResourceDependence>;
-        constructor(mainRes: any, subRes: any);
-        getMainRes(): Resource;
-        getSubRes(): Resource;
-        destroy(): void;
-        private _onLoaded;
-    }
-    abstract class Resource extends RefObj {
-        protected _group: string;
-        protected _isDisposed: boolean;
-        protected _dependenceFiles: Array<ResourceDependence>;
-        protected _name: string;
-        name: string;
-        _priority: number;
-        priority: number;
-        protected _state: ResState;
-        readonly state: ResState;
-        readonly isComplete: boolean;
-        _loadedEvent: QuickEvent1<Resource>;
-        _unloadedEvent: QuickEvent1<Resource>;
-        protected constructor(name?: string, group?: string);
-        isDestroyed(): boolean;
-        destroy(): void;
-        abstract clone(): HashObject;
-        copy(object: HashObject): void;
-        protected abstract loadImpl(data?: ArrayBuffer | Blob | string): any;
-        protected abstract unloadImpl(): any;
-        load(data?: ArrayBuffer | Blob | string): void;
-        unload(): void;
-        reload(): void;
-        protected _onLoad(): void;
-        _addDependence(subResource: Resource): void;
-        _removeDependence(pSubResource: Resource): void;
-        _removeAllDependence(): void;
-        _hasDependencies(): boolean;
     }
 }
-declare namespace QuickEngine {
-    class TextResource extends Resource {
-        private _data;
-        readonly data: string;
-        constructor(name: string);
-        clone(): HashObject;
-        protected loadImpl(): void;
-        protected unloadImpl(): void;
-    }
-}
-declare namespace QuickEngine {
+declare namespace QE {
     module Timer {
         /**
          * 添加一个定时器
@@ -369,32 +290,12 @@ declare namespace QuickEngine {
         function update(dt: number): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     module UUID {
         function newUuid(): string;
     }
 }
-declare namespace QuickEngine {
-    interface IResLoader<T> {
-        load(path: string, onLoaded: (err: any, data: T) => void, thisObj?: Object): void;
-        loadAsync(path: string): Promise<T>;
-    }
-}
-declare namespace QuickEngine {
-    class ImageLoader implements IResLoader<HTMLImageElement> {
-        static readonly instance: ImageLoader;
-        load(path: string, onLoaded: (err: string, data: HTMLImageElement) => void, thisObj?: Object): void;
-        loadAsync(path: string): Promise<HTMLImageElement>;
-    }
-}
-declare namespace QuickEngine {
-    class TextLoader implements IResLoader<string> {
-        static readonly instance: TextLoader;
-        load(url: string, onLoaded: (err: string, data: string) => void, thisObj?: Object): void;
-        loadAsync(url: string): Promise<string>;
-    }
-}
-declare namespace QuickEngine {
+declare namespace QE {
     class AABB {
         max: Vector3;
         min: Vector3;
@@ -402,7 +303,7 @@ declare namespace QuickEngine {
         center: Vector3;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * ��ɫ
      */
@@ -412,41 +313,39 @@ declare namespace QuickEngine {
         static readonly red: Color;
         static readonly green: Color;
         static readonly blue: Color;
+        constructor(r?: number, g?: number, b?: number, a?: number);
         r: number;
         g: number;
         b: number;
         a: number;
-        constructor(r?: number, g?: number, b?: number, a?: number);
-        clone(oriangl: Color): Color;
         static colorToHex(color: Color): number;
         static colorToString(color: Color): string;
         static stringToColor(colorString: string): Color;
+        clone(oriangl: Color): Color;
     }
 }
-declare namespace QuickEngine {
-    class Node extends HashObject {
-        static __ClassName__: string;
-        static __ClassID__: number;
-        protected _transfrom: Transform;
+declare namespace QE {
+    type ComponentClassType<T extends Component> = new () => T;
+    class GameObject extends HashObject {
+        protected _transform: Transform;
         protected _worldAABB: AABB;
         protected _isActive: boolean;
         private _componentList;
-        private _componentDict;
-        constructor(name?: string);
         protected _name: string;
         name: string;
         readonly transform: Transform;
+        constructor(name?: string);
         updateRenderQueue(renderQueue: RenderQueue): void;
-        addComponent<T extends Component>(compName: any): T;
-        getComponent<T extends Component>(compName: string | Function): T;
-        getComponentInChildren<T extends Component>(compName: string | Function, includeInactive?: boolean): T;
-        GetComponentInParent<T extends Component>(compName: string | Function): T;
-        getComponents<T extends Component>(compName: string | Function): T[];
-        getComponentsInChildren<T extends Component>(compName: string | Function, includeInactive?: boolean, outCompList?: T[]): T[];
-        getComponentsInParent<T extends Component>(compName: string | Function, includeInactive?: boolean, outCompList?: T[]): T[];
+        addComponent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponentInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean): T;
+        GetComponentInParent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponents<T extends Component>(compCls: ComponentClassType<T>): T[];
+        getComponentsInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
+        getComponentsInParent<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const enum OrientationMode {
         DEGREE_0 = 0,
         DEGREE_90 = 1,
@@ -468,7 +367,7 @@ declare namespace QuickEngine {
         FRUSTUM_PLANE_TOP = 4,
         FRUSTUM_PLANE_BOTTOM = 5
     }
-    class Frustum extends Node {
+    class Frustum extends GameObject {
         RenderOp: RenderOperation;
         CurrentShader: Shader;
         private _projectionType;
@@ -482,7 +381,7 @@ declare namespace QuickEngine {
         getWorldTransforms(): Matrix4;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     type Degree = number;
     type Radian = number;
     /**
@@ -511,7 +410,7 @@ declare namespace QuickEngine {
         function lerpColor(fromC: Color, toC: Color, t: number, out: Color): Color;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 矩阵存储和openGL规则一致,列主序
      * 学习资料:
@@ -525,7 +424,6 @@ declare namespace QuickEngine {
      | 3 7 11 15 |      | 30 31 32 33 |
      */
     class Matrix4 {
-        static ClassName: string;
         _00: number;
         _01: number;
         _02: number;
@@ -542,10 +440,54 @@ declare namespace QuickEngine {
         _31: number;
         _32: number;
         _33: number;
-        private _rawData;
         readonly rawData: Float32Array;
         constructor();
+        static ClassName: string;
+        private _rawData;
         static create(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
+        /**
+         *
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
+         * @param position
+         * @param rotation
+         * @param scale
+         * @param out
+         */
+        static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4;
+        /**
+         * 生成正交视图矩阵
+         * @param left
+         * @param right
+         * @param bottom
+         * @param top
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makeOrthoRH(left: number, right: number, bottom: number, top: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 构造右手投影矩阵
+         * @param left
+         * @param right
+         * @param top
+         * @param bottom
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
+        /**
+         * 根据fov构造右手透视投影矩阵
+         * @param fov
+         * @param aspect
+         * @param near
+         * @param far
+         * @param target
+         */
+        static makePerspectiveFovRH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4;
         setArray(array: ArrayLike<number>): Matrix4;
         set(_00: number, _01: number, _02: number, _03: number, _10: number, _11: number, _12: number, _13: number, _20: number, _21: number, _22: number, _23: number, _30: number, _31: number, _32: number, _33: number): Matrix4;
         copyFrom(other: Matrix4): Matrix4;
@@ -596,52 +538,9 @@ declare namespace QuickEngine {
          * @param outQuaternion
          */
         decompose(outPosition: Vector3, outScale: Vector3, outQuaternion: Quaternion): void;
-        /**
-         *
-         a00 a01 a02 a03    x
-         a10 a11 a12 a13 *  y
-         a20 a21 a22 a23    z
-         a30 a31 a32 a33    w=0
-         * @param position
-         * @param rotation
-         * @param scale
-         * @param out
-         */
-        static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4;
-        /**
-         * 生成正交视图矩阵
-         * @param left
-         * @param right
-         * @param bottom
-         * @param top
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makeOrthoRH(left: number, right: number, bottom: number, top: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 构造右手投影矩阵
-         * @param left
-         * @param right
-         * @param top
-         * @param bottom
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4;
-        /**
-         * 根据fov构造右手透视投影矩阵
-         * @param fov
-         * @param aspect
-         * @param near
-         * @param far
-         * @param target
-         */
-        static makePerspectiveFovRH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const enum PlaneSide {
         Front = 0,
         Back = 1,
@@ -651,12 +550,17 @@ declare namespace QuickEngine {
      * 平面, 隐式定义方程ax + by + cz = d, 向量(a, b, c)为平面法向量
      */
     class Plane {
+        constructor(x?: number, y?: number, z?: number, d?: number);
         static ClassName: string;
         x: number;
         y: number;
         z: number;
         d: number;
-        constructor(x?: number, y?: number, z?: number, d?: number);
+        /**
+         * 计算点集最佳平面
+         * @param points
+         */
+        static computeBestFitNormal(points: Vector3[]): Vector3;
         set(x?: number, y?: number, z?: number, d?: number): void;
         /**
          * 归一化
@@ -690,27 +594,36 @@ declare namespace QuickEngine {
          * @param p
          */
         fromNormalAndPoint(normal: Vector3, p: Vector3): void;
-        /**
-         * 计算点集最佳平面
-         * @param points
-         */
-        static computeBestFitNormal(points: Vector3[]): Vector3;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 四元数 [w, x, y, z]
      * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
      */
     class Quaternion {
-        static ClassName: string;
         static readonly ZERO: Quaternion;
         static readonly IDENTITY: Quaternion;
+        constructor(w?: number, x?: number, y?: number, z?: number);
+        /**
+         * 模长
+         */
+        readonly magnitude: number;
+        /**
+         * 模长平方
+         */
+        readonly sqrMagnitude: number;
+        static ClassName: string;
+        /**
+         * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
+         */
+        private static _TempQuat0;
+        private static _TempQuat1;
         x: number;
         y: number;
         z: number;
         w: number;
-        constructor(w?: number, x?: number, y?: number, z?: number);
+        static multiplyScalar(s: number, q: Quaternion): Quaternion;
         copyFrom(q: Quaternion): Quaternion;
         clone(): Quaternion;
         /**
@@ -738,7 +651,6 @@ declare namespace QuickEngine {
          * @param s
          */
         multiplyScalar(s: number): Quaternion;
-        static multiplyScalar(s: number, q: Quaternion): Quaternion;
         multiplyVector(vector: Vector3): Quaternion;
         rotateVector3(v: Vector3): Vector3;
         /**
@@ -762,14 +674,6 @@ declare namespace QuickEngine {
          */
         unitInverse(): Quaternion;
         /**
-         * 模长
-         */
-        readonly magnitude: number;
-        /**
-         * 模长平方
-         */
-        readonly sqrMagnitude: number;
-        /**
          * 正则化
          */
         normalize(): Quaternion;
@@ -792,11 +696,6 @@ declare namespace QuickEngine {
          * @param t
          */
         slerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion;
-        /**
-         * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
-         */
-        private static _TempQuat0;
-        private static _TempQuat1;
         squad(q0: any, q1: any, s0: any, s1: any, t: any): Quaternion;
         /**
          * 通过旋转矩阵构造四元数
@@ -833,7 +732,7 @@ declare namespace QuickEngine {
         getDirVector(): Vector3;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 射线, 隐式定义方程
      */
@@ -851,7 +750,7 @@ declare namespace QuickEngine {
     class Ray2D {
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Rect {
         static ClassName: string;
         left: number;
@@ -861,7 +760,7 @@ declare namespace QuickEngine {
         constructor(l: number, t: number, w: number, h: number);
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 球 (x - cx) * (x - cx) + (y - cy) *  (y - cy) +(z - cz) *  (z - cz) = r * r
      */
@@ -872,17 +771,23 @@ declare namespace QuickEngine {
         constructor(x?: number, y?: number, z?: number, radius?: number);
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Spline {
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     type Number2 = [number, number];
     class Vector2 {
+        constructor(x?: number, y?: number);
         static ClassName: string;
         x: number;
         y: number;
-        constructor(x?: number, y?: number);
+        /**
+         * ���
+         * @param lhs
+         * @param rhs
+         */
+        static dot(lhs: Vector2, rhs: Vector2): number;
         /**
          * ���
          * @param other
@@ -904,12 +809,6 @@ declare namespace QuickEngine {
          * @param other
          */
         dot(other: Vector2): number;
-        /**
-         * ���
-         * @param lhs
-         * @param rhs
-         */
-        static dot(lhs: Vector2, rhs: Vector2): number;
         divide(val: number): Vector2;
         divideVector(other: Vector2): Vector2;
         /**
@@ -939,17 +838,49 @@ declare namespace QuickEngine {
         lerp(v0: Vector2, v1: Vector2, t: number): Vector2;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     type Number3 = [number, number, number];
     class Vector3 {
-        static ClassName: string;
         static readonly right: Vector3;
         static readonly up: Vector3;
         static readonly forward: Vector3;
+        constructor(x?: number, y?: number, z?: number);
+        /**
+         * 求模长
+         */
+        readonly magnitude: number;
+        /**
+         * 求模长平方
+         */
+        readonly sqrMagnitude: number;
+        static ClassName: string;
         x: number;
         y: number;
         z: number;
-        constructor(x?: number, y?: number, z?: number);
+        /**
+         * 点积
+         * @param lhs
+         * @param rhs
+         */
+        static dot(lhs: Vector3, rhs: Vector3): number;
+        /**
+         * 叉积
+         * @param lhs
+         * @param rhs
+         */
+        static cross(lhs: Vector3, rhs: Vector3): Vector3;
+        /**
+         * 两向量距离
+         * @param v0
+         * @param v1
+         */
+        static distance(v0: Vector3, v1: Vector3): number;
+        /**
+         * 两向量距离平方
+         * @param v0
+         * @param v1
+         */
+        static sqrDistance(v0: Vector3, v1: Vector3): number;
         /**
          *
          * @param other
@@ -995,22 +926,10 @@ declare namespace QuickEngine {
          */
         dot(other: Vector3): number;
         /**
-         * 点积
-         * @param lhs
-         * @param rhs
-         */
-        static dot(lhs: Vector3, rhs: Vector3): number;
-        /**
          * 叉积
          * @param other
          */
         cross(other: Vector3): Vector3;
-        /**
-         * 叉积
-         * @param lhs
-         * @param rhs
-         */
-        static cross(lhs: Vector3, rhs: Vector3): Vector3;
         /**
          * 除以标量
          * @param val
@@ -1025,30 +944,10 @@ declare namespace QuickEngine {
          * 向量归一化
          */
         normalize(): Vector3;
-        /**
-         * 求模长
-         */
-        readonly magnitude: number;
-        /**
-         * 求模长平方
-         */
-        readonly sqrMagnitude: number;
-        /**
-         * 两向量距离
-         * @param v0
-         * @param v1
-         */
-        static distance(v0: Vector3, v1: Vector3): number;
-        /**
-         * 两向量距离平方
-         * @param v0
-         * @param v1
-         */
-        static sqrDistance(v0: Vector3, v1: Vector3): number;
         lerp(v0: Vector3, v1: Vector3, t: number): Vector3;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     type Number4 = [number, number, number, number];
     class Vector4 {
         x: number;
@@ -1058,17 +957,17 @@ declare namespace QuickEngine {
         constructor(x?: number, y?: number, z?: number, w?: number);
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Sound {
         constructor();
     }
 }
-declare namespace QuickEngine {
-    class Vedio {
+declare namespace QE {
+    class Video {
         constructor();
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const enum XHRState {
         Uninitialized = 0,
         Open = 1,
@@ -1089,12 +988,14 @@ declare namespace QuickEngine {
         callback?: (err: string, data: any, xhr: XMLHttpRequest, status: number) => void;
         thisObj?: Object;
     }
+    type ResponseCallback = (err: string, data: any, xhr: XMLHttpRequest, status: number) => void;
     /**
      * @class
      * @static
      */
-    class Http /** @lends QuickEngine.Http */ {
+    class Http /** @lends QE.Http */ {
         static _defaultOptions: IAjaxOptions;
+        private static _context;
         static getUrlParam(url: any, data: any): any;
         static getQueryData(data: any): string | FormData;
         static getQueryString(data: any): string;
@@ -1108,58 +1009,62 @@ declare namespace QuickEngine {
          * @param thisObj
          * @param isAsync
          */
-        static get(url: string, data?: any, callback?: (err: string, data: any, xhr: XMLHttpRequest, status: number) => void, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
-        static post(url: string, data?: any, callback?: (err: string, data: any, xhr: XMLHttpRequest, status: number) => void, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
+        static get(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
+        static post(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
+        static loadTxtAsync(url: string): Promise<string>;
+        static loadImageAsync(path: string): Promise<HTMLImageElement>;
+        static loadArrayBufferAsync(url: string): Promise<ArrayBuffer>;
+        static loadAudioBufferAsync(url: string): Promise<AudioBuffer>;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Billboard {
     }
-    class BillboardSet extends Node {
-        static __ClassName__: string;
-        static __ClassID__: number;
+    class BillboardSet extends GameObject {
         private _renderable;
         constructor();
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     interface IScriptable {
         onLoad?: () => void;
         onUpdate?: (deltaTime: number) => void;
     }
+    function DisallowMultipleComponent(constructor: any): void;
     class Component extends HashObject implements IScriptable {
-        static __DisallowMultipleComponent__: boolean;
-        static __ClassName__: string;
-        static __ClassID__: number;
+        readonly node: GameObject;
+        readonly transform: Transform;
+        enabled: boolean;
+        constructor();
+        protected static __QE_DisallowMultipleComponent__: boolean;
+        protected static __QE_SerializedFieldMap?: {
+            [key: string]: any;
+        };
+        private static s_unStartedComponentArr;
+        private static s_startedComponentArr;
         tag: string;
         private _needCallStart;
         private _node;
-        node: Node;
-        readonly transform: Transform;
         private _enable;
-        enabled: boolean;
         onLoad: () => void;
         onUpdate: (deltaTime: number) => void;
         onDebugDraw: () => void;
-        constructor();
-        protected onDestroy(): void;
         static load(): void;
         static update(deltaTime: number): void;
+        protected onDestroy(): void;
         compareTag(tag: string): boolean;
-        getComponent<T extends Component>(compName: string | Function): T;
-        getComponentInChildren<T extends Component>(compName: string | Function, includeInactive?: boolean): T;
-        GetComponentInParent<T extends Component>(compName: string | Function): T;
-        getComponents<T extends Component>(compName: string | Function): T[];
-        getComponentsInChildren<T extends Component>(compName: string | Function, includeInactive?: boolean, outCompList?: T[]): T[];
-        getComponentsInParent<T extends Component>(compName: string | Function, includeInactive?: boolean, outCompList?: T[]): T[];
-        notifyAttachNode(val: Node): void;
-        private static s_unStartedComponentArr;
-        private static s_startedComponentArr;
+        getComponent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponentInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean): T;
+        GetComponentInParent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponents<T extends Component>(compCls: ComponentClassType<T>): T[];
+        getComponentsInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
+        getComponentsInParent<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
+        notifyAttachNode(val: GameObject): void;
         private enqueueComponent;
         private dequeueComponent;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const enum CameraType {
         Perspective = 0,
         Orthogonal = 1,
@@ -1177,8 +1082,6 @@ declare namespace QuickEngine {
         PARTIAL = 2
     }
     class Camera extends Component {
-        static __ClassName__: string;
-        static __ClassID__: number;
         static MainCamera: Camera;
         protected _cameraType: CameraType;
         protected _clearFlags: ClearFlags;
@@ -1215,7 +1118,7 @@ declare namespace QuickEngine {
         private _update;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
     * 光源类型
     */
@@ -1238,8 +1141,6 @@ declare namespace QuickEngine {
         Area = 3
     }
     class Light extends Component {
-        static __ClassName__: string;
-        static __ClassID__: number;
         /**
          * 光类型
          */
@@ -1261,43 +1162,22 @@ declare namespace QuickEngine {
         updateRenderQueue(renderQueue: RenderQueue): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 变换组件
      */
     class Transform extends Component {
-        static __ClassName__: string;
-        static __ClassID__: number;
-        protected _children: Transform[];
-        protected _parent: Transform;
-        protected _needParentUpdate: boolean;
-        protected _needChildUpdate: boolean;
-        protected _needTransformUpdate: boolean;
-        protected _needWorldToLocalMatrixUpdate: boolean;
-        protected _needEulerUpdate: boolean;
-        protected _parentNotified: boolean;
-        protected _childrenToUpdate: Transform[];
-        protected _position: Vector3;
-        protected _localPosition: Vector3;
-        protected _rotation: Quaternion;
-        protected _localRotation: Quaternion;
-        protected _eulerAngle: Vector3;
-        protected _localEulerAngle: Vector3;
-        protected _scale: Vector3;
-        protected _localScale: Vector3;
-        protected _localToWorldMatrix: Matrix4;
-        protected _worldToLocalMatrix: Matrix4;
         constructor();
         /**
          * 子节点数量
          */
-        childCount: number;
+        readonly childCount: number;
         /**
         * 返回父节点
         */
         /**
         * 设置父节点
-        * @param {QuickEngine.Transform} parent 父节点, 为空则从当前父节点删除
+        * @param {QE.Transform} parent 父节点, 为空则从当前父节点删除
         */
         parent: Transform;
         /*
@@ -1334,9 +1214,28 @@ declare namespace QuickEngine {
         localScale: Vector3;
         readonly localToWorldMatrix: Matrix4;
         readonly worldToLocalMatrix: Matrix4;
+        protected _children: Transform[];
+        protected _parent: Transform;
+        protected _needParentUpdate: boolean;
+        protected _needChildUpdate: boolean;
+        protected _needTransformUpdate: boolean;
+        protected _needWorldToLocalMatrixUpdate: boolean;
+        protected _needEulerUpdate: boolean;
+        protected _parentNotified: boolean;
+        protected _childrenToUpdate: Transform[];
+        protected _position: Vector3;
+        protected _localPosition: Vector3;
+        protected _rotation: Quaternion;
+        protected _localRotation: Quaternion;
+        protected _eulerAngle: Vector3;
+        protected _localEulerAngle: Vector3;
+        protected _scale: Vector3;
+        protected _localScale: Vector3;
+        protected _localToWorldMatrix: Matrix4;
+        protected _worldToLocalMatrix: Matrix4;
+        private _childNameDict;
         removeChildren(): void;
         getChildByIndex(index: number): Transform;
-        private _childNameDict;
         find(name: string): Transform;
         private _findByPath;
         findChild(name: string): Transform;
@@ -1346,10 +1245,8 @@ declare namespace QuickEngine {
         requestUpdate(child: Transform, forceParentUpdate: boolean): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class MeshFilter extends Component {
-        static __ClassName__: string;
-        static __ClassID__: number;
         private _mesh;
         mesh: Mesh;
     }
@@ -1357,8 +1254,6 @@ declare namespace QuickEngine {
      * 网格
      */
     class Mesh extends HashObject {
-        static __ClassName__: string;
-        static __ClassID__: number;
         sharedVertexData: WebGLVertexBuffer[];
         id: number;
         protected _name: string;
@@ -1377,15 +1272,13 @@ declare namespace QuickEngine {
         protected unloadImpl(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class MeshManager {
-        static __ClassName__: string;
-        static __ClassID__: number;
         static instance: MeshManager;
         constructor();
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     interface SubMeshData {
     }
     interface MeshData {
@@ -1442,13 +1335,11 @@ declare namespace QuickEngine {
         static exportMeshWithBinary(mesh: Mesh, filename: string): void;
         static importMeshWithJson(meshData: MeshData, mesh: Mesh): void;
         static importMeshWithBinary(data: ArrayBuffer, mesh: Mesh): void;
-        static loadModel(modelData: ModelData): Node;
+        static loadModel(modelData: ModelData): GameObject;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class SubMesh {
-        static __ClassName__: string;
-        static __ClassID__: number;
         useSharedVertices: boolean;
         vertexData: WebGLVertexBuffer[];
         indexData: WebGLIndexBuffer;
@@ -1464,10 +1355,10 @@ declare namespace QuickEngine {
          * @param parentMesh 新的Submesh父Mesh, 如果为空, 父Mesh为被克隆的Mesh父Mesh
          */
         clone(newName: string, parentMesh?: Mesh): void;
-        getRenderOpreation(renderOp: RenderOperation): void;
+        getRenderOperation(renderOp: RenderOperation): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const enum VertexAnimationType {
         NONE = 0,
         MORPH = 1,
@@ -1478,8 +1369,6 @@ declare namespace QuickEngine {
      * 动画片段包含一组动画曲线.每个曲线对应节点路径
      */
     class AnimationClip extends HashObject {
-        static __ClassName__: string;
-        static __ClassID__: number;
         private _frameRate;
         frameRate: number;
         private _length;
@@ -1510,7 +1399,7 @@ declare namespace QuickEngine {
          * 清除动画数据
          */
         clearAllCurves(): void;
-        apply(node: Node, timePos: number): void;
+        apply(node: GameObject, timePos: number): void;
         private _applyScale;
         private _applyRotation;
         private _applyPosition;
@@ -1519,7 +1408,7 @@ declare namespace QuickEngine {
         private buildKeyFrameTimeList;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     namespace AnimationCurve {
         /**
          * 插值模式
@@ -1547,12 +1436,11 @@ declare namespace QuickEngine {
         firstKeyFrameIndex?: number;
     }
     class AnimationCurve {
-        static __ClassName__: string;
-        static __ClassID__: number;
         private _isObjCurve;
         private _keyFrames;
         _propName: string;
         _valueType: Object;
+        _objInstance: Object;
         constructor(objCurve?: boolean);
         isObjectKeyFrame(): boolean;
         getKeyFrameCount(): number;
@@ -1581,9 +1469,9 @@ declare namespace QuickEngine {
         _buildKeyFrameIndexMap(outKeyFrameTimes: number[]): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
 }
-declare namespace QuickEngine {
+declare namespace QE {
     enum AnimationBlendMode {
         Add = 0
     }
@@ -1610,14 +1498,12 @@ declare namespace QuickEngine {
         RemoveMixingTransform(mix: Transform): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 动画播放器
      * 动画控制器控制动画的状态切换
      */
     class Animator extends Component {
-        static __ClassName__: string;
-        static __ClassID__: number;
         private _animController;
         animController: AnimatorController;
         private _playingClip;
@@ -1632,7 +1518,7 @@ declare namespace QuickEngine {
         onUpdate: (deltaTime: number) => void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 动画控制器
      * 动画控制器控制管理一组动画片段
@@ -1645,32 +1531,28 @@ declare namespace QuickEngine {
         removeClip(clip: AnimationClip): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 骨骼
      */
     class Bone {
-        static __ClassName__: string;
-        static __ClassID__: number;
         private _skeleton;
         private _name;
         name: string;
         private _handle;
         handle: number;
         private _node;
-        node: Node;
+        node: GameObject;
         private _firstChild;
         constructor(skeleton: Skeleton, name?: string);
         _update(updateChilren: boolean, parentHasChanged: boolean): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      *
      */
     class KeyFrame {
-        static __ClassName__: string;
-        static __ClassID__: number;
         protected _time: number;
         /**
          * 返回关键帧所在时间，以毫秒为单位
@@ -1693,12 +1575,8 @@ declare namespace QuickEngine {
         constructor(time: number, value: number, inTangent?: number, outTangent?: number);
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Skeleton {
-        static __NameSpace__: string;
-        static __ClassName__: string;
-        static __FullClassName__: string;
-        static __ClassID__: number;
         private _name;
         private _rootBones;
         private _boneMapByName;
@@ -1712,15 +1590,7 @@ declare namespace QuickEngine {
         updateTransforms(): void;
     }
 }
-declare namespace QuickEngine {
-}
-declare namespace QuickEngine {
-    class PrefabFactory {
-        static createCube(mesh: Mesh): void;
-        static createSphere(mesh: Mesh): void;
-    }
-}
-declare namespace QuickEngine {
+declare namespace QE {
     const enum RenderOperationType {
         POINT_LIST = 0,
         LINE_LIST = 1,
@@ -1738,58 +1608,59 @@ declare namespace QuickEngine {
         constructor();
     }
     abstract class Renderable extends Component {
-        renderOp: RenderOperation;
-        private _isLighting;
-        private _castShadow;
+        protected _material: Material;
+        protected _materials: Material[];
+        protected _renderOp: RenderOperation;
+        protected _renderOps: RenderOperation[];
+        protected _isLighting: boolean;
+        protected _castShadow: boolean;
         setLighting(lighting: boolean): void;
         isLighting(): boolean;
         setCastShadow(castShadow: boolean): void;
         isCastShadow(): boolean;
-        abstract getMaterial(): Material;
-        abstract getRenderOperation(): RenderOperation;
         abstract getWorldTransforms(): Matrix4;
-        preRender(): void;
-        postRender(): void;
+        abstract isMultiMaterial(): boolean;
+        setMaterial(mat: Material): void;
+        getMaterial(): Material;
+        getMaterials(): Material[];
+        getRenderOperation(): RenderOperation;
+        getRenderOperations(): RenderOperation[];
+        removeMaterial(material: Material): void;
+        removeMaterialByIndex(index: number): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class DebugRender extends Renderable {
-        static __ClassName__: string;
-        static __ClassID__: number;
-        private _material;
-        private readonly _renderOp;
         mesh: Mesh;
         constructor();
+        isMultiMaterial(): boolean;
         setMaterial(material: Material): void;
         getMaterial(): Material;
         getRenderOperation(): RenderOperation;
         getWorldTransforms(): Matrix4;
     }
 }
-declare namespace QuickEngine {
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+declare namespace QE {
     class MeshRender extends Renderable {
-        static __ClassName__: string;
-        static __ClassID__: number;
-        protected _currentMaterial: Material;
-        protected _materials: Material[];
-        protected _renderOp: RenderOperation;
+        protected _material: Material;
         mesh: Mesh;
         constructor();
+        isMultiMaterial(): boolean;
         setMaterial(material: Material): void;
         removeMaterial(material: Material): void;
         removeMaterialByIndex(index: number): void;
-        getMaterial(): Material;
         getRenderOperation(): RenderOperation;
         getWorldTransforms(): Matrix4;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class SkinedMeshRender extends Renderable {
-        static __ClassName__: string;
-        static __ClassID__: number;
-        protected _currentMaterial: Material;
-        protected _materials: Material[];
-        protected _renderOp: RenderOperation;
         mesh: Mesh;
         bones: Transform[];
         rootBone: Transform;
@@ -1798,28 +1669,47 @@ declare namespace QuickEngine {
         GetBlendShapeWeight(index: number): number;
         SetBlendShapeWeight(index: number, value: number): void;
         constructor();
-        setMaterial(material: Material): void;
-        removeMaterial(material: Material): void;
-        removeMaterialByIndex(index: number): void;
-        getMaterial(): Material;
+        isMultiMaterial(): boolean;
         getRenderOperation(): RenderOperation;
         getWorldTransforms(): Matrix4;
     }
 }
-declare namespace QuickEngine {
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+declare namespace QE {
+    /**
+     * 序列化属性
+     * @param {string|Function} fieldType
+     */
+    function SerializeField<T extends Component>(fieldType: 'number' | 'string' | 'function' | 'object' | 'array' | (new () => T)): (target: any, name: any, descriptor: any) => any;
+    class Serializer {
+    }
+}
+declare namespace QE {
     class SpriteRender extends Renderable {
-        static __ClassName__: string;
-        static __ClassID__: number;
-        private _material;
-        private _renderOp;
+        private _flipX;
+        private _flipY;
+        private _skewX;
+        private _skewY;
+        private _pivot;
+        private _pixelsPerUnit;
+        flipX: boolean;
+        flipY: boolean;
+        skewX: number;
+        skewY: number;
+        pivot: Vector2;
+        pixelsPerUnit: number;
         constructor();
-        setMaterial(material: Material): void;
-        getMaterial(): Material;
+        isMultiMaterial(): boolean;
         getRenderOperation(): RenderOperation;
         getWorldTransforms(): Matrix4;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const enum VertexElementSemantic {
         POSITION = 1,
         BLEND_WEIGHTS = 2,
@@ -1981,7 +1871,7 @@ declare namespace QuickEngine {
         h: number;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     namespace GL {
         function init(): void;
         function pushMatrix(): void;
@@ -1995,7 +1885,7 @@ declare namespace QuickEngine {
         function vertex3(x: number, y: number, z: number): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class RenderContext {
         private readonly _name;
         protected _camera: Camera;
@@ -2024,7 +1914,7 @@ declare namespace QuickEngine {
         readPixels(x: number, y: number, w: number, h: number, format: number, type: number, pixels: ArrayBufferView): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 队列渲染管道
      */
@@ -2035,7 +1925,7 @@ declare namespace QuickEngine {
         doLighting(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class RenderQueue {
         private readonly _solidObjects;
         private readonly _alphaObjects;
@@ -2046,7 +1936,7 @@ declare namespace QuickEngine {
         clear(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const MAX_NUM_UNIFORM = 32;
     const MAX_NUM_SAMPLER = 8;
     const MAX_NUM_VELEMENT = 16;
@@ -2054,8 +1944,9 @@ declare namespace QuickEngine {
     const MAX_NUM_SHADER_PASS = 8;
     const MAX_NUM_VERTEX_STREAM = 4;
     class RenderSystem {
-        protected static _sInstance: RenderSystem;
         static readonly instance: RenderSystem;
+        constructor();
+        protected static _sInstance: RenderSystem;
         protected _renderStatedChanged: boolean;
         protected _currentRenderState: RenderState;
         protected _textureChanged: boolean[];
@@ -2098,7 +1989,9 @@ declare namespace QuickEngine {
         protected _clipPlane: Vector4;
         protected _userConst: Vector4[];
         protected _canvas: HTMLCanvasElement;
-        constructor(div?: HTMLElement);
+        static getGLDrawCount(type: RenderOperationType, primCount: number): number;
+        static getGLDrawMode(type: RenderOperationType): number;
+        init(div?: HTMLElement): void;
         private _clearState;
         onInit(): void;
         onShutdown(): void;
@@ -2111,8 +2004,6 @@ declare namespace QuickEngine {
         private _bindRenderState;
         bindGpuProgram(gpuProgram: GLShaderProgram): void;
         private _bindVertexElement;
-        renderOperation(renderOp: RenderOperation): void;
-        static getGLDrawCount(type: RenderOperationType, primCount: number): number;
         onResize(w: number, h: number): void;
         setWorldMatrix(worldMatrix: Matrix4): void;
         getWorldMatrix(): Matrix4;
@@ -2135,10 +2026,11 @@ declare namespace QuickEngine {
         begin(): void;
         end(): void;
         render(shader: Shader, renderable: Renderable): void;
+        renderOperation(renderOp: RenderOperation): void;
         readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class RenderTarget extends HashObject {
         private static RdtId;
         protected _rid: number;
@@ -2157,7 +2049,84 @@ declare namespace QuickEngine {
         destroy(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
+    /**
+     * 资源类型
+     */
+    enum ResType {
+        Texture = 0,
+        TEXT = 1,
+        BINARY = 2,
+        FBX = 3,
+        MATERIAL = 4,
+        SHADER = 5,
+        SCENE = 6,
+        ANIM = 7,
+        FONT = 8,
+        PREFAB = 9
+    }
+    type ResourceClassType<T extends Resource> = new (filePath: string) => T;
+    function extname(path: string): string;
+    class ResourceManager {
+        static readonly BUILTIN_DEF_WHITE_TEX_NAME: string;
+        private static _loaderMap;
+        private static _resMap;
+        static get<T extends Resource>(path: string): T;
+        static load<T extends Resource>(path: string, onProgress?: (progress: number) => void): Promise<T>;
+        static unload(url: string): void;
+        static removeUnusedResources(): void;
+        static init(onFinished: () => void): void;
+        /**
+         * 构建引擎内置资源
+         * @param onFinished
+         */
+        static makeBuiltinRes(onFinished?: Function): void;
+        static setLoader(extName: string | string[], loader: IResLoader<any>): void;
+    }
+}
+declare namespace QE {
+    /**
+     * 资源加载状态
+     */
+    const enum ResState {
+        UnLoaded = 0,
+        Loading = 1,
+        Loaded = 2,
+        Prepared = 3,
+        Preparing = 4
+    }
+    class ResourceDependence extends HashObject {
+        _mainRes: Resource;
+        _subRes: Resource;
+        _listener: QEListener<ResourceDependence>;
+        constructor(mainRes: Resource, subRes: Resource);
+        getMainRes(): Resource;
+        getSubRes(): Resource;
+        destroy(): void;
+        private _onLoaded;
+    }
+    abstract class Resource extends RefObj {
+        protected _group: string;
+        protected _dependenceFiles: Array<ResourceDependence>;
+        protected _name: string;
+        name: string;
+        _priority: number;
+        priority: number;
+        protected _state: ResState;
+        state: ResState;
+        readonly isComplete: boolean;
+        _loadedEvent: QEEvent1<Resource>;
+        _unloadedEvent: QEEvent1<Resource>;
+        protected constructor(name?: string, group?: string);
+        abstract clone(): HashObject;
+        copy(object: HashObject): void;
+        _addDependence(subResource: Resource): void;
+        _removeDependence(pSubResource: Resource): void;
+        _removeAllDependence(): void;
+        _hasDependencies(): boolean;
+    }
+}
+declare namespace QE {
     const enum TextureUsage {
         STATIC = 1,
         DYNAMIC = 2,
@@ -2172,43 +2141,45 @@ declare namespace QuickEngine {
         DEFAULT = 21
     }
     class Texture extends Resource {
+        readonly id: number;
+        width: number;
+        height: number;
+        resolution: number;
+        readonly webglTex: WebGLTexture;
+        usage: TextureUsage;
+        readonly image: HTMLImageElement;
+        readonly imageData: ImageData;
+        constructor(name?: string);
         private static Tid;
         private readonly _tid;
-        readonly id: number;
         protected _width: number;
-        width: number;
         protected _height: number;
-        height: number;
         protected _resolution: number;
-        resolution: number;
         protected _webglTex: WebGLTexture;
-        readonly webglTex: WebGLTexture;
-        getWebGLTexture(): WebGLTexture;
         mipmaps: number;
         format: PixelFormat;
         private _usage;
-        usage: TextureUsage;
         private _image;
-        readonly image: HTMLImageElement;
         private _imageData;
-        readonly imageData: ImageData;
-        constructor(name?: string);
+        getWebGLTexture(): WebGLTexture;
         copy(object: Texture): void;
         clone(): Texture;
         loadImage(image: HTMLImageElement): void;
         loadRawData(data: ArrayBuffer, width: number, height: number): void;
         destroy(): void;
         protected createWebGLTexture(): void;
-        protected loadImpl(): void;
         protected unloadImpl(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     /**
      * 材质基类
      */
     class Material extends Resource {
+        constructor(name?: string);
         static ClassName: string;
+        private static _defaultCubeMaterial;
+        private static _defMatGLTex;
         name: any;
         shader: Shader;
         lightShader: Shader;
@@ -2229,21 +2200,17 @@ declare namespace QuickEngine {
         bumpFactor: number;
         reflection: number;
         reflectionFactor: number;
-        constructor(name?: string);
+        static getDefaultCubeMaterial(): Material;
         copy(object: HashObject): void;
         clone(): HashObject;
         protected loadImpl(): void;
         protected unloadImpl(): void;
-        private static _defaultCubeMaterial;
-        private static _defMatGLTex;
-        static getDefaultCubeMaterial(): Material;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class SpriteMaterial extends Material {
         private static _shared;
         private static _defGLTex;
-        static getDefaultSpriteMaterial(): SpriteMaterial;
         type: string;
         fog: boolean;
         lights: boolean;
@@ -2258,13 +2225,14 @@ declare namespace QuickEngine {
         premultipliedAlpha: boolean;
         _needsUpdate: boolean;
         tex: Texture;
+        static getDefaultSpriteMaterial(): SpriteMaterial;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class GLShaderManager implements IDestroyable {
-        static compileShader(type: number, code: string): WebGLShader;
-        private _shaders;
         constructor();
+        private _shaders;
+        static compileShader(type: number, code: string): WebGLShader;
         isDestroyed(): boolean;
         destroy(): void;
         find(name: string): Shader;
@@ -2272,7 +2240,7 @@ declare namespace QuickEngine {
         remove(name: string): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     const enum UniformType {
         FLOAT4 = 0,
         MATRIX4 = 1,
@@ -2358,17 +2326,18 @@ declare namespace QuickEngine {
         setUniform(index: number, data: any): void;
         addUniform(uniform: GLUniform): void;
         addSampler(sampler: TextureSampler): void;
+        setSampler(index: number, sampler: TextureSampler): void;
+        getSamplers(): TextureSampler[];
         setAttribute(attrName: VertexElementSemantic, attrLoc: number): void;
         getAttribute(attrName: VertexElementSemantic): number;
         setRenderState(renderState: RenderState): void;
         getRenderState(): RenderState;
-        getSamplers(): TextureSampler[];
         clone(): WebGLShaderPass;
         uploadUniforms(): void;
         uploadSamplers(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class GLShaderProgram implements IDestroyable {
         static GLProgramCount: number;
         vsCode: WebGLShader;
@@ -2380,7 +2349,7 @@ declare namespace QuickEngine {
         destroy(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class Shader {
         private _name;
         shaderPasses: WebGLShaderPass[];
@@ -2389,7 +2358,7 @@ declare namespace QuickEngine {
         addPass(pass: WebGLShaderPass): void;
     }
 }
-declare namespace QuickEngine.ShaderChunks {
+declare namespace QE.ShaderChunks {
     interface ShaderData {
         attributes: string[];
         uniforms: string[];
@@ -2402,24 +2371,25 @@ declare namespace QuickEngine.ShaderChunks {
     let BaseMeshShadervs: string;
     let BaseMeshShaderfs: string;
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class WebGLBufferManager {
+        static readonly instance: WebGLBufferManager;
+        private constructor();
         private static _sInstance;
-        static instance: WebGLBufferManager;
         protected _indexBuffers: WebGLIndexBuffer[];
         protected _vertexBuffers: WebGLVertexBuffer[];
-        constructor();
+        static getGLUsage(usage: BufferUsage): number;
+        init(): void;
         createIndexBuffer(numIndexes: number, usage: BufferUsage, useShadowBuffer: boolean): WebGLIndexBuffer;
         createVertexBuffer(stride: number, count: number, normalize: boolean, usage: BufferUsage): WebGLVertexBuffer;
-        static getGLUsage(usage: BufferUsage): number;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     class WebGLIndexBuffer {
         private _buffer;
         _usage: BufferUsage;
         private _count;
-        count: number;
+        readonly count: number;
         _data: Uint16Array;
         constructor(numIndexes: number, usage: BufferUsage, useShadowBuffer: boolean);
         createBuffer(): void;
@@ -2429,7 +2399,7 @@ declare namespace QuickEngine {
         bindBuffer(): void;
     }
 }
-declare namespace QuickEngine {
+declare namespace QE {
     let gl: WebGLRenderingContext;
     function GL_CHECK_ERROR(): void;
     /**
@@ -2438,8 +2408,8 @@ declare namespace QuickEngine {
     class WebGLRendererSystem extends RenderSystem {
     }
 }
-declare namespace QuickEngine {
-    class WebGLVertexBuffer {
+declare namespace QE {
+    class WebGLVertexBuffer implements IDestroyable {
         webGLBuffer: WebGLBuffer;
         _size: number;
         _stride: number;
@@ -2456,11 +2426,121 @@ declare namespace QuickEngine {
          * @param usage
          */
         constructor(stride: number, size: number, normalize: boolean, usage: BufferUsage);
-        dispose(): void;
+        isDestroyed(): boolean;
+        destroy(): void;
         getGLBuffer(): WebGLBuffer;
         protected createBuffer(): void;
         protected destroyBuffer(): void;
         writeData(data: ArrayBuffer): void;
         bindBuffer(): void;
+    }
+}
+declare namespace QE {
+    class TextResource extends Resource {
+        private _text;
+        text: string;
+        constructor();
+        clone(): HashObject;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+declare namespace QE {
+    interface LoadResResult<T> {
+        error?: string;
+        res?: T;
+    }
+    interface IResLoader<T> {
+        load(path: string, onEnd?: (error?: string, data?: T) => void, onProgress?: (progress: null) => void): T;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+declare namespace QE {
+    class TextResourceLoader implements IResLoader<TextResource> {
+        static readonly instance: TextResourceLoader;
+        private _tasks;
+        private _isLoading;
+        private _res;
+        load(path: string, onEnd?: (error?: string, data?: TextResource) => void, onProgress?: (progress: null) => void): TextResource;
+    }
+}
+declare namespace QE {
+    class TextureLoader implements IResLoader<Texture> {
+        static readonly instance: TextureLoader;
+        load(path: string, onEnd?: (error?: string, data?: Texture) => void, onProgress?: (progress: null) => void): Texture;
+    }
+}
+declare namespace QE {
+}
+declare namespace QE {
+    const CUBE_SIZE = 1;
+    const CUBE_HALF_SIZE: number;
+    const CubeMeshData: {
+        vertices: number[];
+        colors: number[];
+        indices: number[];
+        normals: number[];
+        uvs: number[];
+    };
+    class PrefabFactory {
+        static createCube(mesh: Mesh): void;
+        static createSphere(mesh: Mesh): void;
+    }
+}
+declare namespace QE {
+    module Reflection {
+        class Type {
+            /**
+             * 返回当前类型的上一层继承类型
+             *@return {Function}
+             */
+            readonly baseType: Function;
+            constructor(cls: Function);
+            private readonly _cls;
+            static getType(instance: Object): Type;
+            static typeOf(cls: Function): Type;
+            getConstructor(): Function;
+            isSubClassOf(superClass: Type): boolean;
+            equal(type: Type): boolean;
+        }
     }
 }

@@ -1,15 +1,10 @@
 module UnitTest {
 
-	import ResourceManager = QuickEngine.ResourceManager;
-	import TextResource = QuickEngine.TextResource;
-	import Type = QuickEngine.Reflection.Type;
-	import QuickListener1 = QuickEngine.QuickListener1;
+    import TextResource = QE.TextResource;
 
-	export function testTextLoader() {
-        let p = QuickEngine.ResourceManager.instance.loadAsync<QuickEngine.TextResource>('assets/res/test.txt', Type.typeOf(TextResource));
-        p.then(function (textRes: TextResource) {
-            console.log(textRes.data);
-        })
-	}
-
+    export function testTextLoader() {
+        QE.ResourceManager.load<QE.TextResource>('assets/res/test.txt').then(function (textRes: TextResource) {
+            console.log(textRes.text);
+        });
+    }
 }

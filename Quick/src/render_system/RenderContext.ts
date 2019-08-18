@@ -1,20 +1,20 @@
-﻿namespace QuickEngine {
+namespace QE {
 
 	export class RenderContext {
 
 		private readonly _name: string;
 
 		protected _camera: Camera;
-		protected _clearMode: ClearMask = ClearMask.ALL;// 清除缓冲类型
-		protected _clearColor: Number4 = [255, 255, 255, 255];// 清屏颜色
-		protected _clearDepth: number; // 清除深度
-		protected _clearStencil: number; // 清除模板
-		protected _visibleCuller;// 可见裁剪对象
-		protected _shaderProvider;// shader供应器
-		protected _renderPipeline: RenderPipeline;// 渲染管道
+		protected _clearMode: ClearMask = ClearMask.ALL; // 清除缓冲类型
+		protected _clearColor: Number4 = [0, 0, 0, 255]; // 清屏颜色
+		protected _clearDepth = 1; // 清除深度
+		protected _clearStencil = 0; // 清除模板
+		protected _visibleCuller; // 可见裁剪对象
+		protected _shaderProvider; // shader供应器
+		protected _renderPipeline: RenderPipeline; // 渲染管道
 
 		public get name(): string {
-			return this._name
+			return this._name;
 		}
 
 		public get camera() {
@@ -57,13 +57,13 @@
 		public doRender() {
 
 			// 没有摄像机就不需要渲染了
-			let camera = this._camera;
-			let viewport = camera.viewPort;
-			if (viewport.w == 0 || viewport.h == 0) {
+			const camera = this._camera;
+			const viewport = camera.viewPort;
+			if (viewport.w === 0 || viewport.h === 0) {
 				return;
 			}
 
-			let renderSystem = RenderSystem.instance;
+			const renderSystem = RenderSystem.instance;
 
 			// 设置render target
 			renderSystem.setRenderTarget(camera.renderTarget);
@@ -78,12 +78,13 @@
 			renderSystem.setCamera(camera);
 
 			// 管道渲染
-			if (this._renderPipeline)
+			if (this._renderPipeline) {
 				this._renderPipeline.doRender(this);
+			}
 		}
 
 		public readPixels(x: number, y: number, w: number, h: number, format: number, type: number, pixels: ArrayBufferView) {
-			let renderSystem = RenderSystem.instance;
+			const renderSystem = RenderSystem.instance;
 
 			renderSystem.setRenderTarget(this._camera.renderTarget);
 			renderSystem.readPixels(x, y, w, h, format, type, pixels);

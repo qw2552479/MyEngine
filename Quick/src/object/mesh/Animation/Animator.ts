@@ -1,6 +1,6 @@
-﻿///<reference path="../../Component.ts" />
+///<reference path="../../Component.ts" />
 ///<reference path="AnimationLoader.ts"/>
-namespace QuickEngine {
+namespace QE {
 
     /**
      * 动画播放器
@@ -8,8 +8,6 @@ namespace QuickEngine {
      */
     export class Animator extends Component {
 
-        public static __ClassName__ = "QuickEngine.Animator";
-        public static __ClassID__ = 0;
         private _animController: AnimatorController;
         public get animController(): AnimatorController {
             return this._animController;
@@ -19,7 +17,7 @@ namespace QuickEngine {
         }
 
         private _playingClip: AnimationClip;
-        private _timePos: number = 0;
+        private _timePos = 0;
 
         constructor() {
             super();
@@ -27,7 +25,7 @@ namespace QuickEngine {
 
         public play(animName: string) {
 
-            if (this._playingClip && this._playingClip.name == animName) {
+            if (this._playingClip && this._playingClip.name === animName) {
                 return;
             }
 
@@ -35,16 +33,16 @@ namespace QuickEngine {
                 return;
             }
 
-            let clips = this._animController.animationClips;
+            const clips = this._animController.animationClips;
             for (let i = 0, len = clips.length; i < len; i++) {
-                let clip = clips[i];
-                if (clip.name == animName) {
+                const clip = clips[i];
+                if (clip.name === animName) {
                     this._playingClip = clip;
                     break;
                 }
-            }     
-            
-            this._timePos = 0;       
+            }
+
+            this._timePos = 0;
         }
 
         public stop() {

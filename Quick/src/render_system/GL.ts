@@ -1,4 +1,4 @@
-namespace QuickEngine {
+namespace QE {
     export namespace GL {
 
         declare var mat4: any;
@@ -9,7 +9,7 @@ namespace QuickEngine {
         const _vertexBuffer = new Int32Array(_arrayBuffer);
         let VBO: WebGLBuffer;
 
-        let _init = false;
+        const _init = false;
 
         export function init() {
             VBO = gl.createBuffer();

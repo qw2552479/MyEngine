@@ -1,11 +1,11 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     /**
      * 球 (x - cx) * (x - cx) + (y - cy) *  (y - cy) +(z - cz) *  (z - cz) = r * r
      */
     export class Sphere {
 
-        public static ClassName = "Sphere";
+        public static ClassName = 'Sphere';
 
         public center: Vector3;
         public radius: number;

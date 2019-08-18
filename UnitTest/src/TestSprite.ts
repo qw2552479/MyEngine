@@ -1,39 +1,43 @@
-﻿module UnitTest {
+module UnitTest {
 
 
     function initScene() {
 
-        let mainScene: QuickEngine.Scene3D = QuickEngine.SceneManager.instance.currentScene;
+        const mainScene: QE.Scene3D = QE.SceneManager.instance.currentScene;
 
-        let mainCamera = QuickEngine.Camera.MainCamera;
-        mainCamera.setCameraType(QuickEngine.CameraType.Orthogonal);
+        const mainCamera = QE.Camera.MainCamera;
+        mainCamera.setCameraType(QE.CameraType.Perspective);
+        mainCamera.setNearClip(0.1);
+        mainCamera.setFarClip(100);
+        mainCamera.setFOV(45);
 
-        let cameraNode = mainCamera.node.transform;
-        cameraNode.localPosition = new QuickEngine.Vector3(0, 0, -10);
-        cameraNode.localEulerAngle = new QuickEngine.Vector3(1, 1, 1);
+        const cameraNode = mainCamera.node.transform;
+        cameraNode.localPosition = new QE.Vector3(0, 0, -3);
+        cameraNode.localEulerAngle = new QE.Vector3(0, 0, 0);
     }
 
-    export function testSprite() {
+    export async function testSprite() {
 
         initScene();
 
-        let mainScene: QuickEngine.Scene3D = QuickEngine.SceneManager.instance.currentScene;
+        const mainScene: QE.Scene3D = QE.SceneManager.instance.currentScene;
 
-        let i = 0;
-        let meshNode = mainScene.createNode();
-        let spriteRender = meshNode.addComponent<QuickEngine.SpriteRender>(QuickEngine.SpriteRender);
+        const tex: QE.Texture = await QE.ResourceManager.load<QE.Texture>('UnitTest/assets/res/icon.png');
+        const meshNode = mainScene.createNode();
+        const spriteRender = meshNode.addComponent<QE.SpriteRender>(QE.SpriteRender);
 
-        let material = QuickEngine.SpriteMaterial.getDefaultSpriteMaterial();
+        const material = QE.SpriteMaterial.getDefaultSpriteMaterial();
         spriteRender.setMaterial(material);
-
-        let tex = QuickEngine.ResourceManager.instance.load<QuickEngine.Texture>("assets/res/icon.png",  QuickEngine.Reflection.Type.typeOf(QuickEngine.Texture));
         material.shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
+        //
+        // meshNode.transform.localPosition = new QE.Vector3(0.1 * i, 0.1 * i, 1 * 0.1);
 
-        meshNode.transform.localPosition = new QuickEngine.Vector3(0.1 * i, 0.1 * i, 1 * 0.1);
+        // setTimeout(function () {
+        //     meshNode.transform.localPosition = new QE.Vector3(
+        //     meshNode.transform.localPosition.x + 0.1,
+        //     meshNode.transform.localPosition.y + 0.1 , 1);
+        // }, this);
 
-        setTimeout(function () {
-            meshNode.transform.localPosition = new QuickEngine.Vector3(meshNode.transform.localPosition.x + 0.1, meshNode.transform.localPosition.y + 0.1 , 1);
-        }, this);
     }
 
 }

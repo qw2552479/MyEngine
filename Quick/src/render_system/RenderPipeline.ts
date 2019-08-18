@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
 	/**
 	 * 队列渲染管道
@@ -13,9 +13,9 @@
 
 		public doRender(renderContext: RenderContext): void {
 
-			let camera = renderContext.camera;
-			let renderQueue = this.renderQueue;
-			let renderSystem = RenderSystem.instance;
+			const camera = renderContext.camera;
+			const renderQueue = this.renderQueue;
+			const renderSystem = RenderSystem.instance;
 
 			// 清除渲染队列
 			renderQueue.clear();
@@ -23,9 +23,9 @@
 			// TODO: 封装裁剪
 			function doCull() {
 
-				let outArr: Node[] = [];
+				const outArr: GameObject[] = [];
 
-				function cull(transfrom: Transform, outNodeArr: Node[]) {
+				function cull(transfrom: Transform, outNodeArr: GameObject[]) {
 
 					outNodeArr.push(transfrom.node);
 
@@ -34,7 +34,7 @@
 					}
 				}
 
-				let children = SceneManager.instance.currentScene.children;
+				const children = SceneManager.instance.currentScene.children;
 				for (let i = 0, len = children.length; i < len; i++) {
 					cull(children[i].transform, outArr);
 				}
@@ -43,11 +43,11 @@
 			}
 
 			// 裁剪
-			let visibleList = doCull();
-			let len = visibleList.length;
+			const visibleList = doCull();
+			const len = visibleList.length;
 			// 节点加入渲染队列
 			for (let i = 0; i < len; i++) {
-				let child = visibleList[i];
+				const child = visibleList[i];
 				if (child) {
 					child.updateRenderQueue(renderQueue);
 				}

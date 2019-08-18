@@ -1,5 +1,5 @@
-﻿namespace QuickEngine {
-    export let __EDITOR_MODE__: boolean = false;
-    export let __DEBUG__: boolean = true;
-    export let __PROFILER__: boolean = true;
+namespace QE {
+    export let __QE_EDITOR_MODE__ = false;
+    export let __QE_DEBUG__ = true;
+    export let __PROFILER__ = true;
 }

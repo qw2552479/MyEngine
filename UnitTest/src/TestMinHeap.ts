@@ -2,7 +2,7 @@
     //最小堆：根结点的键值是所有堆结点键值中最小者。
     export function testMinHeap() {
         //let k, n = 11, a = [0, 5, 2, 4, 9, 7, 3, 1, 10, 8, 6];
-        //let test = new QuickEngine.MinHeap<number>();
+        //let test = new QE.MinHeap<number>();
         //for (k = 0; k < n; k++)
         //    test.enqueue(a[k]);
         //for (k = 0; k < n; k++)
@@ -31,7 +31,7 @@
             { v: 6, b: 2 }
         ];
 
-        let test = new QuickEngine.MinHeap<TestData>(comparer);
+        let test = new QE.MinHeap<TestData>(comparer);
         for (k = 0; k < n; k++)
             test.enqueue(a[k]);
         for (k = 0; k < n; k++)

@@ -1,11 +1,11 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     /**
      * 射线, 隐式定义方程
      */
     export class Ray {
 
-        public static ClassName = "Ray";
+        public static ClassName = 'Ray';
 
         public origin: Vector3;
         public direction: Vector3;

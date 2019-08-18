@@ -1,9 +1,6 @@
 ﻿module UnitTest {
 
-    class TestComponent extends QuickEngine.Component {
-
-        public static __ClassName__ = "UnitTest.TestComponent";
-        public static __ClassID__ = 0;
+    class TestComponent extends QE.Component {
 
         onLoad = function () {
             console.log("UnitTest.TestComponent onLoad");
@@ -17,7 +14,7 @@
 
     export function testComponent() {
 
-        let mainScene = QuickEngine.SceneManager.instance.currentScene;
+        let mainScene = QE.SceneManager.instance.currentScene;
        
         let emptyNode = mainScene.createNode();
 

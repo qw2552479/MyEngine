@@ -4,9 +4,9 @@ const browserSync = require('browser-sync').create();
 
 function build() {
     let tsProject = ts.createProject('./tsconfig.json');
-    return gulp.src(tsProject.config.include)
+    return tsProject.src()
         .pipe(tsProject())
-        .pipe(gulp.dest(tsProject.config.compilerOptions.outFile));
+        .pipe(gulp.dest('.'));
 };
 
 function run(cb) {

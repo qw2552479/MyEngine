@@ -1,14 +1,12 @@
-﻿namespace QuickEngine {
+namespace QE {
 
-	const s_epsilon: number = 1e-03;
+	const s_epsilon = 1e-03;
 
 	/**
 	 * 四元数 [w, x, y, z]
 	 * 假设轴角对(n, θ): 绕n指定的旋转轴θ角, 则 q = [cos(θ / 2), sin(θ / 2) * nx, sin(θ / 2) * ny, sin(θ / 2) * nz]
 	 */
 	export class Quaternion {
-
-		public static ClassName = "Quaternion";
 
 		public static get ZERO(): Quaternion {
 			return new Quaternion(1, 0, 0, 0);
@@ -18,16 +16,42 @@
 			return new Quaternion(1, 0, 0, 0);
 		}
 
-		public x: number;
-		public y: number;
-		public z: number;
-		public w: number;
-
 		public constructor(w: number = 1, x: number = 0, y: number = 0, z: number = 0) {
 			this.w = w;
 			this.x = x;
 			this.y = y;
 			this.z = z;
+		}
+
+		/**
+		 * 模长
+		 */
+		public get magnitude(): number {
+			return this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
+		}
+
+		/**
+		 * 模长平方
+		 */
+		public get sqrMagnitude(): number {
+			return Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+		}
+
+		public static ClassName = 'Quaternion';
+
+		/**
+		 * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
+		 */
+		private static _TempQuat0 = new Quaternion();
+		private static _TempQuat1 = new Quaternion();
+
+		public x: number;
+		public y: number;
+		public z: number;
+		public w: number;
+
+		public static multiplyScalar(s: number, q: Quaternion): Quaternion {
+			return new Quaternion(q.w * s, q.x * s, q.y * s, q.z * s);
 		}
 
 		public copyFrom(q: Quaternion): Quaternion {
@@ -44,7 +68,7 @@
 			return new Quaternion(this.w, this.x, this.y, this.z);
 		}
 
-		//----------------------------------基本计算-------------------------------------
+		// ----------------------------------基本计算-------------------------------------
 		/**
 		 * 加法
 		 * @param q
@@ -93,16 +117,12 @@
 			return new Quaternion(this.w * s, this.x * s, this.y * s, this.z * s);
 		}
 
-		public static multiplyScalar(s: number, q: Quaternion): Quaternion {
-			return new Quaternion(q.w * s, q.x * s, q.y * s, q.z * s);
-		}
-
 		public multiplyVector(vector: Vector3): Quaternion {
 
-			let w = this.w, x = this.x, y = this.y, z = this.z;
-			let x2: number = vector.x;
-			let y2: number = vector.y;
-			let z2: number = vector.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
+			const x2: number = vector.x;
+			const y2: number = vector.y;
+			const z2: number = vector.z;
 
 			return new Quaternion(
 				-x * x2 - y * y2 - z * z2,
@@ -122,11 +142,11 @@
 			// uuv = uuv.multiplyScalar(2.0);
 			//
 			// return new Vector3(v.x + uv.x + uuv.x, v.y + uv.y + uuv.y, v.z + uv.z + uuv.z);
-			let out = new Vector3();
-			let src = this;
-			let vector = v;
+			const out = new Vector3();
+			const src = this;
+			const vector = v;
 			let x1: number, y1: number, z1: number, w1: number;
-			let x2: number = vector.x, y2: number = vector.y, z2: number = vector.z;
+			const x2: number = vector.x, y2: number = vector.y, z2: number = vector.z;
 
 			w1 = -src.x * x2 - src.y * y2 - src.z * z2;
 			x1 = src.w * x2 + src.y * z2 - src.z * y2;
@@ -145,14 +165,14 @@
 		 */
 		public log(): Quaternion {
 
-			let w = this.w, x = this.x, y = this.y, z = this.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
 			let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
 			// w = cos(θ / 2)
 			if (Math.abs(w) < 1.0) {
-				let angle: Radian = Math.acos(w);
-				let sina = Math.sin(angle);
+				const angle: Radian = Math.acos(w);
+				const sina = Math.sin(angle);
 				if (Math.abs(sina) >= s_epsilon) {
-					let fCoeff = angle / sina;
+					const fCoeff = angle / sina;
 					rx = fCoeff * x;
 					ry = fCoeff * y;
 					rz = fCoeff * z;
@@ -167,16 +187,16 @@
 		 */
 		public exp(): Quaternion {
 
-			let w = this.w, x = this.x, y = this.y, z = this.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
 			let rw = 0.0, rx = 0.0, ry = 0.0, rz = 0.0;
 
-			let fAngle = Math.sqrt(x * x + y * y + z * z);
-			let fSin = Math.sin(fAngle);
+			const fAngle = Math.sqrt(x * x + y * y + z * z);
+			const fSin = Math.sin(fAngle);
 
 			rw = Math.cos(fAngle);
 
 			if (Math.abs(fSin) >= s_epsilon) {
-				let fCoeff = fSin / (fAngle);
+				const fCoeff = fSin / (fAngle);
 				rx = fCoeff * x;
 				ry = fCoeff * y;
 				rz = fCoeff * z;
@@ -201,11 +221,11 @@
 		 */
 		public inverse(): Quaternion {
 
-			let w = this.w, x = this.x, y = this.y, z = this.z;
-			let mag = w * w + x * x + y * y + z * z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
+			const mag = w * w + x * x + y * y + z * z;
 
 			if (mag > 0.0) {
-				let invMag = 1.0 / mag;
+				const invMag = 1.0 / mag;
 				return new Quaternion(w * invMag, -x * invMag, -y * invMag, -z * invMag);
 			} else {
 				return new Quaternion(0, 0, 0, 0);
@@ -220,30 +240,16 @@
 		}
 
 		/**
-		 * 模长
-		 */
-		public get magnitude(): number {
-			return this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
-		}
-
-		/**
-		 * 模长平方
-		 */
-		public get sqrMagnitude(): number {
-			return Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
-		}
-
-		/**
 		 * 正则化
 		 */
 		public normalize(): Quaternion {
 
 			// 模长
-			let len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
+			const len = Math.sqrt(this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z);
 
 			console.assert(len != 0);
 
-			let invLen = 1.0 / len;
+			const invLen = 1.0 / len;
 			this.x *= invLen;
 			this.y *= invLen;
 			this.z *= invLen;
@@ -257,10 +263,10 @@
 		 * @param other
 		 */
 		public equal(q: Quaternion): boolean {
-			return this.x == q.x && this.y == q.y && this.z == q.z && this.w == q.w;
+			return this.x === q.x && this.y === q.y && this.z === q.z && this.w === q.w;
 		}
 
-		//----------------------------------插值操作-------------------------------------
+		// ----------------------------------插值操作-------------------------------------
 		/**
 		 * 线性插值(Linear Interpolation)
 		 * @param lhs
@@ -269,11 +275,11 @@
 		 */
 		public lerp(lhs: Quaternion, rhs: Quaternion, t: number): Quaternion {
 
-			let w0: number = lhs.w, x0: number = lhs.x, y0: number = lhs.y, z0: number = lhs.z;
+			const w0: number = lhs.w, x0: number = lhs.x, y0: number = lhs.y, z0: number = lhs.z;
 			let w1: number = rhs.w, x1: number = rhs.x, y1: number = rhs.y, z1: number = rhs.z;
 
 			// 两四元数点乘
-			let cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
+			const cosOmega = w0 * w1 + x0 * x1 + y0 * y1 + z0 * z1;
 			// 点乘为负, 反转四元数以取得短弧
 			if (cosOmega < 0) {
 				w1 = -w1;
@@ -282,11 +288,11 @@
 				z1 = -z1;
 			}
 
-			let w = w0 + t * (w1 - w0);
-			let x = x0 + t * (x1 - x0);
-			let y = y0 + t * (y1 - y0);
-			let z = z0 + t * (z1 - z0);
-			let invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
+			const w = w0 + t * (w1 - w0);
+			const x = x0 + t * (x1 - x0);
+			const y = y0 + t * (y1 - y0);
+			const z = z0 + t * (z1 - z0);
+			const invLen = 1.0 / Math.sqrt(w * w + x * x + y * y + z * z);
 
 			this.w = w * invLen;
 			this.x = x * invLen;
@@ -322,9 +328,9 @@
 				k0 = 1 - t;
 				k1 = t;
 			} else {
-				let sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
-				let omega = Math.atan2(sinOmega, cosOmega);
-				let invSinOmega = 1 / sinOmega;
+				const sinOmega = Math.sqrt(1 - cosOmega * cosOmega);
+				const omega = Math.atan2(sinOmega, cosOmega);
+				const invSinOmega = 1 / sinOmega;
 				k0 = Math.sin((1 - t) * omega) * invSinOmega;
 				k1 = Math.sin(t * omega) * invSinOmega;
 			}
@@ -337,29 +343,23 @@
 			return this;
 		}
 
-		/**
-		 * 四元数样条 squad(qi, qi1, si, si1, t) = slerp(slerp(qi, qi1, t), slerp(si, si1, t), 2 * t * (1 - t))
-		 */
-		private static _TempQuat0 = new Quaternion();
-		private static _TempQuat1 = new Quaternion();
-
 		public squad(q0, q1, s0, s1, t) {
 
-			let slerpT = 2 * t * (1 - t);
-			let slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
-			let slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
+			const slerpT = 2 * t * (1 - t);
+			const slerpQ0 = Quaternion._TempQuat0.slerp(q0, q1, t);
+			const slerpQ1 = Quaternion._TempQuat1.slerp(s0, s1, t);
 
 			return this.slerp(slerpQ0, slerpQ1, slerpT);
 		}
 
-		//------------------------------四元数,矩阵,向量互相转换--------------------------
+		// ------------------------------四元数,矩阵,向量互相转换--------------------------
 		/**
 		 * 通过旋转矩阵构造四元数
 		 * @param rotMat
 		 */
 		public FromRotationMatrix(rotMat: Matrix4): Quaternion {
 
-			let w = this.w, x = this.x, y = this.y, z = this.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
 
 
 			return this;
@@ -371,27 +371,27 @@
 				rotMat = new Matrix4();
 			}
 
-			let w = this.w, x = this.x, y = this.y, z = this.z;
-			let _2x = x + x, _2y = y + y, _2z = z + z;
-			let _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
-			let _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
-			let _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
+			const _2x = x + x, _2y = y + y, _2z = z + z;
+			const _2xw = _2x * w, _2yw = _2y * w, _2zw = _2z * w;
+			const _2xx = _2x * x, _2xy = _2y * x, _2xz = _2z * x;
+			const _2yy = _2y * y, _2yz = _2z * y, _2zz = _2z * z;
 
 			rotMat._00 = 1.0 - (_2yy + _2zz);
-			rotMat._01 = _2xy + _2zw;/*-----*/
-			rotMat._02 = _2xz - _2yw;/*-----*/
+			rotMat._01 = _2xy + _2zw; /*-----*/
+			rotMat._02 = _2xz - _2yw; /*-----*/
 			rotMat._03 = 0;
-			rotMat._10 = _2xy - _2zw;/*-----*/
+			rotMat._10 = _2xy - _2zw; /*-----*/
 			rotMat._11 = 1.0 - (_2xx + _2zz);
-			rotMat._12 = _2yz + _2xw;/*-----*/
+			rotMat._12 = _2yz + _2xw; /*-----*/
 			rotMat._13 = 0;
-			rotMat._20 = _2xz + _2yw;/*-----*/
-			rotMat._21 = _2yz - _2xw;/*-----*/
+			rotMat._20 = _2xz + _2yw; /*-----*/
+			rotMat._21 = _2yz - _2xw; /*-----*/
 			rotMat._22 = 1.0 - (_2xx + _2yy);
 			rotMat._23 = 0;
-			rotMat._30 = 0;/*---------------*/
-			rotMat._31 = 0;/*---------------*/
-			rotMat._32 = 0;/*---------------*/
+			rotMat._30 = 0; /*---------------*/
+			rotMat._31 = 0; /*---------------*/
+			rotMat._32 = 0; /*---------------*/
 			rotMat._33 = 1;
 
 			return rotMat;
@@ -404,9 +404,9 @@
 		 */
 		public fromAngleAxis(axis: Vector3, rads: Radian) {
 
-			let half_rads = rads / 2.0;
-			let cosine = Math.cos(half_rads);
-			let sine = Math.sin(half_rads);
+			const half_rads = rads / 2.0;
+			const cosine = Math.cos(half_rads);
+			const sine = Math.sin(half_rads);
 
 			this.x = axis.x * sine;
 			this.y = axis.y * sine;
@@ -422,7 +422,7 @@
 		 * @returns 弧度
 		 */
 		public toAngleAxis(axis: Vector3): Radian {
-			let rads = Math.acos(this.w) * 2.0;
+			const rads = Math.acos(this.w) * 2.0;
 			const s = Math.sin(rads / 2.0);
 
 			if (s > 0) {
@@ -448,17 +448,17 @@
 		}
 
 		public fromEulerAngleScalar(x: number, y: number, z: number): Quaternion {
-			let halfX = x * 0.5 * DEGREES_TO_RADIANS;
-			let sx = Math.sin(halfX);
-			let cx = Math.cos(halfX);
+			const halfX = x * 0.5 * DEGREES_TO_RADIANS;
+			const sx = Math.sin(halfX);
+			const cx = Math.cos(halfX);
 
-			let halfY = y * 0.5 * DEGREES_TO_RADIANS;
-			let sy = Math.sin(halfY);
-			let cy = Math.cos(halfY);
+			const halfY = y * 0.5 * DEGREES_TO_RADIANS;
+			const sy = Math.sin(halfY);
+			const cy = Math.cos(halfY);
 
-			let halfZ = z * 0.5 * DEGREES_TO_RADIANS;
-			let sz = Math.sin(halfZ);
-			let cz = Math.cos(halfZ);
+			const halfZ = z * 0.5 * DEGREES_TO_RADIANS;
+			const sz = Math.sin(halfZ);
+			const cz = Math.cos(halfZ);
 
 
 			this.w = cx * cy * cz + sx * sy * sz;
@@ -473,7 +473,7 @@
 		 * 四元数转欧拉角
 		 */
 		public toEulerAngle(refEulerAngle?: Vector3): Vector3 {
-			let w = this.w, x = this.x, y = this.y, z = this.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
 
 			if (!refEulerAngle) {
 				refEulerAngle = new Vector3();
@@ -494,7 +494,7 @@
 		}
 
 		public getRightVector(): Vector3 {
-			let w = this.w, x = this.x, y = this.y, z = this.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
 			return new Vector3(
 				1.0 - 2.0 * (y * y + z * z),
 				2.0 * (x * y + w * z),
@@ -503,7 +503,7 @@
 		}
 
 		public getUpVector(): Vector3 {
-			let w = this.w, x = this.x, y = this.y, z = this.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
 			return new Vector3(
 				2.0 * (x * y - w * z),
 				1.0 - 2.0 * (x * x + z * z),
@@ -512,7 +512,7 @@
 		}
 
 		public getDirVector(): Vector3 {
-			let w = this.w, x = this.x, y = this.y, z = this.z;
+			const w = this.w, x = this.x, y = this.y, z = this.z;
 			return new Vector3(
 				2.0 * (w * y + x * z),
 				2.0 * (y * z - w * x),

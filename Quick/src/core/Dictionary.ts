@@ -1,33 +1,35 @@
-namespace QuickEngine {
-    
+namespace QE {
+
     export interface IStringDictionary<TValue> {
-	    [key: string]: TValue;
-	}
+        [key: string]: TValue;
+    }
 
-	export interface INumberDictionary<TValue> {
-		[key: string]: TValue;
-	}
+    export interface INumberDictionary<TValue> {
+        [key: string]: TValue;
+    }
 
-	export class Dictionary<TValue> {
+    export class Dictionary<TValue> {
 
         private data: { [key: string]: TValue } = {};
         private list: Array<TValue> = new Array<TValue>();
 
         constructor(useOrderList: boolean = false) {
-            if(useOrderList) {
+            if (useOrderList) {
                 this.list = new Array<TValue>();
-            }    
+            }
         }
 
         public containsKey(key: string): boolean {
-            if(this.data[key]) return true;
+            if (this.data[key]) {
+                return true;
+            }
             return false;
         }
 
         public getValue(key: string): TValue {
             return this.data[key];
         }
-        
+
         public getKeys(): string[] {
             return Object.keys(this.data);
         }
@@ -36,17 +38,17 @@ namespace QuickEngine {
             return this.list;
         }
 
-        public add(key: string,value: TValue) {
+        public add(key: string, value: TValue) {
             this.data[key] = value;
-            if(this.list) {
+            if (this.list) {
                 this.list.push(value);
             }
         }
 
         public remove(key: string) {
-            if(this.list) {
-                let index: number = this.list.indexOf(this.data[key]);
-                if(index != -1) {
+            if (this.list) {
+                const index: number = this.list.indexOf(this.data[key]);
+                if (index !== -1) {
                     this.list.splice(index);
                 }
             }

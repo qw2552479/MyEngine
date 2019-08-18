@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export namespace AnimationCurve {
         /**
@@ -10,7 +10,7 @@
             Constant    // 常数
         }
     }
-    
+
 
     /**
      * 关键帧索引数据
@@ -21,7 +21,7 @@
     }
 
     /**
-     * timeline的指定时间点上，相邻的一对关键帧，以及时间系数     
+     * timeline的指定时间点上，相邻的一对关键帧，以及时间系数
      */
     export interface KeyFramePair {
         t: number; // 系数
@@ -32,14 +32,12 @@
 
     export class AnimationCurve {
 
-        public static __ClassName__ = "QuickEngine.AnimationCurve";
-        public static __ClassID__ = 0;
-
         private _isObjCurve = false;
         private _keyFrames: KeyFrame[];
 
         public _propName: string;
         public _valueType: Object;
+        public _objInstance: Object;
 
         public constructor(objCurve: boolean = false) {
             this._keyFrames = [];
@@ -56,7 +54,7 @@
 
         public addKeyFrame(keyFrame: KeyFrame, index?: number) {
             // 检查KeyFrame类型是否一致
-            if (__EDITOR_MODE__) {
+            if (__QE_EDITOR_MODE__) {
                 if (this._keyFrames.length > 0) {
                 }
             }
@@ -71,12 +69,12 @@
 
         public addKeyFrameByValue(time: number, value: number, inTangent?: number, outTangent?: number, index?: number) {
             // 检查KeyFrame类型是否一致
-            if (__EDITOR_MODE__) {
+            if (__QE_EDITOR_MODE__) {
                 if (this._keyFrames.length > 0) {
                 }
             }
 
-            let keyFrame = new KeyFrame(time, value, inTangent, outTangent);
+            const keyFrame = new KeyFrame(time, value, inTangent, outTangent);
             if (index === undefined || this._keyFrames.length <= index) {
                 this._keyFrames.push(keyFrame);
                 return;
@@ -86,7 +84,7 @@
         }
 
         public moveKeyFrame(index: number, keyFrame: KeyFrame) {
-            let thisKeyFrame = this._keyFrames;
+            const thisKeyFrame = this._keyFrames;
 
             if (index < 0 || thisKeyFrame.length > index) {
                 return;
@@ -97,7 +95,7 @@
         }
 
         public removeKeyFrame(index: number) {
-            let thisKeyFrame = this._keyFrames;
+            const thisKeyFrame = this._keyFrames;
 
             if (index < 0 || thisKeyFrame.length > index) {
                 return;
@@ -107,20 +105,20 @@
         }
 
         /**
-         * 根据时间索引, 取得当前一对关键帧    
+         * 根据时间索引, 取得当前一对关键帧
          * @param {number} timePos 动画时间位置，这个时间应当和动画片段的总时间做过取余计算
          * @param {number} keyIndex 帧索引
-         * @return {KeyFramePair} 
+         * @return {KeyFramePair}
          */
         protected getKeyFramePairAtTime(timePos: number, keyIndex?: number): KeyFramePair {
 
             let keyframe1: KeyFrame, keyframe2: KeyFrame;
-            let keys = this._keyFrames;
+            const keys = this._keyFrames;
 
             // 直接设置帧索引
             if (keyIndex !== undefined) {
-                
-                if (keyIndex + 1 == keys.length) {
+
+                if (keyIndex + 1 === keys.length) {
                     keyframe1 = keys[keyIndex];
                     keyframe2 = keys[keyIndex];
                 } else {
@@ -131,11 +129,11 @@
             } else {
                 // 计算帧索引
                 let i = 1;
-                let len = keys.length;
+                const len = keys.length;
                 for (; i < len; i++) {
 
-                    let frame = keys[i - 1];
-                    let nextFrame = keys[i];
+                    const frame = keys[i - 1];
+                    const nextFrame = keys[i];
                     if (timePos < frame.time) {
                         // 小于等于前一帧时间点，则命中
                         // timePos---------firstKey_time---------k2_time
@@ -147,17 +145,17 @@
                         break;
                     }
                     // 最后一帧还没有找到对应的时间点，意味着timepos超出了最后一帧，直接使用最后一帧作为关键帧
-                    if (i == len - 1) {
+                    if (i === len - 1) {
                         // k1_time---------laseKey_time---------timePos
                         i++;
                         break;
                     }
                 }
 
-                if (i == 0) {
+                if (i === 0) {
                     keyframe1 = keys[i];
                     keyframe2 = keys[i];
-                } else if (i == len) {
+                } else if (i === len) {
                     keyframe1 = keys[i - 1];
                     keyframe2 = keys[i - 1];
                 } else {
@@ -165,16 +163,16 @@
                     keyframe2 = keys[i];
                 }
             }
-            
-            // timePos在两帧之间的比例
-            //       |------------total-------------| 
-            //       |-elapsed-|      
-            // k1_time----------timePos-------------k2_time
-            let total = keyframe2.time - keyframe1.time;
-            let elapsed = timePos - keyframe1.time;
-            let t = (total == 0 || elapsed == 0) ? 0 : elapsed / total;
 
-            let pair: KeyFramePair = {
+            // timePos在两帧之间的比例
+            //       |------------total-------------|
+            //       |-elapsed-|
+            // k1_time----------timePos-------------k2_time
+            const total = keyframe2.time - keyframe1.time;
+            const elapsed = timePos - keyframe1.time;
+            const t = (total === 0 || elapsed === 0) ? 0 : elapsed / total;
+
+            const pair: KeyFramePair = {
                 keyframe1: keyframe1,
                 keyframe2: keyframe2,
                 t: t
@@ -183,52 +181,52 @@
         }
 
         /**
-         * 根据时间索引, 计算关键帧插值   
+         * 根据时间索引, 计算关键帧插值
          * @param {number} timePos 时间点
          * @param {number} keyIndex 索引
          */
         public getInterpolation(timePos: number, keyIndex?: number): number {
 
-            if (this._keyFrames.length == 0) {
+            if (this._keyFrames.length === 0) {
                 return 0;
             }
 
-            let ret: number = 0;
+            let ret = 0;
 
             // #1 根据时间点, 取得前后一组关键帧
-            let keyFramePair = this.getKeyFramePairAtTime(timePos, keyIndex);
-            let k1: KeyFrame = keyFramePair.keyframe1;
-            let k2: KeyFrame = keyFramePair.keyframe2;
+            const keyFramePair = this.getKeyFramePairAtTime(timePos, keyIndex);
+            const k1: KeyFrame = keyFramePair.keyframe1;
+            const k2: KeyFrame = keyFramePair.keyframe2;
 
             // 插值系数为0，直接返回k1帧的值
-            if (keyFramePair.t == 0) {
+            if (keyFramePair.t === 0) {
                 return k1.value;
             }
 
             // #2 求两关键帧在当前时间的插值
-            let interpolationMode = k1.interpolationMode;
+            const interpolationMode = k1.interpolationMode;
             switch (interpolationMode) {
 
                 case AnimationCurve.InterpolationMode.Liner: {
-                    MathUtil.clampf
+                    MathUtil.clampf;
                     ret = MathUtil.lerp(k1.value, k2.value, keyFramePair.t);
 
                 } break;
                 case AnimationCurve.InterpolationMode.Spline: {
-                
+
                     // TODO: 补全样条插值
                     ret = MathUtil.lerp(k1.value, k2.value, keyFramePair.t);
 
                 } break;
                 case AnimationCurve.InterpolationMode.Constant: {
-                   
-                    // 常数的话,直接使用k1的属性           
+
+                    // 常数的话,直接使用k1的属性
                     ret = k1.value;
 
-                } break;                  
+                } break;
                 default: {
                     // 是否支持自定义插值函数
-                    console.error("[AnimationCurve.getInterpolation] 不支持的插值类型: " + interpolationMode);
+                    console.error('[AnimationCurve.getInterpolation] 不支持的插值类型: ' + interpolationMode);
                 } break;
             }
 
@@ -241,20 +239,20 @@
          */
         public _collectKeyFrameTimes(outKeyFrameTimes: number[]) {
 
-            let thisKeyFrames = this._keyFrames;
+            const thisKeyFrames = this._keyFrames;
 
             // 遍历所有关键帧, 如果outKeyFrameTimes没有包含关键帧时间, 插入关键帧时间
             for (let i = 0, len = thisKeyFrames.length; i < len; i++) {
 
-                let keyFrame = thisKeyFrames[i];
-                let timePos = keyFrame.time;
+                const keyFrame = thisKeyFrames[i];
+                const timePos = keyFrame.time;
                 let index = 0;
-                let keyTimePos = 0;
+                const keyTimePos = 0;
 
                 for (let j = 0, len = outKeyFrameTimes.length; j < len - 1; j++) {
 
-                    let prev = outKeyFrameTimes[j];
-                    let next = outKeyFrameTimes[j + 1];
+                    const prev = outKeyFrameTimes[j];
+                    const next = outKeyFrameTimes[j + 1];
 
                     if (timePos < prev) {
                         index = i;
@@ -267,7 +265,7 @@
                     index = i + 1;
                 }
 
-                if (index == len || timePos != keyTimePos) {
+                if (index === len || timePos != keyTimePos) {
                     outKeyFrameTimes.splice(index, 0, timePos);
                 }
             }
@@ -275,19 +273,19 @@
 
         public _buildKeyFrameIndexMap(outKeyFrameTimes: number[]) {
         // Pre-allocate memory
-        //mKeyFrameIndexMap.resize(keyFrameTimes.size() + 1);
+        // mKeyFrameIndexMap.resize(keyFrameTimes.size() + 1);
 
-        //size_t i = 0, j = 0;
-        //while (j <= keyFrameTimes.size()) {
+        // size_t i = 0, j = 0;
+        // while (j <= keyFrameTimes.size()) {
         //    mKeyFrameIndexMap[j] = static_cast<ushort>(i);
         //    while (i < mKeyFrames.size() && mKeyFrames[i] ->getTime() <= keyFrameTimes[j])
         //        ++i;
         //    ++j;
-        //}
+        // }
     }
 }
 
-    //export class QuaternionCurve extends AnimationCurve {
+    // export class QuaternionCurve extends AnimationCurve {
 
     //    public getInterpolation(timePos: number, keyIndex?: number): any {
     //        let ret = new Quaternion();
@@ -312,7 +310,7 @@
 
     //            } break;
     //            case InterpolationMode.Constant: {
-    //                // 常数的话,直接使用k1的属性           
+    //                // 常数的话,直接使用k1的属性
     //                ret = ret.copy(k1.value);
 
     //            } break;
@@ -320,17 +318,17 @@
     //                console.error("[QuaternionCurve.getInterpolation] 不支持的插值类型: " + interpolationMode);
     //            } break;
     //        }
-            
+
     //        return ret;
-    //    }      
+    //    }
 
     //    public apply(go: Node, index: number, timePos: number, weight: number) {
     //        let ret = this.getInterpolation(timePos) as Quaternion;
-    //        go.transform.rotation = ret.lerp(Quaternion.IDENTITY, ret, weight);         
+    //        go.transform.rotation = ret.lerp(Quaternion.IDENTITY, ret, weight);
     //    }
-    //}
+    // }
 
-    //export class VectorCurve extends AnimationCurve {
+    // export class VectorCurve extends AnimationCurve {
 
     //    public getInterpolation(timePos: number, keyIndex?: number): any {
     //        let ret;
@@ -342,7 +340,7 @@
 
 
     //        return ret;
-    //    }      
+    //    }
 
     //    public apply(go: Node, index: number, timePos: number, weight: number) {
     //        let ret = this.getInterpolation(timePos) as Vector3;
@@ -351,15 +349,15 @@
     //            case 'position': {
     //                go.transform.position = ret;
     //            } break;
-    //            case 'scale': {                                        
+    //            case 'scale': {
     //                go.transform.position = ret;
     //            } break;
     //            default: go[this._propName] = ret; break;
     //        }
     //    }
-    //}
+    // }
 
-    //export class NumericCurve extends AnimationCurve {
+    // export class NumericCurve extends AnimationCurve {
 
     //    public getInterpolation(timePos: number, keyIndex?: number): any {
     //        let ret;
@@ -371,7 +369,7 @@
 
 
     //        return ret;
-    //    }      
+    //    }
 
     //    public apply(go: Node, index: number, timePos: number, weight: number) {
     //        let t = this.getInterpolation(timePos);
@@ -388,9 +386,9 @@
 
     //        }
     //    }
-    //}
+    // }
 
-    //export class ObjectCurve extends AnimationCurve {
+    // export class ObjectCurve extends AnimationCurve {
 
     //    public getInterpolation(timePos: number, keyIndex?: number): any {
     //        let ret;
@@ -402,7 +400,7 @@
 
 
     //        return ret;
-    //    }      
+    //    }
 
     //    public apply(go: Node, index: number, timePos: number, weight: number) {
     //        let t = this.getInterpolation(timePos, index);
@@ -419,6 +417,6 @@
 
     //        }
     //    }
-    //}
+    // }
 
 }

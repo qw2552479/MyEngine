@@ -1,8 +1,8 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export class RenderTarget extends HashObject {
         private static RdtId = 0;
-        protected _rid: number = -1;
+        protected _rid = -1;
         protected _texture: Texture;
 
         width: number;
@@ -35,10 +35,10 @@
         }
 
         public init() {
-            let w = this.width, h = this.height;
+            const w = this.width, h = this.height;
             console.assert(w > 0 && h > 0);
 
-            let texture = new Texture('RenderTarget' + this._rid);
+            const texture = new Texture('RenderTarget' + this._rid);
             texture.width = w;
             texture.height = h;
             texture.mipmaps = 0;
@@ -46,10 +46,10 @@
             texture.usage = TextureUsage.STATIC;
             this._texture = texture;
 
-            let webglTex = texture.getWebGLTexture();
+            const webglTex = texture.getWebGLTexture();
 
             // 创建帧缓冲
-            let frameBuffer = gl.createFramebuffer();
+            const frameBuffer = gl.createFramebuffer();
             // 绑定帧缓冲
             gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
             // 连接创建的2d纹理作为帧缓冲区附着
@@ -61,7 +61,7 @@
 
             if (this._hasDepthBuffer) {
                 // 创建深度渲染缓冲对象
-                let renderBuffer = gl.createRenderbuffer();
+                const renderBuffer = gl.createRenderbuffer();
                 // 绑定深度渲染缓冲对象
                 gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
                 // 指定保存在渲染缓冲区的图像大小和格式, 格式参数参考OPengl3.0 第12章 12.4.2渲染缓冲区格式
@@ -75,9 +75,9 @@
             }
 
             // 检查帧缓冲区完整性, 状态参数参考12.5.4
-            let status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+            const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
             if (status != gl.FRAMEBUFFER_COMPLETE) {
-                if (__DEBUG__) {
+                if (__QE_DEBUG__) {
                     // TODO: 打印状态描述
                     switch (status) {
                         case gl.FRAMEBUFFER_UNSUPPORTED:

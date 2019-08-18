@@ -1,10 +1,6 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export class SubMesh {
-
-        public static __ClassName__ = "QuickEngine.__ClassName__";
-        public static __ClassID__ = 0;
-
         // 使用共享顶点
         public useSharedVertices: boolean;
         public vertexData: WebGLVertexBuffer[];
@@ -31,23 +27,21 @@
         public constructor() {
 
         }
-                
+
         /**
-         * 复制一个新的SubMesh 
+         * 复制一个新的SubMesh
          * @param newName 新的SubMesh名称
          * @param parentMesh 新的Submesh父Mesh, 如果为空, 父Mesh为被克隆的Mesh父Mesh
          */
         public clone(newName: string, parentMesh?: Mesh) {
-            
             if (parentMesh) {
-                let newSubmesh: SubMesh = parentMesh.createSubMesh(newName);
+                const newSubMesh: SubMesh = parentMesh.createSubMesh(newName);
             } else {
-                let newSubmesh: SubMesh = this.parent.createSubMesh(newName);
+                const newSubMesh: SubMesh = this.parent.createSubMesh(newName);
             }
-
         }
 
-        public getRenderOpreation(renderOp: RenderOperation) {            
+        public getRenderOperation(renderOp: RenderOperation) {
             renderOp.indexBuffer = this.indexData;
             renderOp.renderOpType = this.renderOpType;
             renderOp.vertexBuffers = this.useSharedVertices ? this.parent.sharedVertexData : this.vertexData;

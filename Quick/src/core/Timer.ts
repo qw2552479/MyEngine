@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export module Timer {
 
@@ -15,15 +15,15 @@
 
             public remove(timerId: number) {
 
-                let heap = this._heap;
-                let len = this._length;
+                const heap = this._heap;
+                const len = this._length;
 
                 for (let i = 0; i < len; i++) {
-                    let data = heap[i];
-                    if (data.id == timerId) {
+                    const data = heap[i];
+                    if (data.id === timerId) {
                         heap[i] = heap[this._length - 1];
                         this._length--;
-                        this.filterDown(i, this._length - 1); //调整新的根节点
+                        this.filterDown(i, this._length - 1); // 调整新的根节点
                         break;
                     }
                 }
@@ -36,7 +36,7 @@
             return x.endTick - y.endTick;
         }
 
-        let _timerHeap: TimerHeap = new TimerHeap(_TimerDataComparer);
+        const _timerHeap: TimerHeap = new TimerHeap(_TimerDataComparer);
         let _timerId = 0;
         let _tick = 0;
 
@@ -50,8 +50,8 @@
          */
         export function addTimer(callback: (dt: number) => void, delay: number, repeat: number = 0, interval: number = 0): number {
 
-            let newTimerId = _timerId++;
-            let timerData: TimerData = {
+            const newTimerId = _timerId++;
+            const timerData: TimerData = {
                 id: newTimerId,
                 callback: callback,
                 delay: delay,
@@ -79,7 +79,7 @@
 
             while (_timerHeap.count() > 0) {
 
-                let timerData = _timerHeap.peek();
+                const timerData = _timerHeap.peek();
 
                 if (_tick < timerData.endTick) {
                     break;
@@ -89,9 +89,9 @@
 
                 let repeatCount = timerData.repeat;
 
-                if (repeatCount == 0) {
+                if (repeatCount === 0) {
                     timerData.callback(dt);
-                } else if (repeatCount == -1) {
+                } else if (repeatCount === -1) {
                      // 无限定时器
                     timerData.callback(dt);
                     timerData.endTick = _tick + timerData.interval;
@@ -103,7 +103,7 @@
                     _timerHeap.enqueue(timerData);
                 }
             }
-            
+
         }
     }
 

@@ -1,5 +1,5 @@
-﻿///<reference path="../object/Node.ts" />
-namespace QuickEngine {
+///<reference path="../object/GameObject.ts" />
+namespace QE {
 
     // 朝向
     export const enum OrientationMode {
@@ -11,15 +11,15 @@ namespace QuickEngine {
         PORTRAIT = DEGREE_0,
         LANDSCAPERIGHT = DEGREE_90,
         LANDSCAPELEFT = DEGREE_270
-    };
+    }
 
     /*
     * @param 投影类型
     */
     export const enum ProjectionType {
-        ORTHOGRAPHIC,   //正交投影
-        PERSPECTIVE     //透视投影
-    };
+        ORTHOGRAPHIC,   // 正交投影
+        PERSPECTIVE     // 透视投影
+    }
 
     // 视锥体面
     export const enum FrustumPlane {
@@ -31,7 +31,7 @@ namespace QuickEngine {
         FRUSTUM_PLANE_BOTTOM = 5
     }
 
-    export class Frustum extends Node {
+    export class Frustum extends GameObject {
 
         public RenderOp: RenderOperation;
         public CurrentShader: Shader;
@@ -44,7 +44,7 @@ namespace QuickEngine {
 
             super();
 
-            let planes = [];
+            const planes = [];
             for (let i = 0; i < 6; i++) {
                 planes.push(new Plane());
             }

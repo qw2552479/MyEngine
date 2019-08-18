@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     /**
      * 动画控制器
@@ -25,8 +25,8 @@
 
         public removeClip(clip: AnimationClip) {
 
-            let clips = this._animationClips;
-            let idx = clips.indexOf(clip);
+            const clips = this._animationClips;
+            const idx = clips.indexOf(clip);
 
             if (idx != -1) {
                 clips.splice(idx, 1);

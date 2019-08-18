@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     /**
     * 光源类型
@@ -24,21 +24,17 @@
 
     // 标准光照方程
     // Clit = C_spec + C_diff + C_amb;
-    // Clit: 光照颜色值     
+    // Clit: 光照颜色值
     // C_spec: 镜面反射分量
-    // C_diff: 漫反射分量   
-    // C_amb: 环境分量   
+    // C_diff: 漫反射分量
+    // C_amb: 环境分量
     export class Light extends Component {
-
-        public static __ClassName__ = "QuickEngine.Light";
-        public static __ClassID__ = 0;
-
         /**
          * 光类型
          */
         public lightType: LightType = LightType.Direction;
-        
-        // spot 
+
+        // spot
         public position: Vector3;
 
         // direction
@@ -61,11 +57,11 @@
 
         public constructor() {
             super();
-            
+
         }
 
         public updateRenderQueue(renderQueue: RenderQueue): void {
-            
+
         }
 
     }

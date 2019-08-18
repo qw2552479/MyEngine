@@ -1,23 +1,21 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export module Reflection {
 
         export class Type {
 
-            private readonly _cls: Function;
-
             /**
              * 返回当前类型的上一层继承类型
-             *@return {Function} 
+             *@return {Function}
              */
             public get baseType(): Function {
-                let proto = this._cls.prototype;
+                const proto = this._cls.prototype;
 
                 if (!proto) {
                     return undefined;
                 }
 
-                let parentProto = Object.getPrototypeOf(proto);
+                const parentProto = Object.getPrototypeOf(proto);
 
                 if (parentProto) {
                     return parentProto.constructor;
@@ -26,14 +24,12 @@
                 return undefined;
             }
 
-            public getConstructor(): Function {
-                return this._cls;
-            }
-
             constructor(cls: Function) {
-                console.assert(!!cls, "类参数不能为空");
+                console.assert(!!cls, '类参数不能为空');
                 this._cls = cls;
             }
+
+            private readonly _cls: Function;
 
             public static getType(instance: Object): Type {
                 return new Type(instance.constructor);
@@ -43,12 +39,16 @@
                 return new Type(cls);
             }
 
+            public getConstructor(): Function {
+                return this._cls;
+            }
+
             public isSubClassOf(superClass: Type): boolean {
                 return superClass._cls.prototype.isPrototypeOf(this._cls);
             }
 
             public equal(type: Type): boolean {
-                return this._cls == type._cls;
+                return this._cls === type._cls;
             }
         }
 

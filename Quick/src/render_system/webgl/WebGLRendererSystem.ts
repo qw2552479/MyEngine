@@ -1,11 +1,11 @@
 ///<reference path="../RenderSystem.ts" />
-namespace QuickEngine {
+namespace QE {
 
     export let gl: WebGLRenderingContext;
 
     export function GL_CHECK_ERROR() {
-        if (__DEBUG__) {
-            console.assert(gl.getError() == 0);
+        if (__QE_DEBUG__) {
+            console.assert(gl.getError() === 0);
         }
     }
 
@@ -40,7 +40,7 @@ namespace QuickEngine {
         //
         // public clear(mask: ClearMask, color: Number4, depth: number, stencil: number) {
         //
-        //     if (mask == ClearMask.None) {
+        //     if (mask === ClearMask.None) {
         //         return;
         //     }
         //
@@ -99,7 +99,7 @@ namespace QuickEngine {
         // public _setTexture(unit: number, enable: boolean, tex: Texture) {
         //     // 纹理未加载完成时,使用默认纹理
         //     if (!tex.getWebGLTexture()) {
-        //         tex = ResourceManager.instance.get<Texture>(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
+        //         tex = ResourceManager.get<Texture>(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
         //     }
         //
         //     if (!tex.getWebGLTexture()) {

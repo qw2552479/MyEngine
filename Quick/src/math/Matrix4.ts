@@ -1,4 +1,4 @@
-namespace QuickEngine {
+namespace QE {
 
     // 复用的单位矩阵
     const identifyMatrixArray = [
@@ -21,8 +21,6 @@ namespace QuickEngine {
      | 3 7 11 15 |      | 30 31 32 33 |
      */
     export class Matrix4 {
-
-        public static ClassName = 'Matrix4';
 
         public get _00(): number {
             return this._rawData[0];
@@ -153,8 +151,6 @@ namespace QuickEngine {
             this._rawData[15] = val;
         }
 
-        private _rawData: Float32Array;
-
         public get rawData(): Float32Array {
             return this._rawData;
         }
@@ -163,13 +159,17 @@ namespace QuickEngine {
             this._rawData = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
         }
 
+        public static ClassName = 'Matrix4';
+
+        private _rawData: Float32Array;
+
         public static create(
             _00: number, _01: number, _02: number, _03: number,
             _10: number, _11: number, _12: number, _13: number,
             _20: number, _21: number, _22: number, _23: number,
             _30: number, _31: number, _32: number, _33: number) {
 
-            let matrix = new Matrix4();
+            const matrix = new Matrix4();
 
             matrix._00 = _00, matrix._01 = _01, matrix._02 = _02, matrix._03 = _03;
             matrix._10 = _10, matrix._11 = _11, matrix._12 = _12, matrix._13 = _13;
@@ -177,6 +177,208 @@ namespace QuickEngine {
             matrix._30 = _30, matrix._31 = _31, matrix._32 = _32, matrix._33 = _33;
 
             return matrix;
+        }
+
+        /**
+         *
+         a00 a01 a02 a03    x
+         a10 a11 a12 a13 *  y
+         a20 a21 a22 a23    z
+         a30 a31 a32 a33    w=0
+         * @param position
+         * @param rotation
+         * @param scale
+         * @param out
+         */
+        public static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4 {
+            if (!out) {
+                out = new Matrix4();
+            }
+            // Ordering:
+            //    1. Scale
+            //    2. Rotate
+            //    3. Translate
+            // 右乘
+            // M = Mt * Mr * Ms
+
+            // Quaternion math
+            const x = rotation.x, y = rotation.y, z = rotation.z, w = rotation.w;
+            const x2 = x + x;
+            const y2 = y + y;
+            const z2 = z + z;
+
+            const xx = x * x2;
+            const xy = x * y2;
+            const xz = x * z2;
+            const yy = y * y2;
+            const yz = y * z2;
+            const zz = z * z2;
+            const wx = w * x2;
+            const wy = w * y2;
+            const wz = w * z2;
+
+            const sx = scale.x;
+            const sy = scale.y;
+            const sz = scale.z;
+
+            const out0 = (1 - (yy + zz)) * sx;
+            const out1 = (xy + wz) * sx;
+            const out2 = (xz - wy) * sx;
+            const out4 = (xy - wz) * sy;
+            const out5 = (1 - (xx + zz)) * sy;
+            const out6 = (yz + wx) * sy;
+            const out8 = (xz + wy) * sz;
+            const out9 = (yz - wx) * sz;
+            const out10 = (1 - (xx + yy)) * sz;
+
+            const rawData = out._rawData;
+
+            rawData[0] = out0;
+            rawData[1] = out1;
+            rawData[2] = out2;
+            rawData[3] = 0;
+            rawData[4] = out4;
+            rawData[5] = out5;
+            rawData[6] = out6;
+            rawData[7] = 0;
+            rawData[8] = out8;
+            rawData[9] = out9;
+            rawData[10] = out10;
+            rawData[11] = 0;
+            rawData[12] = position.x;
+            rawData[13] = position.y;
+            rawData[14] = position.z;
+            rawData[15] = 1;
+
+            return out;
+        }
+
+        /**
+         * 生成正交视图矩阵
+         * @param left
+         * @param right
+         * @param bottom
+         * @param top
+         * @param near
+         * @param far
+         * @param target
+         */
+        public static makeOrthoRH(left: number, right: number, bottom: number, top: number, near: number, far: number, target?: Matrix4): Matrix4 {
+            if (!target) {
+                target = new Matrix4();
+            }
+
+            const inv_d = 1 / (far - near);
+
+            const w = right - left;
+            const h = top - bottom;
+            const d = far - near;
+
+            const x = (right + left) / w;
+            const y = (top + bottom) / h;
+            const z = (far + near) / d;
+
+            const rawData = target._rawData;
+
+            rawData[0] = 2 / w;
+            rawData[1] = 0;
+            rawData[2] = 0;
+            rawData[3] = 0;
+
+            rawData[4] = 0;
+            rawData[5] = 2 / h;
+            rawData[6] = 0;
+            rawData[7] = 0;
+
+            rawData[8] = 0;
+            rawData[9] = 0;
+            rawData[10] = -2 / d;
+            rawData[11] = 0;
+
+            rawData[12] = -x;
+            rawData[13] = -y;
+            rawData[14] = -z;
+            rawData[15] = 1;
+
+            return target;
+        }
+
+        /**
+         * 构造右手投影矩阵
+         * @param left
+         * @param right
+         * @param top
+         * @param bottom
+         * @param near
+         * @param far
+         * @param target
+         */
+        public static makePerspectiveRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
+            if (!target) {
+                target = new Matrix4();
+            }
+
+            const inv_w = 1 / (right - left);
+            const inv_h = 1 / (top - bottom);
+
+            const inv_d = 1 / (far - near);
+
+            const A = 2 * near * inv_w;
+            const B = 2 * near * inv_h;
+            const C = (right + left) * inv_w;
+            const D = (top + bottom) * inv_h;
+            let q, qn;
+
+            if (far === 0) {
+                // Infinite far plane
+                q = Number.EPSILON - 1;
+                qn = near * (Number.EPSILON - 2);
+            } else {
+                q = -(far + near) * inv_d;
+                qn = -2 * (far * near) * inv_d;
+            }
+
+            const rawData = target._rawData;
+
+            rawData[0] = A;
+            rawData[1] = 0;
+            rawData[2] = 0;
+            rawData[3] = 0;
+
+            rawData[4] = 0;
+            rawData[5] = B;
+            rawData[6] = 0;
+            rawData[7] = 0;
+
+            rawData[8] = C;
+            rawData[11] = -1;
+            rawData[9] = D;
+            rawData[10] = q;
+
+            rawData[12] = 0;
+            rawData[13] = 0;
+            rawData[14] = qn;
+            rawData[15] = 0;
+
+            return target;
+        }
+
+        /**
+         * 根据fov构造右手透视投影矩阵
+         * @param fov
+         * @param aspect
+         * @param near
+         * @param far
+         * @param target
+         */
+        public static makePerspectiveFovRH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4 {
+
+            const ymax = near * Math.tan(fov * Math.PI / 360);
+            const ymin = -ymax;
+            const xmin = ymin * aspect;
+            const xmax = ymax * aspect;
+
+            return Matrix4.makePerspectiveRH(xmin, xmax, ymax, ymin, near, far, target);
         }
 
         public setArray(array: ArrayLike<number>): Matrix4 {
@@ -320,23 +522,23 @@ namespace QuickEngine {
             const a = this._rawData;
             const out = outMat._rawData;
 
-            let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
-            let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
-            let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
-            let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+            const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+            const a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+            const a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+            const a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
 
-            let b00 = a00 * a11 - a01 * a10;
-            let b01 = a00 * a12 - a02 * a10;
-            let b02 = a00 * a13 - a03 * a10;
-            let b03 = a01 * a12 - a02 * a11;
-            let b04 = a01 * a13 - a03 * a11;
-            let b05 = a02 * a13 - a03 * a12;
-            let b06 = a20 * a31 - a21 * a30;
-            let b07 = a20 * a32 - a22 * a30;
-            let b08 = a20 * a33 - a23 * a30;
-            let b09 = a21 * a32 - a22 * a31;
-            let b10 = a21 * a33 - a23 * a31;
-            let b11 = a22 * a33 - a23 * a32;
+            const b00 = a00 * a11 - a01 * a10;
+            const b01 = a00 * a12 - a02 * a10;
+            const b02 = a00 * a13 - a03 * a10;
+            const b03 = a01 * a12 - a02 * a11;
+            const b04 = a01 * a13 - a03 * a11;
+            const b05 = a02 * a13 - a03 * a12;
+            const b06 = a20 * a31 - a21 * a30;
+            const b07 = a20 * a32 - a22 * a30;
+            const b08 = a20 * a33 - a23 * a30;
+            const b09 = a21 * a32 - a22 * a31;
+            const b10 = a21 * a33 - a23 * a31;
+            const b11 = a22 * a33 - a23 * a32;
 
             // Calculate the determinant
             let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
@@ -407,11 +609,11 @@ namespace QuickEngine {
          */
         public rotateByAxis(angle: number, axis: Vector3): Matrix4 {
 
-            let x = axis.x, y = axis.y, z = axis.z;
-            let ca = Math.cos(angle), sa = Math.sin(angle), c1 = 1 - ca;
-            let x2 = x * x, y2 = y * y, z2 = z * z;
-            let xz = x * z, xy = x * y, yz = y * z;
-            let xs = x * sa, ys = y * sa, zs = z * sa;
+            const x = axis.x, y = axis.y, z = axis.z;
+            const ca = Math.cos(angle), sa = Math.sin(angle), c1 = 1 - ca;
+            const x2 = x * x, y2 = y * y, z2 = z * z;
+            const xz = x * z, xy = x * y, yz = y * z;
+            const xs = x * sa, ys = y * sa, zs = z * sa;
 
             this._00 = x2 * c1 + ca;
             this._01 = xy * c1 + zs;
@@ -435,14 +637,14 @@ namespace QuickEngine {
 
         public rotateByScalar(x: number, y: number, z: number): Matrix4 {
 
-            let yaw = y, pitch = x, roll = z;
+            const yaw = y, pitch = x, roll = z;
 
-            let sinx = Math.sin(pitch);
-            let cosx = Math.cos(pitch);
-            let siny = Math.sin(yaw);
-            let cosy = Math.cos(yaw);
-            let sinz = Math.sin(roll);
-            let cosz = Math.cos(roll);
+            const sinx = Math.sin(pitch);
+            const cosx = Math.cos(pitch);
+            const siny = Math.sin(yaw);
+            const cosy = Math.cos(yaw);
+            const sinz = Math.sin(roll);
+            const cosz = Math.cos(roll);
 
             this._00 = cosy * cosz + siny * sinx * sinz;
             this._01 = sinz * cosx;
@@ -486,21 +688,21 @@ namespace QuickEngine {
             outScale.z = Math.hypot(mat[8], mat[9], mat[10]);
 
             // quaternion
-            let is1 = 1 / outScale.x;
-            let is2 = 1 / outScale.y;
-            let is3 = 1 / outScale.z;
+            const is1 = 1 / outScale.x;
+            const is2 = 1 / outScale.y;
+            const is3 = 1 / outScale.z;
 
-            let sm11 = mat[0] * is1;
-            let sm12 = mat[1] * is1;
-            let sm13 = mat[2] * is1;
-            let sm21 = mat[4] * is2;
-            let sm22 = mat[5] * is2;
-            let sm23 = mat[6] * is2;
-            let sm31 = mat[8] * is3;
-            let sm32 = mat[9] * is3;
-            let sm33 = mat[10] * is3;
+            const sm11 = mat[0] * is1;
+            const sm12 = mat[1] * is1;
+            const sm13 = mat[2] * is1;
+            const sm21 = mat[4] * is2;
+            const sm22 = mat[5] * is2;
+            const sm23 = mat[6] * is2;
+            const sm31 = mat[8] * is3;
+            const sm32 = mat[9] * is3;
+            const sm33 = mat[10] * is3;
 
-            let trace = sm11 + sm22 + sm33;
+            const trace = sm11 + sm22 + sm33;
             let S = 0;
 
             if (trace > 0) {
@@ -528,208 +730,6 @@ namespace QuickEngine {
                 outQuaternion.y = (sm23 + sm32) / S;
                 outQuaternion.z = 0.25 * S;
             }
-        }
-
-        /**
-         *
-         a00 a01 a02 a03    x
-         a10 a11 a12 a13 *  y
-         a20 a21 a22 a23    z
-         a30 a31 a32 a33    w=0
-         * @param position
-         * @param rotation
-         * @param scale
-         * @param out
-         */
-        public static makeTransform(position: Vector3, rotation: Quaternion, scale: Vector3, out?: Matrix4): Matrix4 {
-            if (!out) {
-                out = new Matrix4();
-            }
-            // Ordering:
-            //    1. Scale
-            //    2. Rotate
-            //    3. Translate
-            // 右乘
-            // M = Mt * Mr * Ms
-
-            // Quaternion math
-            let x = rotation.x, y = rotation.y, z = rotation.z, w = rotation.w;
-            let x2 = x + x;
-            let y2 = y + y;
-            let z2 = z + z;
-
-            let xx = x * x2;
-            let xy = x * y2;
-            let xz = x * z2;
-            let yy = y * y2;
-            let yz = y * z2;
-            let zz = z * z2;
-            let wx = w * x2;
-            let wy = w * y2;
-            let wz = w * z2;
-
-            let sx = scale.x;
-            let sy = scale.y;
-            let sz = scale.z;
-
-            let out0 = (1 - (yy + zz)) * sx;
-            let out1 = (xy + wz) * sx;
-            let out2 = (xz - wy) * sx;
-            let out4 = (xy - wz) * sy;
-            let out5 = (1 - (xx + zz)) * sy;
-            let out6 = (yz + wx) * sy;
-            let out8 = (xz + wy) * sz;
-            let out9 = (yz - wx) * sz;
-            let out10 = (1 - (xx + yy)) * sz;
-
-            const rawData = out._rawData;
-
-            rawData[0] = out0;
-            rawData[1] = out1;
-            rawData[2] = out2;
-            rawData[3] = 0;
-            rawData[4] = out4;
-            rawData[5] = out5;
-            rawData[6] = out6;
-            rawData[7] = 0;
-            rawData[8] = out8;
-            rawData[9] = out9;
-            rawData[10] = out10;
-            rawData[11] = 0;
-            rawData[12] = position.x;
-            rawData[13] = position.y;
-            rawData[14] = position.z;
-            rawData[15] = 1;
-
-            return out;
-        }
-
-        /**
-         * 生成正交视图矩阵
-         * @param left
-         * @param right
-         * @param bottom
-         * @param top
-         * @param near
-         * @param far
-         * @param target
-         */
-        public static makeOrthoRH(left: number, right: number, bottom: number, top: number, near: number, far: number, target?: Matrix4): Matrix4 {
-            if (!target) {
-                target = new Matrix4();
-            }
-
-            let inv_d = 1 / (far - near);
-
-            let w = right - left;
-            let h = top - bottom;
-            let d = far - near;
-
-            let x = (right + left) / w;
-            let y = (top + bottom) / h;
-            let z = (far + near) / d;
-
-            const rawData = target._rawData;
-
-            rawData[0] = 2 / w;
-            rawData[1] = 0;
-            rawData[2] = 0;
-            rawData[3] = 0;
-
-            rawData[4] = 0;
-            rawData[5] = 2 / h;
-            rawData[6] = 0;
-            rawData[7] = 0;
-
-            rawData[8] = 0;
-            rawData[9] = 0;
-            rawData[10] = -2 / d;
-            rawData[11] = 0;
-
-            rawData[12] = -x;
-            rawData[13] = -y;
-            rawData[14] = -z;
-            rawData[15] = 1;
-
-            return target;
-        }
-
-        /**
-         * 构造右手投影矩阵
-         * @param left
-         * @param right
-         * @param top
-         * @param bottom
-         * @param near
-         * @param far
-         * @param target
-         */
-        public static makePerspectiveRH(left: number, right: number, top: number, bottom: number, near: number, far: number, target?: Matrix4): Matrix4 {
-            if (!target) {
-                target = new Matrix4();
-            }
-
-            let inv_w = 1 / (right - left);
-            let inv_h = 1 / (top - bottom);
-
-            let inv_d = 1 / (far - near);
-
-            let A = 2 * near * inv_w;
-            let B = 2 * near * inv_h;
-            let C = (right + left) * inv_w;
-            let D = (top + bottom) * inv_h;
-            let q, qn;
-
-            if (far == 0) {
-                // Infinite far plane
-                q = Number.EPSILON - 1;
-                qn = near * (Number.EPSILON - 2);
-            } else {
-                q = -(far + near) * inv_d;
-                qn = -2 * (far * near) * inv_d;
-            }
-
-            const rawData = target._rawData;
-
-            rawData[0] = A;
-            rawData[1] = 0;
-            rawData[2] = 0;
-            rawData[3] = 0;
-
-            rawData[4] = 0;
-            rawData[5] = B;
-            rawData[6] = 0;
-            rawData[7] = 0;
-
-            rawData[8] = C;
-            rawData[11] = -1;
-            rawData[9] = D;
-            rawData[10] = q;
-
-            rawData[12] = 0;
-            rawData[13] = 0;
-            rawData[14] = qn;
-            rawData[15] = 0;
-
-            return target;
-        }
-
-        /**
-         * 根据fov构造右手透视投影矩阵
-         * @param fov
-         * @param aspect
-         * @param near
-         * @param far
-         * @param target
-         */
-        public static makePerspectiveFovRH(fov: number, aspect: number, near: number, far: number, target?: Matrix4): Matrix4 {
-
-            let ymax = near * Math.tan(fov * Math.PI / 360);
-            let ymin = -ymax;
-            let xmin = ymin * aspect;
-            let xmax = ymax * aspect;
-
-            return Matrix4.makePerspectiveRH(xmin, xmax, ymax, ymin, near, far, target);
         }
     }
 }

@@ -1,4 +1,4 @@
-namespace QuickEngine {
+namespace QE {
 
 	export type Degree = number;
 	export type Radian = number;
@@ -29,7 +29,7 @@ namespace QuickEngine {
 		 */
 		export function clampf(value: number, min: number, max: number): number {
 			if (min > max) {
-				let temp: number = min;
+				const temp: number = min;
 				min = max;
 				max = temp;
 			}
@@ -54,4 +54,4 @@ namespace QuickEngine {
 			return out;
 		}
 	}
-} 
+}

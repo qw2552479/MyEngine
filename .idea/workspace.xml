@@ -22,12 +22,15 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="NamedScopeManager">
+    <scope name="quick" pattern="file[MyEngine]:Quick/src//*||file[MyEngine]:UnitTest/src//*" />
+  </component>
   <component name="ProjectId" id="1Ov1B8NTgUT5vabLAtSNHG4H6a5" />
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="js.buildTools.gulp.gulp_package_dir" value="$PROJECT_DIR$/node_modules/gulp" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/UnitTest" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../easygame/trunk/engine" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -36,15 +39,15 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="duplicates.index" />
-    <property name="ts.external.directory.path" value="C:\Program Files\JetBrains\WebStorm 2019.2\plugins\JavaScriptLanguage\jsLanguageServicesImpl\external" />
+    <property name="settings.editor.selected.configurable" value="settings.typescriptcompiler" />
+    <property name="ts.external.directory.path" value="D:\work\MyEngine\MyEngine\node_modules\typescript\lib" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="D:\work\MyEngine\MyEngine\UnitTest" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\work\MyEngine\MyEngine\Quick\src\core" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\work\MyEngine\MyEngine\UnitTest" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -121,10 +124,10 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="JavaScript Debug.index.html" />
-        <item itemvalue="Gulp.js.run" />
         <item itemvalue="Gulp.js.build (1)" />
         <item itemvalue="Gulp.js.build" />
+        <item itemvalue="Gulp.js.run" />
+        <item itemvalue="JavaScript Debug.index.html" />
         <item itemvalue="Gulp.js.default" />
       </list>
     </recent_temporary>
@@ -149,6 +152,8 @@
       <workItem from="1564847789276" duration="6649000" />
       <workItem from="1564884455377" duration="18257000" />
       <workItem from="1564903045160" duration="7557000" />
+      <workItem from="1565456693973" duration="1645000" />
+      <workItem from="1565458915411" duration="78000" />
     </task>
     <servers />
   </component>
@@ -167,16 +172,5 @@
         </entry>
       </map>
     </option>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="javascript">
-          <url>file://$PROJECT_DIR$/UnitTest/src/app.ts</url>
-          <line>26</line>
-          <option name="timeStamp" value="35" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

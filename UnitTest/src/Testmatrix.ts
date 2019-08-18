@@ -1,7 +1,7 @@
 ﻿module UnitTest.TestMatrix {
 
-    import Matrix4 = QuickEngine.Matrix4;
-    import Vector3 = QuickEngine.Vector3;
+    import Matrix4 = QE.Matrix4;
+    import Vector3 = QE.Vector3;
 
     export function run() {
 	

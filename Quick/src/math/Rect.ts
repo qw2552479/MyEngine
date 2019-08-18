@@ -1,8 +1,8 @@
-namespace QuickEngine {
+namespace QE {
 
 	export class Rect {
 
-        public static ClassName = "Rect";
+        public static ClassName = 'Rect';
 
     	public left: number;
     	public top: number;

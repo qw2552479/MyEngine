@@ -1,4 +1,4 @@
-﻿namespace QuickEngine {    
+namespace QE {
 
     export interface SubMeshData {
 
@@ -30,7 +30,7 @@
     export interface BoneData {
         name: string;
         id: number;
-        parentId: number,
+        parentId: number;
         position: Number3;
         eulerAngle: Number3;
         scale: Number3;
@@ -52,7 +52,7 @@
     export interface PoseData {
         isBindPose: boolean;
         isCharacter: boolean;
-        items : PoseItem[];
+        items: PoseItem[];
     }
 
     export interface ModelData {
@@ -81,21 +81,21 @@
             mesh.id = meshData.id;
             mesh.name = meshData.name;
 
-            let vertices: number[] = [];
-            let colors: number[] = [];
-            let normals: number[] = [];
-            let uvs: number[] = [];
-            let indices: number[] = [];
+            const vertices: number[] = [];
+            const colors: number[] = [];
+            const normals: number[] = [];
+            const uvs: number[] = [];
+            const indices: number[] = [];
 
             // load mesh info
-            let position = meshData["position"] || [];
+            const position = meshData['position'] || [];
             for (let i = 0; i < position.length; i += 3) {
                 vertices.push(position[i]);
                 vertices.push(position[i + 1]);
                 vertices.push(-position[i + 2]);
             }
 
-            let color = meshData["color"] || [];
+            const color = meshData['color'] || [];
             for (let i = 0; i < Math.floor(position.length / 3); i++) {
                 colors.push(255);
                 colors.push(255);
@@ -103,49 +103,49 @@
                 colors.push(255);
             }
 
-            let normal = meshData["normal"] || [];
+            const normal = meshData['normal'] || [];
             for (let i = 0; i < normal.length; i += 3) {
-                let p = normal[i];
+                const p = normal[i];
                 normals.push(normal[i]);
                 normals.push(normal[i + 1]);
                 normals.push(normal[i + 2]);
             }
 
-            let uv = meshData["uv"] || [];
+            const uv = meshData['uv'] || [];
             for (let i = 0; i < uv.length; i += 2) {
                 uvs.push(uv[i]);
                 uvs.push(uv[i + 1]);
             }
 
-            let posBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, QuickEngine.BufferUsage.STATIC);
-            posBuf.type = QuickEngine.gl.FLOAT;
-            posBuf.semantic = QuickEngine.VertexElementSemantic.POSITION;
+            const posBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, QE.BufferUsage.STATIC);
+            posBuf.type = QE.gl.FLOAT;
+            posBuf.semantic = QE.VertexElementSemantic.POSITION;
             posBuf.vertexCount = vertices.length / 3;
             posBuf.writeData((new Float32Array(vertices)).buffer);
             posBuf.bindBuffer();
 
-            let colBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, QuickEngine.BufferUsage.STATIC);
-            colBuf.type = QuickEngine.gl.UNSIGNED_BYTE;
-            colBuf.semantic = QuickEngine.VertexElementSemantic.DIFFUSE;
+            const colBuf = QE.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, QE.BufferUsage.STATIC);
+            colBuf.type = QE.gl.UNSIGNED_BYTE;
+            colBuf.semantic = QE.VertexElementSemantic.DIFFUSE;
             colBuf.vertexCount = colors.length;
             colBuf.writeData((new Uint8Array(colors)).buffer);
             colBuf.bindBuffer();
 
-            let normalBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, QuickEngine.BufferUsage.STATIC);
-            normalBuf.type = QuickEngine.gl.FLOAT;
-            normalBuf.semantic = QuickEngine.VertexElementSemantic.NORMAL;
+            const normalBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, QE.BufferUsage.STATIC);
+            normalBuf.type = QE.gl.FLOAT;
+            normalBuf.semantic = QE.VertexElementSemantic.NORMAL;
             normalBuf.vertexCount = normals.length;
             normalBuf.writeData((new Float32Array(normals)).buffer);
             normalBuf.bindBuffer();
 
-            let uvBuf = QuickEngine.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, QuickEngine.BufferUsage.STATIC);
-            uvBuf.type = QuickEngine.gl.FLOAT;
-            uvBuf.semantic = QuickEngine.VertexElementSemantic.TEXTURE_COORDINATES;
+            const uvBuf = QE.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, QE.BufferUsage.STATIC);
+            uvBuf.type = QE.gl.FLOAT;
+            uvBuf.semantic = QE.VertexElementSemantic.TEXTURE_COORDINATES;
             uvBuf.vertexCount = uvs.length;
             uvBuf.writeData((new Float32Array(uvs)).buffer);
             uvBuf.bindBuffer();
 
-            let sharedVertexData: WebGLVertexBuffer[] = [];
+            const sharedVertexData: WebGLVertexBuffer[] = [];
             sharedVertexData[0] = posBuf;
             sharedVertexData[1] = colBuf;
             sharedVertexData[2] = normalBuf;
@@ -153,23 +153,23 @@
 
             mesh.sharedVertexData = sharedVertexData;
 
-            let subMeshes = meshData["subMeshes"];
+            const subMeshes = meshData['subMeshes'];
 
             for (let i = 0, len = subMeshes.length; i < len; i++) {
-                let indicesData = meshData["subMeshes"][0]["indices"];
+                const indicesData = meshData['subMeshes'][0]['indices'];
                 for (let i = 0; i < indicesData.length; i++) {
                     indices.push(indicesData[i]);
                 }
 
-                let subMesh = new QuickEngine.SubMesh();
+                const subMesh = new QE.SubMesh();
                 // 共享mesh顶点数据
                 subMesh.useSharedVertices = true;
 
                 // TODO: 解析material
-                let defmaterial = QuickEngine.Material.getDefaultCubeMaterial();
+                const defmaterial = QE.Material.getDefaultCubeMaterial();
 
                 // 子网格索引数据
-                let indicesBuf = QuickEngine.WebGLBufferManager.instance.createIndexBuffer(indices.length, QuickEngine.BufferUsage.STATIC, false);
+                const indicesBuf = QE.WebGLBufferManager.instance.createIndexBuffer(indices.length, QE.BufferUsage.STATIC, false);
                 indicesBuf.writeData(indices);
                 indicesBuf.bindBuffer();
 
@@ -183,12 +183,12 @@
 
         }
 
-        public static loadModel(modelData: ModelData): Node {
+        public static loadModel(modelData: ModelData): GameObject {
 
-            let currentScene = SceneManager.instance.currentScene;
+            const currentScene = SceneManager.instance.currentScene;
 
-            let rootNodes: Node[] = [];
-            //export interface ModelData {
+            const rootNodes: GameObject[] = [];
+            // export interface ModelData {
             //    metadata: string;
             //    materials?: string[];
             //    textures?: string[];
@@ -197,18 +197,18 @@
             //    hierarchy?: BoneData[];
             //    meshes: MeshData[];
             //    animations?: Object[];
-            //}
-            let hierarchyData = modelData.hierarchy;
-            let hierarchy: { [key: number]: Node } = {};
+            // }
+            const hierarchyData = modelData.hierarchy;
+            const hierarchy: { [key: number]: GameObject } = {};
             for (let i = 0, len = hierarchyData.length; i < len; i++) {
 
-                let boneData = hierarchyData[i];
+                const boneData = hierarchyData[i];
 
-                console.assert(!!!hierarchy[boneData.id], "重复的骨骼id: " + boneData.id);
+                console.assert(!!!hierarchy[boneData.id], '重复的骨骼id: ' + boneData.id);
 
-                let parentBoneNode = hierarchy[boneData.parentId];
+                const parentBoneNode = hierarchy[boneData.parentId];
 
-                let boneNode: Node;
+                let boneNode: GameObject;
                 // 存在父节点
                 if (parentBoneNode) {
                     boneNode = currentScene.createNode(parentBoneNode.transform);
@@ -222,45 +222,45 @@
 
                 hierarchy[boneData.id] = boneNode;
 
-                let boneTransform = boneNode.transform;
+                const boneTransform = boneNode.transform;
 
-                boneTransform.localPosition = new QuickEngine.Vector3(boneData.position[0], boneData.position[1], boneData.position[2]);
-                boneTransform.localScale = new QuickEngine.Vector3(boneData.scale[0], boneData.scale[1], boneData.scale[2]);
-                let eulerAngle = new QuickEngine.Vector3(boneData.eulerAngle[0], boneData.eulerAngle[1], boneData.eulerAngle[2]);
-                let tempQ = boneTransform.localRotation.fromEulerAngle(eulerAngle);
+                boneTransform.localPosition = new QE.Vector3(boneData.position[0], boneData.position[1], boneData.position[2]);
+                boneTransform.localScale = new QE.Vector3(boneData.scale[0], boneData.scale[1], boneData.scale[2]);
+                const eulerAngle = new QE.Vector3(boneData.eulerAngle[0], boneData.eulerAngle[1], boneData.eulerAngle[2]);
+                const tempQ = boneTransform.localRotation.fromEulerAngle(eulerAngle);
                 boneTransform.localRotation = tempQ;
             }
 
             // bind pose
-            let poseDatas = modelData.poses || [];
+            const poseDatas = modelData.poses || [];
             for (let i = 0, len = poseDatas.length; i < len; i++) {
-                let poseData = poseDatas[i];
+                const poseData = poseDatas[i];
                 if (poseData.isBindPose) {
 
-                    let isCharacter = poseData.isCharacter;
+                    const isCharacter = poseData.isCharacter;
 
-                    let poseItems = poseData.items;
-                    let poseItemDict: { [key: number]: PoseItem } = {};
+                    const poseItems = poseData.items;
+                    const poseItemDict: { [key: number]: PoseItem } = {};
                     for (let ii = 0, len2 = poseItems.length; ii < len2; ii++) {
                         poseItemDict[poseItems[ii].id] = poseItems[ii];
                     }
 
                     for (let ii = 0, len2 = hierarchyData.length; ii < len2; ii++) {
-                        let data = hierarchyData[ii];
+                        const data = hierarchyData[ii];
 
-                        let poseItem = poseItemDict[data.id];
+                        const poseItem = poseItemDict[data.id];
                         if (!poseItem) {
                             continue;
                         }
 
-                        let bindNode = hierarchy[data.id];
+                        const bindNode = hierarchy[data.id];
                         if (!bindNode) {
-                            console.error("bind pose error. bone not find: " + poseItem.id);
+                            console.error('bind pose error. bone not find: ' + poseItem.id);
                             continue;
                         }
 
-                        let matrix = poseItem.matrix;
-                        let mat = new Matrix4();
+                        const matrix = poseItem.matrix;
+                        const mat = new Matrix4();
                         mat.set(
                             matrix[0], matrix[4], matrix[8], matrix[12],
                             matrix[1], matrix[5], matrix[9], matrix[13],
@@ -270,12 +270,12 @@
 
                         if (poseItem.isLocalMatrix) {
                            // bindNode.transform.position = mat.getTrans();
-                            let q = new Quaternion();
+                            const q = new Quaternion();
                             q.FromRotationMatrix(mat);
                            // bindNode.transform.localRotation = bindNode.transform.localRotation.multiply(q);
                         } else {
                            // bindNode.transform.position = mat.getTrans();
-                            let q = new Quaternion();
+                            const q = new Quaternion();
                             q.FromRotationMatrix(mat);
                             bindNode.transform.rotation = bindNode.transform.localRotation.multiply(q);
                         }
@@ -284,61 +284,61 @@
             }
 
             for (let i = 0, len = hierarchyData.length; i < len; i++) {
-                let boneData = hierarchyData[i];
-                let boneNode: Node = hierarchy[boneData.id];
-                let boneTransform = boneNode.transform;
-                console.log("load bone {" + boneData.name + "}. pos: " + JSON.stringify(boneTransform.localPosition) +
-                    "  \n euler: " + JSON.stringify(boneTransform.localEulerAngle) +
-                    "  \n rot: " + JSON.stringify(boneTransform.localRotation));
+                const boneData = hierarchyData[i];
+                const boneNode: GameObject = hierarchy[boneData.id];
+                const boneTransform = boneNode.transform;
+                console.log('load bone {' + boneData.name + '}. pos: ' + JSON.stringify(boneTransform.localPosition) +
+                    '  \n euler: ' + JSON.stringify(boneTransform.localEulerAngle) +
+                    '  \n rot: ' + JSON.stringify(boneTransform.localRotation));
             }
 
             // add mesh component
-            let meshes = modelData.meshes;
+            const meshes = modelData.meshes;
             for (let i = 0, len = meshes.length; i < len; i++) {
 
-                let meshData = meshes[i];
+                const meshData = meshes[i];
 
-                let meshNode = hierarchy[meshData.id];
+                const meshNode = hierarchy[meshData.id];
                 if (!meshNode) {
-                    console.error("bind pose error. bone not find: " + meshData.id);
+                    console.error('bind pose error. bone not find: ' + meshData.id);
                     continue;
                 }
 
                 meshNode.name = meshData.name;
 
-                let mesh = new Mesh();
+                const mesh = new Mesh();
 
                 MeshSerializer.importMeshWithJson(meshData, mesh);
 
-                let meshFilter = meshNode.addComponent<MeshFilter>(MeshFilter);
+                const meshFilter = meshNode.addComponent<MeshFilter>(MeshFilter);
                 meshFilter.mesh = mesh;
 
-                let meshRender = meshNode.addComponent<MeshRender>(MeshRender);
+                const meshRender = meshNode.addComponent<MeshRender>(MeshRender);
                 meshRender.mesh = mesh;
-                meshRender.setMaterial(Material.getDefaultCubeMaterial());     
+                meshRender.setMaterial(Material.getDefaultCubeMaterial());
             }
 
             // load animation
-            let animations = modelData.animations || [];
+            const animations = modelData.animations || [];
             if (animations && animations.length > 0) {
-           
+
                 // 创建动画控制器
-                let animController = new AnimatorController();
+                const animController = new AnimatorController();
 
                 for (let i = 0, len = animations.length; i < len; i++) {
 
-                    let animData = animations[i];
-                    let clip = parseAnimationClip(animData);
+                    const animData = animations[i];
+                    const clip = parseAnimationClip(animData);
 
                     animController.addClip(clip);
                 }
 
                 // 添加Animator组件
-                let animator = rootNodes[0].addComponent<Animator>(Animator);
+                const animator = rootNodes[0].addComponent<Animator>(Animator);
                 animator.animController = animController;
             }
 
-            //animator.play("Take 001");
+            // animator.play("Take 001");
 
             return rootNodes[0];
         }
@@ -348,44 +348,44 @@
     function parseAnimationClip(animData: Object): AnimationClip {
 
         // 创建动画片段
-        let posClip = new AnimationClip();
-        posClip.name = "Take 001";
+        const posClip = new AnimationClip();
+        posClip.name = 'Take 001';
 
         let maxTime = 0;
 
-        for (let nodePath in animData) {
-            let nodeCurveData = animData[nodePath];
+        for (const nodePath in animData) {
+            const nodeCurveData = animData[nodePath];
 
-            for (let curveName in nodeCurveData) {
+            for (const curveName in nodeCurveData) {
 
-                if (curveName == '') {
+                if (curveName === '') {
                     continue;
                 }
 
-                let curveData = nodeCurveData[curveName];
+                const curveData = nodeCurveData[curveName];
 
-                let curve = new AnimationCurve();
+                const curve = new AnimationCurve();
                 for (let i = 0, len = curveData.length; i < len; i++) {
-                    let keyFrameData = curveData[i];
+                    const keyFrameData = curveData[i];
                     let reverse = 1;
-                    if (curveName.indexOf("localEulerAngle.z") > -1 || curveName.indexOf("localPosition.z") > -1) {
+                    if (curveName.indexOf('localEulerAngle.z') > -1 || curveName.indexOf('localPosition.z') > -1) {
                         reverse = -1;
                     }
-                    curve.addKeyFrameByValue(keyFrameData["time"], reverse * keyFrameData["value"]);
+                    curve.addKeyFrameByValue(keyFrameData['time'], reverse * keyFrameData['value']);
 
-                    if (keyFrameData["time"] > maxTime) {
-                        maxTime = keyFrameData["time"];
+                    if (keyFrameData['time'] > maxTime) {
+                        maxTime = keyFrameData['time'];
                     }
                 }
 
                 if (nodePath != '') {
-                    posClip.addCurve(nodePath, QuickEngine.Reflection.Type.typeOf(Transform), curveName, curve);
+                    posClip.addCurve(nodePath, QE.Reflection.Type.typeOf(Transform), curveName, curve);
                 } else {
-                    posClip.addCurve("RootNode", QuickEngine.Reflection.Type.typeOf(Transform), curveName, curve);
+                    posClip.addCurve('RootNode', QE.Reflection.Type.typeOf(Transform), curveName, curve);
                 }
             }
         }
-        
+
         posClip.length = maxTime;
 
         return posClip;

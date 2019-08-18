@@ -1,10 +1,13 @@
-﻿namespace QuickEngine {
+namespace QE {
 
     export class SceneManager {
 
         private static _sInstance: SceneManager;
+
         public static get instance(): SceneManager {
-            console.assert(!!SceneManager._sInstance);
+            if (!SceneManager._sInstance) {
+                SceneManager._sInstance = new SceneManager();
+            }
             return this._sInstance;
         }
 
@@ -21,6 +24,10 @@
             SceneManager._sInstance = this;
             // 创建默认场景
             this._currentScene = SceneManager.createScene();
+        }
+
+        public init(): void {
+
         }
     }
 
