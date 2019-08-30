@@ -203,6 +203,12 @@ namespace QE {
             });
         }
 
+        public static async loadJsonAsync(url: string): Promise<any> {
+            const text = await this.loadTxtAsync(url);
+            const jsonObj = JSON.parse(text);
+            return jsonObj;
+        }
+
         public static async loadImageAsync(path: string): Promise<HTMLImageElement> {
             return new Promise<HTMLImageElement>((resolve, reject) => {
                 const image = new Image();

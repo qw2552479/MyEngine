@@ -54,56 +54,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 var QE;
 (function (QE) {
-    QE.__QE_EDITOR_MODE__ = false;
-    QE.__QE_DEBUG__ = true;
-    QE.__PROFILER__ = true;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    function run(data) {
-        QE.WebGLBufferManager.instance.init();
-        QE.RenderSystem.instance.init(data.div);
-        QE.SceneManager.instance.init();
-        window.onresize = function (ev) {
-            var w = window.innerWidth;
-            var h = window.innerHeight;
-            onResize(w, h);
-        };
-        // 准备内置资源
-        QE.ResourceManager.init(function () {
-            onResize(window.innerWidth, window.innerHeight);
-            frameUpdate(0);
-            if (data.onEnginePrepared) {
-                data.onEnginePrepared();
-            }
-        });
-    }
-    QE.run = run;
-    function frameUpdate(deltaTime) {
-        renderOneFrame(deltaTime / 1000);
-        requestAnimationFrame(frameUpdate);
-    }
-    function renderOneFrame(deltaTime) {
-        var mainScene = QE.SceneManager.instance.currentScene;
-        if (!mainScene) {
-            return;
-        }
-        mainScene.update(deltaTime);
-        QE.RenderSystem.instance.beginScene();
-        mainScene.render();
-        QE.RenderSystem.instance.endScene();
-        // mainScene.fixedUpdate(dt);
-    }
-    QE.renderOneFrame = renderOneFrame;
-    function onResize(w, h) {
-        QE.Screen.screenWidth = w;
-        QE.Screen.screenHeight = h;
-        QE.SceneManager.instance.currentScene.onResize(w, h);
-        QE.RenderSystem.instance.onResize(w, h);
-    }
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
     /**
      * @private
      * 哈希计数
@@ -172,834 +122,945 @@ var QE;
     }());
     QE.HashObject = HashObject;
 })(QE || (QE = {}));
-///<reference path="core/HashObject.ts" />
+///<reference path="../core/msic/HashObject.ts" />
 var QE;
-///<reference path="core/HashObject.ts" />
+///<reference path="../core/msic/HashObject.ts" />
 (function (QE) {
-    var Scene3D = /** @class */ (function (_super) {
-        __extends(Scene3D, _super);
-        function Scene3D() {
+    /**
+     * 动画片段
+     * 动画片段包含一组动画曲线.每个曲线对应节点路径
+     */
+    var AnimationClip = /** @class */ (function (_super) {
+        __extends(AnimationClip, _super);
+        /**
+         *
+         */
+        function AnimationClip() {
             var _this = _super.call(this) || this;
-            _this._cameras = [];
-            _this._frameId = 0;
-            _this._rootChildren = [];
-            var mainCamera = _this.createNode().addComponent(QE.Camera);
-            mainCamera.setAspect(1280 / 720);
-            mainCamera.setOrthoWidth(1280);
-            mainCamera.setOrthoHeight(720);
-            mainCamera.setCameraType(0 /* Perspective */);
-            QE.Camera.MainCamera = mainCamera;
-            _this._mainCamera = mainCamera;
-            _this._cameras = [mainCamera];
+            _this._frameRate = 0;
+            _this._length = 0;
+            _this._keyFrameTimes = [];
+            _this._positionCurveDict = {};
+            _this._scaleCurveDict = {};
+            _this._eulerCurveDict = {};
+            _this._numberCurveDict = {};
+            _this._objCurveDict = {};
             return _this;
         }
-        Object.defineProperty(Scene3D.prototype, "children", {
+        Object.defineProperty(AnimationClip.prototype, "frameRate", {
             get: function () {
-                return this._rootChildren;
+                return this._frameRate;
+            },
+            set: function (val) {
+                this._frameRate = val;
             },
             enumerable: true,
             configurable: true
         });
-        Scene3D.prototype.createNode = function (parent) {
-            var node = new QE.GameObject();
-            var transform = node.transform;
-            this._rootChildren.push(node);
-            if (parent) {
-                transform.parent = parent;
-            }
-            return node;
-        };
-        Scene3D.prototype.insertNode = function (node, index) {
-            var children = this._rootChildren;
-            if (QE.__QE_DEBUG__ && children.indexOf(node) !== -1) {
-                console.error('node already in the scene');
-            }
-            if (index !== undefined) {
-                if (QE.__QE_DEBUG__) {
-                    console.assert(!isNaN(index) && typeof (index) === 'number', 'the index is error' + index);
+        Object.defineProperty(AnimationClip.prototype, "length", {
+            get: function () {
+                return this._length;
+            },
+            set: function (val) {
+                this._length = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AnimationClip.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            set: function (val) {
+                this._name = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * 添加一条曲线
+         * @param relativePath 曲线对应节点路径
+         * @param type 属性类型
+         * @param propertyName 属性名
+         * @param curve 曲线
+         */
+        AnimationClip.prototype.addCurve = function (relativePath, type, propertyName, curve) {
+            curve._propName = propertyName;
+            curve._valueType = type;
+            if (type.equal(QE.Reflection.Type.typeOf(QE.Transform))) {
+                var segmentProp = splitProperty(propertyName);
+                console.assert(segmentProp.length === 2, 'Transform属性长度为2');
+                var transCurveArr = void 0;
+                if (segmentProp[0] === 'localPosition') {
+                    transCurveArr = this._positionCurveDict[relativePath];
+                    if (!transCurveArr) {
+                        this._positionCurveDict[relativePath] = transCurveArr = [];
+                    }
                 }
-                if (index < 0 || index >= children.length) {
-                    console.error('insert node failed. the index is error: ' + index);
+                else if (segmentProp[0] === 'localEulerAngle') {
+                    transCurveArr = this._eulerCurveDict[relativePath];
+                    if (!transCurveArr) {
+                        this._eulerCurveDict[relativePath] = transCurveArr = [];
+                    }
+                }
+                else if (segmentProp[0] === 'localScale') {
+                    transCurveArr = this._scaleCurveDict[relativePath];
+                    if (!transCurveArr) {
+                        this._scaleCurveDict[relativePath] = transCurveArr = [];
+                    }
+                }
+                else {
+                    console.error('不支持的变换属性：' + segmentProp[0]);
+                }
+                if (segmentProp[1] === 'x') {
+                    transCurveArr.splice(0, 1, curve);
+                }
+                else if (segmentProp[1] === 'y') {
+                    transCurveArr.splice(1, 1, curve);
+                }
+                else if (segmentProp[1] === 'z') {
+                    transCurveArr.splice(2, 1, curve);
+                }
+            }
+            else if (type.equal(QE.Reflection.Type.typeOf(Number))) {
+                var numberCurveArr = this._numberCurveDict[relativePath];
+                if (!numberCurveArr) {
+                    this._numberCurveDict[relativePath] = numberCurveArr = [];
+                }
+                numberCurveArr.push(curve);
+            }
+            else {
+                var objCurveArr = this._objCurveDict[relativePath];
+                if (objCurveArr) {
+                    this._objCurveDict[relativePath] = objCurveArr = [];
+                }
+                objCurveArr.push(curve);
+            }
+        };
+        AnimationClip.prototype.removeCurve = function (relativePath, type, propertyName) {
+            var curveArr = this._objCurveDict[relativePath];
+            if (!curveArr) {
+                console.warn('[AnimationClip.removeCurve] 删除的curve不存在. path: ' + relativePath + '  propertyName: ' + propertyName);
+                return;
+            }
+            for (var i = 0, len = curveArr.length; i < len; i++) {
+                var curve = curveArr[i];
+                if (curve._propName === propertyName) {
+                    curveArr.splice(i, 1);
                     return;
                 }
-                children.splice(index, 0, node);
             }
-            else {
-                children.push(node);
-            }
-        };
-        Scene3D.prototype.removeNode = function (node) {
-            var children = this._rootChildren;
-            if (QE.__QE_DEBUG__ && children.indexOf(node) === -1) {
-                console.error('node not in the scene');
-            }
-            children.splice(children.indexOf(node), 1);
-        };
-        Scene3D.prototype.onResize = function (w, h) {
-            var mainCamera = this._mainCamera;
-            if (mainCamera) {
-                mainCamera.setAspect(w / h);
-                mainCamera.setOrthoWidth(w);
-                mainCamera.setOrthoHeight(h);
-            }
-        };
-        Scene3D.prototype.render = function () {
-            var cameras = this._cameras;
-            for (var i = 0, len = cameras.length; i < len; i++) {
-                var camera = cameras[i];
-                this._currentCamera = camera;
-                camera.renderContext.doRender();
-            }
-            this._currentCamera = null;
-            QE.RenderSystem.instance.setRenderTarget(null);
-            this._frameId++;
-        };
-        Scene3D.prototype.update = function (deltaTime) {
-            QE.Component.load();
-            QE.Component.update(deltaTime);
-            var children = this._rootChildren;
-            // 更新动画?
-            for (var i = 0, len = children.length; i < len; i++) {
-                children[i].transform.update(true, true);
-            }
-        };
-        return Scene3D;
-    }(QE.HashObject));
-    QE.Scene3D = Scene3D;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var SceneManager = /** @class */ (function () {
-        function SceneManager() {
-            SceneManager._sInstance = this;
-            // 创建默认场景
-            this._currentScene = SceneManager.createScene();
-        }
-        Object.defineProperty(SceneManager, "instance", {
-            get: function () {
-                if (!SceneManager._sInstance) {
-                    SceneManager._sInstance = new SceneManager();
-                }
-                return this._sInstance;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(SceneManager.prototype, "currentScene", {
-            get: function () {
-                return this._currentScene;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        SceneManager.createScene = function () {
-            return new QE.Scene3D();
-        };
-        SceneManager.prototype.init = function () {
-        };
-        return SceneManager;
-    }());
-    QE.SceneManager = SceneManager;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var Screen = /** @class */ (function () {
-        function Screen() {
-        }
-        Screen.screenWidth = 0;
-        Screen.screenHeight = 0;
-        return Screen;
-    }());
-    QE.Screen = Screen;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    function assert(cond, msg) {
-    }
-    QE.assert = assert;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var Dictionary = /** @class */ (function () {
-        function Dictionary(useOrderList) {
-            if (useOrderList === void 0) { useOrderList = false; }
-            this.data = {};
-            this.list = new Array();
-            if (useOrderList) {
-                this.list = new Array();
-            }
-        }
-        Dictionary.prototype.containsKey = function (key) {
-            if (this.data[key]) {
-                return true;
-            }
-            return false;
-        };
-        Dictionary.prototype.getValue = function (key) {
-            return this.data[key];
-        };
-        Dictionary.prototype.getKeys = function () {
-            return Object.keys(this.data);
-        };
-        Dictionary.prototype.getValues = function () {
-            return this.list;
-        };
-        Dictionary.prototype.add = function (key, value) {
-            this.data[key] = value;
-            if (this.list) {
-                this.list.push(value);
-            }
-        };
-        Dictionary.prototype.remove = function (key) {
-            if (this.list) {
-                var index = this.list.indexOf(this.data[key]);
-                if (index !== -1) {
-                    this.list.splice(index);
-                }
-            }
-            delete this.data[key];
-        };
-        Dictionary.prototype.dispose = function () {
-            delete this.data;
-            delete this.list;
-        };
-        return Dictionary;
-    }());
-    QE.Dictionary = Dictionary;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var QEListener = /** @class */ (function () {
-        function QEListener(listener, func) {
-            this._listener = listener;
-            this._func = func;
-        }
-        QEListener.prototype.onCall = function () {
-            this._func.call(this._listener);
-        };
-        return QEListener;
-    }());
-    QE.QEListener = QEListener;
-    var QEEvent = /** @class */ (function () {
-        function QEEvent() {
-            this._listeners = [];
-        }
-        QEEvent.prototype.add = function (listener) {
-            this._listeners.push(listener);
-        };
-        QEEvent.prototype.del = function (listener) {
-            var idx = this._listeners.indexOf(listener);
-            if (idx !== -1) {
-                this._listeners.splice(idx, 1);
-            }
-        };
-        QEEvent.prototype.clear = function () {
-            this._listeners = [];
-        };
-        QEEvent.prototype.dispatchEvent = function () {
-            var listeners = this._listeners;
-            for (var i = 0, len = listeners.length; i < len; i++) {
-                listeners[i].onCall();
-            }
-        };
-        return QEEvent;
-    }());
-    QE.QEEvent = QEEvent;
-    var QEListener1 = /** @class */ (function () {
-        function QEListener1(listener, func) {
-            this._listener = listener;
-            this._func = func;
-        }
-        QEListener1.prototype.onCall = function (p) {
-            this._func.call(this._listener, p);
-        };
-        return QEListener1;
-    }());
-    QE.QEListener1 = QEListener1;
-    var QEEvent1 = /** @class */ (function () {
-        function QEEvent1() {
-            this._listeners = [];
-        }
-        QEEvent1.prototype.add = function (listener) {
-            this._listeners.push(listener);
-        };
-        QEEvent1.prototype.del = function (listener) {
-            var idx = this._listeners.indexOf(listener);
-            if (idx !== -1) {
-                this._listeners.splice(idx, 1);
-            }
-        };
-        QEEvent1.prototype.clear = function () {
-            this._listeners = [];
-        };
-        QEEvent1.prototype.dispatchEvent = function (t) {
-            var listeners = this._listeners;
-            for (var i = 0, len = listeners.length; i < len; i++) {
-                listeners[i].onCall(t);
-            }
-        };
-        return QEEvent1;
-    }());
-    QE.QEEvent1 = QEEvent1;
-    var QEListener2 = /** @class */ (function () {
-        function QEListener2(listener, func) {
-            this._listener = listener;
-            this._func = func;
-        }
-        QEListener2.prototype.onCall = function (p1, p2) {
-            this._func.call(this._listener, p1, p2);
-        };
-        return QEListener2;
-    }());
-    QE.QEListener2 = QEListener2;
-    var QEEvent2 = /** @class */ (function () {
-        function QEEvent2() {
-            this._listeners = [];
-        }
-        QEEvent2.prototype.add = function (listener) {
-            this._listeners.push(listener);
-        };
-        QEEvent2.prototype.del = function (listener) {
-            var idx = this._listeners.indexOf(listener);
-            if (idx !== -1) {
-                this._listeners.splice(idx, 1);
-            }
-        };
-        QEEvent2.prototype.clear = function () {
-            this._listeners = [];
-        };
-        QEEvent2.prototype.dispatchEvent = function (p1, p2) {
-            var listeners = this._listeners;
-            for (var i = 0, len = listeners.length; i < len; i++) {
-                listeners[i].onCall(p1, p2);
-            }
-        };
-        return QEEvent2;
-    }());
-    QE.QEEvent2 = QEEvent2;
-    var QEListener3 = /** @class */ (function () {
-        function QEListener3(listener, func) {
-            this._listener = listener;
-            this._func = func;
-        }
-        QEListener3.prototype.onCall = function (p1, p2, p3) {
-            this._func.call(this._listener, p1, p2, p3);
-        };
-        return QEListener3;
-    }());
-    QE.QEListener3 = QEListener3;
-    var QEEvent3 = /** @class */ (function () {
-        function QEEvent3() {
-            this._listeners = [];
-        }
-        QEEvent3.prototype.add = function (listener) {
-            this._listeners.push(listener);
-        };
-        QEEvent3.prototype.del = function (listener) {
-            var idx = this._listeners.indexOf(listener);
-            if (idx !== -1) {
-                this._listeners.splice(idx, 1);
-            }
-        };
-        QEEvent3.prototype.clear = function () {
-            this._listeners = [];
-        };
-        QEEvent3.prototype.dispatchEvent = function (p1, p2, p3) {
-            var listeners = this._listeners;
-            for (var i = 0, len = listeners.length; i < len; i++) {
-                listeners[i].onCall(p1, p2, p3);
-            }
-        };
-        return QEEvent3;
-    }());
-    QE.QEEvent3 = QEEvent3;
-    var QEListener4 = /** @class */ (function () {
-        function QEListener4(listener, func) {
-            this._listener = listener;
-            this._func = func;
-        }
-        QEListener4.prototype.onCall = function (p1, p2, p3, p4) {
-            this._func.call(this._listener, p1, p2, p3, p4);
-        };
-        return QEListener4;
-    }());
-    QE.QEListener4 = QEListener4;
-    var QEEvent4 = /** @class */ (function () {
-        function QEEvent4() {
-            this._listeners = [];
-        }
-        QEEvent4.prototype.add = function (listener) {
-            this._listeners.push(listener);
-        };
-        QEEvent4.prototype.del = function (listener) {
-            var idx = this._listeners.indexOf(listener);
-            if (idx !== -1) {
-                this._listeners.splice(idx, 1);
-            }
-        };
-        QEEvent4.prototype.clear = function () {
-            this._listeners = [];
-        };
-        QEEvent4.prototype.dispatchEvent = function (p1, p2, p3, p4) {
-            var listeners = this._listeners;
-            for (var i = 0, len = listeners.length; i < len; i++) {
-                listeners[i].onCall(p1, p2, p3, p4);
-            }
-        };
-        return QEEvent4;
-    }());
-    QE.QEEvent4 = QEEvent4;
-    // ===================  Event4  ===================
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var Log = /** @class */ (function () {
-        function Log() {
-        }
-        Log.D = function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            console.log.apply(this, arguments);
-        };
-        Log.I = function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            console.info.apply(this, arguments);
-        };
-        Log.W = function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            console.warn.apply(this, arguments);
-        };
-        Log.E = function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            console.error.apply(this, arguments);
-        };
-        Log.F = function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            console.error.apply(this, arguments);
-        };
-        return Log;
-    }());
-    QE.Log = Log;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    /**
-     * 最小堆
-     */
-    var MinHeap = /** @class */ (function () {
-        function MinHeap(comparer) {
-            this._heap = [];
-            this._length = 0;
-            this._comparer = comparer;
-        }
-        /**
-         * 元素入队
-         * @param x
-         */
-        MinHeap.prototype.enqueue = function (x) {
-            this._heap.push(x);
-            this.filterUp(this._length);
-            this._length++;
-            return true;
+            console.warn('[AnimationClip.removeCurve] 删除的curve不存在. path: ' + relativePath + '  propertyName: ' + propertyName);
         };
         /**
-         * 最小元素出队
+         * 清除动画数据
          */
-        MinHeap.prototype.dequeue = function () {
-            var heap = this._heap;
-            var x = heap[0];
-            heap[0] = heap[this._length - 1];
-            this._length--;
-            this.filterDown(0, this._length - 1); // 调整新的根节点
-            return x;
+        AnimationClip.prototype.clearAllCurves = function () {
+            this._positionCurveDict = {};
+            this._scaleCurveDict = {};
+            this._eulerCurveDict = {};
+            this._numberCurveDict = {};
+            this._objCurveDict = {};
         };
-        /**
-         * 查看最小元素
-         */
-        MinHeap.prototype.peek = function () {
-            return this._heap[0];
+        AnimationClip.prototype.apply = function (node, timePos) {
+            var timeIndex = this.getTimeIndex(timePos);
+            // 变换缩放
+            this._applyScale(node, timeIndex, 1);
+            // 变换旋转
+            this._applyRotation(node, timeIndex, 1);
+            // 变换位移
+            this._applyPosition(node, timeIndex, 1);
+            // 对象属性变换
+            this._applyObj(node, timeIndex, 1);
+            if (!node.transform) {
+                return;
+            }
+            var meshFilter = node.transform.getComponent(QE.MeshFilter);
+            if (!meshFilter) {
+                return;
+            }
+            var mesh = meshFilter.mesh;
+            if (!mesh) {
+                return;
+            }
+            // 网格形变动画
         };
-        /**
-         * 堆元素数量
-         */
-        MinHeap.prototype.count = function () {
-            return this._length;
+        AnimationClip.prototype._applyScale = function (node, timeIndex, weight) {
+            var curveDict = this._scaleCurveDict;
+            var timePos = timeIndex.timePos;
+            var keyIndex = timeIndex.keyIndex;
+            // apply position
+            for (var path in curveDict) {
+                var target = void 0;
+                // 如果路径为空，此曲线应用在动画根节点上
+                if (!path) {
+                    target = node.transform;
+                }
+                else {
+                    target = node.transform.find(path);
+                }
+                if (!target) {
+                    console.warn('[AnimationClip._applyScale] 动画对象节点不存在： ' + path);
+                    continue;
+                }
+                var objCurves = curveDict[path];
+                var curveX = objCurves[0];
+                var curveY = objCurves[1];
+                var curveZ = objCurves[2];
+                var interpolationX = curveX.getInterpolation(timePos, keyIndex);
+                var interpolationY = curveY.getInterpolation(timePos, keyIndex);
+                var interpolationZ = curveZ.getInterpolation(timePos, keyIndex);
+                // TODO: 计算权重
+                // 设置本地坐标
+                target.localScale = target.localScale.set(interpolationX, interpolationY, interpolationZ);
+            }
         };
-        /**
-         * 清空队列
-         */
-        MinHeap.prototype.clear = function () {
-            this._heap = [];
-            this._length = 0;
+        AnimationClip.prototype._applyRotation = function (node, timeIndex, weight) {
+            var curveDict = this._eulerCurveDict;
+            var timePos = timeIndex.timePos;
+            var keyIndex; // timeIndex.keyIndex;
+            // apply position
+            for (var path in curveDict) {
+                var target = void 0;
+                // 如果路径为空，此曲线应用在动画根节点上
+                if (!path) {
+                    target = node.transform;
+                }
+                else {
+                    target = node.transform.find(path);
+                }
+                if (!target) {
+                    console.warn('[AnimationClip._applyRotation] 动画对象节点不存在： ' + path);
+                    continue;
+                }
+                var objCurves = curveDict[path];
+                var curveX = objCurves[0];
+                var curveY = objCurves[1];
+                var curveZ = objCurves[2];
+                var interpolationX = curveX.getInterpolation(timePos);
+                var interpolationY = curveY.getInterpolation(timePos);
+                var interpolationZ = curveZ.getInterpolation(timePos);
+                // TODO: 计算权重
+                // 设置本地坐标
+                target.localRotation = target.localRotation.fromEulerAngleScalar(interpolationX, interpolationY, interpolationZ);
+            }
         };
-        MinHeap.prototype.filterDown = function (start, end) {
-            var i = start, j = 2 * i + 1;
-            var heap = this._heap;
-            var temp = heap[i];
-            var comparer = this._comparer;
-            if (comparer) {
-                while (j <= end) {
-                    if ((j < end) && (comparer(heap[j], heap[j + 1]) > 0)) {
-                        j++;
+        AnimationClip.prototype._applyPosition = function (node, timeIndex, weight) {
+            var curveDict = this._positionCurveDict;
+            var timePos = timeIndex.timePos;
+            var keyIndex = timeIndex.keyIndex;
+            // apply position
+            for (var path in curveDict) {
+                var target = void 0;
+                // 如果路径为空，此曲线应用在动画根节点上
+                if (!path) {
+                    target = node.transform;
+                }
+                else {
+                    target = node.transform.find(path);
+                }
+                if (!target) {
+                    console.warn('[AnimationClip._applyPosition] 动画对象节点不存在： ' + path);
+                    continue;
+                }
+                var objCurves = curveDict[path];
+                var curveX = objCurves[0];
+                var curveY = objCurves[1];
+                var curveZ = objCurves[2];
+                var interpolationX = curveX.getInterpolation(timePos);
+                var interpolationY = curveY.getInterpolation(timePos);
+                var interpolationZ = curveZ.getInterpolation(timePos);
+                // TODO: 计算权重
+                // 设置本地坐标
+                target.localPosition = target.localPosition.set(interpolationX, interpolationY, interpolationZ);
+            }
+        };
+        AnimationClip.prototype._applyObj = function (node, timeIndex, weight) {
+            var curveDict = this._objCurveDict;
+            var timePos = timeIndex.timePos;
+            var keyIndex = timeIndex.keyIndex;
+            for (var path in curveDict) {
+                var target = void 0;
+                // 如果路径为空，此曲线应用在动画根节点上
+                if (!path) {
+                    target = node.transform;
+                }
+                else {
+                    target = node.transform.find(path);
+                }
+                if (!target) {
+                    console.warn('[AnimationClip._applyObj] 动画对象节点不存在： ' + path);
+                    continue;
+                }
+                var objCurveArr = curveDict[path];
+                for (var i = 0, len = objCurveArr.length; i < len; i++) {
+                    var objCurve = objCurveArr[i];
+                    if (!objCurve._objInstance || !objCurve._objInstance.hasOwnProperty(objCurve._propName)) {
+                        console.error('脚本属性不存在. PropName: ' + objCurve._propName);
+                        continue;
                     }
-                    if (comparer(temp, heap[j]) <= 0) {
-                        break;
-                    }
-                    else {
-                        heap[i] = heap[j];
-                        i = j;
-                        j = 2 * j + 1;
-                    }
+                    var interpolation = objCurve.getInterpolation(timePos, keyIndex);
+                    objCurve._objInstance[objCurve._propName] = interpolation;
                 }
             }
-            else {
-                while (j <= end) {
-                    if ((j < end) && (heap[j] > heap[j + 1])) {
-                        j++;
-                    }
-                    if (temp <= heap[j]) {
-                        break;
-                    }
-                    else {
-                        heap[i] = heap[j];
-                        i = j;
-                        j = 2 * j + 1;
-                    }
-                }
-            }
-            heap[i] = temp;
         };
-        MinHeap.prototype.filterUp = function (start) {
-            var j = start, i = Math.floor((j - 1) * 0.5); // i指向j的双亲节点
-            var heap = this._heap;
-            var temp = heap[j];
-            var comparer = this._comparer;
-            if (comparer) {
-                while (j > 0) {
-                    if (comparer(heap[i], temp) <= 0) {
-                        break;
-                    }
-                    else {
-                        heap[j] = heap[i];
-                        j = i;
-                        i = Math.floor((i - 1) * 0.5);
-                    }
-                }
+        AnimationClip.prototype.getTimeIndex = function (timePos) {
+            if (this._keyFrameTimesDirty) {
+                this.buildKeyFrameTimeList();
             }
-            else {
-                while (j > 0) {
-                    if (heap[i] <= temp) {
-                        break;
-                    }
-                    else {
-                        heap[j] = heap[i];
-                        j = i;
-                        i = Math.floor((i - 1) * 0.5);
-                    }
-                }
+            var totalAnimationLength = this.length;
+            if (timePos > totalAnimationLength && totalAnimationLength > 0.0) {
+                timePos = timePos % totalAnimationLength;
             }
-            heap[j] = temp;
-        };
-        return MinHeap;
-    }());
-    QE.MinHeap = MinHeap;
-})(QE || (QE = {}));
-/**
- *  -
- *
- * create by wjl at
- *
- */
-var QE;
-/**
- *  -
- *
- * create by wjl at
- *
- */
-(function (QE) {
-    var RefObj = /** @class */ (function (_super) {
-        __extends(RefObj, _super);
-        function RefObj() {
-            var _this = _super.call(this) || this;
-            _this._retainCount = 1;
-            return _this;
-        }
-        Object.defineProperty(RefObj.prototype, "retainCount", {
-            get: function () {
-                return this._retainCount;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        RefObj.prototype.retain = function () {
-            this._retainCount++;
-        };
-        RefObj.prototype.release = function () {
-            console.assert(this._retainCount > 0, 'retain count must greater than 0');
-            this._retainCount--;
-            if (this._retainCount === 0) {
-                this.destroy();
-            }
-        };
-        return RefObj;
-    }(QE.HashObject));
-    QE.RefObj = RefObj;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var Timer;
-    (function (Timer) {
-        var TimerHeap = /** @class */ (function (_super) {
-            __extends(TimerHeap, _super);
-            function TimerHeap() {
-                return _super !== null && _super.apply(this, arguments) || this;
-            }
-            TimerHeap.prototype.remove = function (timerId) {
-                var heap = this._heap;
-                var len = this._length;
-                for (var i = 0; i < len; i++) {
-                    var data = heap[i];
-                    if (data.id === timerId) {
-                        heap[i] = heap[this._length - 1];
-                        this._length--;
-                        this.filterDown(i, this._length - 1); // 调整新的根节点
-                        break;
-                    }
-                }
-            };
-            return TimerHeap;
-        }(QE.MinHeap));
-        function _TimerDataComparer(x, y) {
-            return x.endTick - y.endTick;
-        }
-        var _timerHeap = new TimerHeap(_TimerDataComparer);
-        var _timerId = 0;
-        var _tick = 0;
-        /**
-         * 添加一个定时器
-         * @param callback 回调函数
-         * @param delay    延迟时间, 单位毫秒
-         * @param repeat   重复次数, 默认为0, 不重复
-         * @param interval 重复间隔时间, 单位毫秒
-         * @return 定时器id
-         */
-        function addTimer(callback, delay, repeat, interval) {
-            if (repeat === void 0) { repeat = 0; }
-            if (interval === void 0) { interval = 0; }
-            var newTimerId = _timerId++;
-            var timerData = {
-                id: newTimerId,
-                callback: callback,
-                delay: delay,
-                repeat: repeat,
-                interval: interval,
-                endTick: _tick + Date.now()
-            };
-            _timerHeap.enqueue(timerData);
-            return timerData.id;
-        }
-        Timer.addTimer = addTimer;
-        /**
-         * 删除一个定时器
-         * @param timerId 定时器id
-         */
-        function killTimer(timerId) {
-            _timerHeap.remove(timerId);
-        }
-        Timer.killTimer = killTimer;
-        function update(dt) {
-            _tick += dt;
-            while (_timerHeap.count() > 0) {
-                var timerData = _timerHeap.peek();
-                if (_tick < timerData.endTick) {
+            var keyFrameTimes = this._keyFrameTimes;
+            var index = 0;
+            for (var i = 0, len = this._keyFrameTimes.length; i < len - 1; i++) {
+                var prev = keyFrameTimes[i];
+                var next = keyFrameTimes[i + 1];
+                if (timePos < prev) {
+                    index = i;
                     break;
                 }
-                _timerHeap.dequeue();
-                var repeatCount = timerData.repeat;
-                if (repeatCount === 0) {
-                    timerData.callback(dt);
+                else if (timePos >= prev && timePos < next) {
+                    index = i + 1;
+                    break;
                 }
-                else if (repeatCount === -1) {
-                    // 无限定时器
-                    timerData.callback(dt);
-                    timerData.endTick = _tick + timerData.interval;
-                    _timerHeap.enqueue(timerData);
-                }
-                else {
-                    timerData.callback(dt);
-                    timerData.repeat = repeatCount--;
-                    timerData.endTick = _tick + timerData.interval;
-                    _timerHeap.enqueue(timerData);
+                index = i + 1;
+            }
+            return { timePos: timePos, keyIndex: index };
+        };
+        AnimationClip.prototype.buildKeyFrameTimeList = function () {
+            var thisKeyFrameTimes = this._keyFrameTimes;
+            var thisCurveDict = this._positionCurveDict;
+            // let keys = Object.keys(thisCurveDict);
+            for (var key in thisCurveDict) {
+                var val = thisCurveDict[key];
+                for (var i = 0, len = val.length; i < len; i++) {
+                    var curve = val[i];
+                    curve._collectKeyFrameTimes(thisKeyFrameTimes);
                 }
             }
-        }
-        Timer.update = update;
-    })(Timer = QE.Timer || (QE.Timer = {}));
+            this._keyFrameTimesDirty = false;
+        };
+        return AnimationClip;
+    }(QE.HashObject));
+    QE.AnimationClip = AnimationClip;
+    function splitProperty(prop) {
+        return prop.split('.');
+    }
 })(QE || (QE = {}));
 var QE;
 (function (QE) {
-    var UUID;
-    (function (UUID) {
-        // Private array of chars to use
-        var CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
-        function uuid(len, radix) {
-            var chars = CHARS;
-            var ret = [];
-            var i;
-            radix = radix || chars.length;
-            if (len) {
-                // Compact form
-                for (i = 0; i < len; i++) {
-                    ret[i] = chars[0 | Math.random() * radix];
+    var AnimationCurve = /** @class */ (function () {
+        function AnimationCurve(objCurve) {
+            if (objCurve === void 0) { objCurve = false; }
+            this._isObjCurve = false;
+            this._keyFrames = [];
+            this._isObjCurve = objCurve;
+        }
+        AnimationCurve.prototype.isObjectKeyFrame = function () {
+            return false;
+        };
+        AnimationCurve.prototype.getKeyFrameCount = function () {
+            return this._keyFrames.length;
+        };
+        AnimationCurve.prototype.addKeyFrame = function (keyFrame, index) {
+            // 检查KeyFrame类型是否一致
+            if (QE.__QE_EDITOR_MODE__) {
+                if (this._keyFrames.length > 0) {
+                }
+            }
+            if (index === undefined || this._keyFrames.length <= index) {
+                this._keyFrames.push(keyFrame);
+                return;
+            }
+            this._keyFrames.splice(index, 0, keyFrame);
+        };
+        AnimationCurve.prototype.addKeyFrameByValue = function (time, value, inTangent, outTangent, index) {
+            // 检查KeyFrame类型是否一致
+            if (QE.__QE_EDITOR_MODE__) {
+                if (this._keyFrames.length > 0) {
+                }
+            }
+            var keyFrame = new QE.KeyFrame(time, value, inTangent, outTangent);
+            if (index === undefined || this._keyFrames.length <= index) {
+                this._keyFrames.push(keyFrame);
+                return;
+            }
+            this._keyFrames.splice(index, 0, keyFrame);
+        };
+        AnimationCurve.prototype.moveKeyFrame = function (index, keyFrame) {
+            var thisKeyFrame = this._keyFrames;
+            if (index < 0 || thisKeyFrame.length > index) {
+                return;
+            }
+            thisKeyFrame.splice(index, 1);
+            thisKeyFrame.splice(index, 0, keyFrame);
+        };
+        AnimationCurve.prototype.removeKeyFrame = function (index) {
+            var thisKeyFrame = this._keyFrames;
+            if (index < 0 || thisKeyFrame.length > index) {
+                return;
+            }
+            this._keyFrames.splice(index, 1);
+        };
+        /**
+         * 根据时间索引, 取得当前一对关键帧
+         * @param {number} timePos 动画时间位置，这个时间应当和动画片段的总时间做过取余计算
+         * @param {number} keyIndex 帧索引
+         * @return {KeyFramePair}
+         */
+        AnimationCurve.prototype.getKeyFramePairAtTime = function (timePos, keyIndex) {
+            var keyframe1, keyframe2;
+            var keys = this._keyFrames;
+            // 直接设置帧索引
+            if (keyIndex !== undefined) {
+                if (keyIndex + 1 === keys.length) {
+                    keyframe1 = keys[keyIndex];
+                    keyframe2 = keys[keyIndex];
+                }
+                else {
+                    keyframe1 = keys[keyIndex];
+                    keyframe2 = keys[keyIndex + 1];
                 }
             }
             else {
-                // rfc4122, version 4 form
-                var r = void 0;
-                // rfc4122 requires these characters
-                ret[8] = ret[13] = ret[18] = ret[23] = '-';
-                ret[14] = '4';
-                // Fill in random data.  At i==19 set the high bits of clock sequence as
-                // per rfc4122, sec. 4.1.5
-                for (i = 0; i < 36; i++) {
-                    if (!ret[i]) {
-                        r = 0 | Math.random() * 16;
-                        ret[i] = chars[(i === 19) ? (r & 0x3) | 0x8 : r];
+                // 计算帧索引
+                var i = 1;
+                var len = keys.length;
+                for (; i < len; i++) {
+                    var frame = keys[i - 1];
+                    var nextFrame = keys[i];
+                    if (timePos < frame.time) {
+                        // 小于等于前一帧时间点，则命中
+                        // timePos---------firstKey_time---------k2_time
+                        i--;
+                        break;
+                    }
+                    else if (timePos >= frame.time && timePos <= nextFrame.time) {
+                        // 小于下一帧时间点，则命中
+                        // k1_time---------timePos---------k2_time
+                        break;
+                    }
+                    // 最后一帧还没有找到对应的时间点，意味着timepos超出了最后一帧，直接使用最后一帧作为关键帧
+                    if (i === len - 1) {
+                        // k1_time---------laseKey_time---------timePos
+                        i++;
+                        break;
                     }
                 }
-            }
-            return ret.join('');
-        }
-        // A more performant, but slightly bulkier, RFC4122v4 solution.  We boost performance
-        // by minimizing calls to random()
-        function uuidFast() {
-            var chars = CHARS;
-            var ret = new Array(36);
-            var rnd = 0;
-            var r;
-            for (var i = 0; i < 36; i++) {
-                if (i === 8 || i === 13 || i === 18 || i === 23) {
-                    ret[i] = '-';
+                if (i === 0) {
+                    keyframe1 = keys[i];
+                    keyframe2 = keys[i];
                 }
-                else if (i === 14) {
-                    ret[i] = '4';
+                else if (i === len) {
+                    keyframe1 = keys[i - 1];
+                    keyframe2 = keys[i - 1];
                 }
                 else {
-                    if (rnd <= 0x02) {
-                        rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
-                    }
-                    r = rnd & 0xf;
-                    rnd = rnd >> 4;
-                    ret[i] = chars[(i === 19) ? (r & 0x3) | 0x8 : r];
+                    keyframe1 = keys[i - 1];
+                    keyframe2 = keys[i];
                 }
             }
-            return ret.join('');
-        }
-        // A more compact, but less performant, RFC4122v4 solution:
-        function newUuid() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-        UUID.newUuid = newUuid;
-    })(UUID = QE.UUID || (QE.UUID = {}));
+            // timePos在两帧之间的比例
+            //       |------------total-------------|
+            //       |-elapsed-|
+            // k1_time----------timePos-------------k2_time
+            var total = keyframe2.time - keyframe1.time;
+            var elapsed = timePos - keyframe1.time;
+            var t = (total === 0 || elapsed === 0) ? 0 : elapsed / total;
+            var pair = {
+                keyframe1: keyframe1,
+                keyframe2: keyframe2,
+                t: t
+            };
+            return pair;
+        };
+        /**
+         * 根据时间索引, 计算关键帧插值
+         * @param {number} timePos 时间点
+         * @param {number} keyIndex 索引
+         */
+        AnimationCurve.prototype.getInterpolation = function (timePos, keyIndex) {
+            if (this._keyFrames.length === 0) {
+                return 0;
+            }
+            var ret = 0;
+            // #1 根据时间点, 取得前后一组关键帧
+            var keyFramePair = this.getKeyFramePairAtTime(timePos, keyIndex);
+            var k1 = keyFramePair.keyframe1;
+            var k2 = keyFramePair.keyframe2;
+            // 插值系数为0，直接返回k1帧的值
+            if (keyFramePair.t === 0) {
+                return k1.value;
+            }
+            // #2 求两关键帧在当前时间的插值
+            var interpolationMode = k1.interpolationMode;
+            switch (interpolationMode) {
+                case 0 /* Liner */:
+                    {
+                        QE.MathUtil.clampf;
+                        ret = QE.MathUtil.lerp(k1.value, k2.value, keyFramePair.t);
+                    }
+                    break;
+                case 1 /* Spline */:
+                    {
+                        // TODO: 补全样条插值
+                        ret = QE.MathUtil.lerp(k1.value, k2.value, keyFramePair.t);
+                    }
+                    break;
+                case 2 /* Constant */:
+                    {
+                        // 常数的话,直接使用k1的属性
+                        ret = k1.value;
+                    }
+                    break;
+                default:
+                    {
+                        // 是否支持自定义插值函数
+                        console.error('[AnimationCurve.getInterpolation] 不支持的插值类型: ' + interpolationMode);
+                    }
+                    break;
+            }
+            return ret;
+        };
+        /**
+         * 收集所有关键帧时间
+         * @param outKeyFrameTimes 关键帧时间数组
+         */
+        AnimationCurve.prototype._collectKeyFrameTimes = function (outKeyFrameTimes) {
+            var thisKeyFrames = this._keyFrames;
+            // 遍历所有关键帧, 如果outKeyFrameTimes没有包含关键帧时间, 插入关键帧时间
+            for (var i = 0, len = thisKeyFrames.length; i < len; i++) {
+                var keyFrame = thisKeyFrames[i];
+                var timePos = keyFrame.time;
+                var index = 0;
+                var keyTimePos = 0;
+                for (var j = 0, len_1 = outKeyFrameTimes.length; j < len_1 - 1; j++) {
+                    var prev = outKeyFrameTimes[j];
+                    var next = outKeyFrameTimes[j + 1];
+                    if (timePos < prev) {
+                        index = i;
+                        break;
+                    }
+                    else if (timePos >= prev && timePos < next) {
+                        index = i + 1;
+                        break;
+                    }
+                    index = i + 1;
+                }
+                if (index === len || timePos != keyTimePos) {
+                    outKeyFrameTimes.splice(index, 0, timePos);
+                }
+            }
+        };
+        AnimationCurve.prototype._buildKeyFrameIndexMap = function (outKeyFrameTimes) {
+            // Pre-allocate memory
+            // mKeyFrameIndexMap.resize(keyFrameTimes.size() + 1);
+            // size_t i = 0, j = 0;
+            // while (j <= keyFrameTimes.size()) {
+            //    mKeyFrameIndexMap[j] = static_cast<ushort>(i);
+            //    while (i < mKeyFrames.size() && mKeyFrames[i] ->getTime() <= keyFrameTimes[j])
+            //        ++i;
+            //    ++j;
+            // }
+        };
+        return AnimationCurve;
+    }());
+    QE.AnimationCurve = AnimationCurve;
+    // export class QuaternionCurve extends AnimationCurve {
+    //    public getInterpolation(timePos: number, keyIndex?: number): any {
+    //        let ret = new Quaternion();
+    //        // #1 根据时间点, 求得关键帧
+    //        let keyFramePair = this.getKeyFramePairAtTime(timePos, keyIndex);
+    //        let k1: QuaternionKeyFrame = keyFramePair.keyframe1 as QuaternionKeyFrame;
+    //        let k2: QuaternionKeyFrame = keyFramePair.keyframe2 as QuaternionKeyFrame;
+    //        // #2 求两关键帧在当前时间的插值
+    //        let interpolationMode = k1.interpolationMode;
+    //        switch (interpolationMode) {
+    //            case InterpolationMode.Liner: {
+    //                ret = ret.lerp(k1.value, k2.value, keyFramePair.t);
+    //            } break;
+    //            case InterpolationMode.Spline: {
+    //                // TODO: 补全样条插值
+    //                ret = ret.lerp(k1.value, k2.value, keyFramePair.t);
+    //            } break;
+    //            case InterpolationMode.Constant: {
+    //                // 常数的话,直接使用k1的属性
+    //                ret = ret.copy(k1.value);
+    //            } break;
+    //            default: {
+    //                console.error("[QuaternionCurve.getInterpolation] 不支持的插值类型: " + interpolationMode);
+    //            } break;
+    //        }
+    //        return ret;
+    //    }
+    //    public apply(go: Node, index: number, timePos: number, weight: number) {
+    //        let ret = this.getInterpolation(timePos) as Quaternion;
+    //        go.transform.rotation = ret.lerp(Quaternion.IDENTITY, ret, weight);
+    //    }
+    // }
+    // export class VectorCurve extends AnimationCurve {
+    //    public getInterpolation(timePos: number, keyIndex?: number): any {
+    //        let ret;
+    //        // #1 根据时间点, 求得关键帧
+    //        let k1: KeyFrame, k2: KeyFrame;
+    //        // #2 求两关键帧在当前时间的插值
+    //        return ret;
+    //    }
+    //    public apply(go: Node, index: number, timePos: number, weight: number) {
+    //        let ret = this.getInterpolation(timePos) as Vector3;
+    //        switch (this._propName) {
+    //            case 'position': {
+    //                go.transform.position = ret;
+    //            } break;
+    //            case 'scale': {
+    //                go.transform.position = ret;
+    //            } break;
+    //            default: go[this._propName] = ret; break;
+    //        }
+    //    }
+    // }
+    // export class NumericCurve extends AnimationCurve {
+    //    public getInterpolation(timePos: number, keyIndex?: number): any {
+    //        let ret;
+    //        // #1 根据时间点, 求得关键帧
+    //        let k1: KeyFrame, k2: KeyFrame;
+    //        // #2 求两关键帧在当前时间的插值
+    //        return ret;
+    //    }
+    //    public apply(go: Node, index: number, timePos: number, weight: number) {
+    //        let t = this.getInterpolation(timePos);
+    //        switch (this._propName) {
+    //            case 'x': {
+    //                go.transform.x = 0;
+    //            } break;
+    //            default: ; break;
+    //        }
+    //        if (this.isObjectKeyFrame()) {
+    //        } else {
+    //        }
+    //    }
+    // }
+    // export class ObjectCurve extends AnimationCurve {
+    //    public getInterpolation(timePos: number, keyIndex?: number): any {
+    //        let ret;
+    //        // #1 根据时间点, 求得关键帧
+    //        let k1: KeyFrame, k2: KeyFrame;
+    //        // #2 求两关键帧在当前时间的插值
+    //        return ret;
+    //    }
+    //    public apply(go: Node, index: number, timePos: number, weight: number) {
+    //        let t = this.getInterpolation(timePos, index);
+    //        switch (this._propName) {
+    //            case 'x': {
+    //                go.transform.x = 0;
+    //            } break;
+    //            default: ; break;
+    //        }
+    //        if (this.isObjectKeyFrame()) {
+    //        } else {
+    //        }
+    //    }
+    // }
 })(QE || (QE = {}));
 var QE;
 (function (QE) {
-    var AABB = /** @class */ (function () {
-        function AABB() {
+    var AnimationLoader = /** @class */ (function () {
+        function AnimationLoader() {
         }
-        return AABB;
+        AnimationLoader.load = function (fileJson) {
+        };
+        return AnimationLoader;
     }());
-    QE.AABB = AABB;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var AnimationBlendMode;
+    (function (AnimationBlendMode) {
+        AnimationBlendMode[AnimationBlendMode["Add"] = 0] = "Add";
+    })(AnimationBlendMode = QE.AnimationBlendMode || (QE.AnimationBlendMode = {}));
+    /**
+     * 动画控制器
+     * 动画控制器控制管理一组动画片段
+     */
+    var AnimationState = /** @class */ (function () {
+        function AnimationState() {
+            this._blendMode = AnimationBlendMode.Add;
+        }
+        Object.defineProperty(AnimationState.prototype, "blendMode", {
+            get: function () {
+                return this._blendMode;
+            },
+            set: function (val) {
+                this._blendMode = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AnimationState.prototype, "clip", {
+            get: function () {
+                return this._clip;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        AnimationState.prototype.AddMixingTransform = function (mix, recursive) {
+            if (recursive === void 0) { recursive = true; }
+        };
+        AnimationState.prototype.RemoveMixingTransform = function (mix) {
+        };
+        return AnimationState;
+    }());
+    QE.AnimationState = AnimationState;
+})(QE || (QE = {}));
+///<reference path="../msic/HashObject.ts" />
+var QE;
+///<reference path="../msic/HashObject.ts" />
+(function (QE) {
+    function DisallowMultipleComponent(constructor) {
+        constructor.__QE_DisallowMultipleComponent__ = true;
+    }
+    QE.DisallowMultipleComponent = DisallowMultipleComponent;
+    var Component = /** @class */ (function (_super) {
+        __extends(Component, _super);
+        function Component() {
+            var _this = _super.call(this) || this;
+            _this._needCallStart = true;
+            _this._enable = false;
+            // 脚本函数
+            // 启动时调用
+            _this.onLoad = undefined;
+            // 更新时调用
+            _this.onUpdate = undefined;
+            // 调试调用
+            _this.onDebugDraw = undefined;
+            return _this;
+        }
+        Object.defineProperty(Component.prototype, "node", {
+            get: function () {
+                return this._node;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Component.prototype, "transform", {
+            get: function () {
+                return this.node.transform;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Component.prototype, "enabled", {
+            get: function () {
+                return this._enable;
+            },
+            set: function (val) {
+                if (this._enable === val) {
+                    return;
+                }
+                this._enable = val;
+                if (val) {
+                    this.enqueueComponent();
+                }
+                else {
+                    this.dequeueComponent();
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
+        // 组件基本逻辑
+        Component.load = function () {
+            var unStartedComponentArr = Component.s_unStartedComponentArr;
+            for (var i = 0, len = unStartedComponentArr.length; i < len; i++) {
+                var comp = unStartedComponentArr[i];
+                comp._needCallStart = false;
+                Component.s_startedComponentArr.push(comp);
+                if (comp.onLoad) {
+                    comp.onLoad.call(comp);
+                }
+            }
+            Component.s_unStartedComponentArr.length = 0;
+        };
+        Component.update = function (deltaTime) {
+            var startedCompArr = Component.s_startedComponentArr;
+            for (var i = 0, len = startedCompArr.length; i < len; i++) {
+                var comp = startedCompArr[i];
+                if (comp.onUpdate) {
+                    comp.onUpdate.call(this, deltaTime);
+                }
+            }
+        };
+        Component.prototype.onDestroy = function () {
+            this.enabled = false;
+            this._node = null;
+        };
+        Component.prototype.compareTag = function (tag) {
+            return this.tag === tag;
+        };
+        Component.prototype.getComponent = function (compCls) {
+            return this.node.getComponent(compCls);
+        };
+        Component.prototype.getComponentInChildren = function (compCls, includeInactive) {
+            if (includeInactive === void 0) { includeInactive = false; }
+            return this.node.getComponentInChildren(compCls, includeInactive);
+        };
+        Component.prototype.GetComponentInParent = function (compCls) {
+            return this.node.GetComponentInParent(compCls);
+        };
+        Component.prototype.getComponents = function (compCls) {
+            return this.node.getComponents(compCls);
+        };
+        Component.prototype.getComponentsInChildren = function (compCls, includeInactive, outCompList) {
+            if (includeInactive === void 0) { includeInactive = false; }
+            return this.node.getComponentsInChildren(compCls, includeInactive, outCompList);
+        };
+        Component.prototype.getComponentsInParent = function (compCls, includeInactive, outCompList) {
+            if (includeInactive === void 0) { includeInactive = false; }
+            return this.node.getComponentsInParent(compCls, includeInactive, outCompList);
+        };
+        Component.prototype.notifyAttachNode = function (val) {
+            console.assert(!this._node, '重复挂载节点');
+            console.assert(!!val, '挂载节点为空');
+            this._node = val;
+        };
+        Component.prototype.enqueueComponent = function () {
+            if (this._needCallStart) {
+                Component.s_unStartedComponentArr.push(this);
+            }
+            else {
+                Component.s_startedComponentArr.push(this);
+            }
+        };
+        Component.prototype.dequeueComponent = function () {
+            if (this._needCallStart) {
+                var idx = Component.s_unStartedComponentArr.indexOf(this);
+                if (idx !== -1) {
+                    Component.s_unStartedComponentArr.splice(idx, 1);
+                }
+            }
+            else {
+                var idx = Component.s_startedComponentArr.indexOf(this);
+                if (idx !== -1) {
+                    Component.s_startedComponentArr.splice(idx, 1);
+                }
+            }
+        };
+        Component.__QE_DisallowMultipleComponent__ = false;
+        // 脚本管理
+        Component.s_unStartedComponentArr = [];
+        Component.s_startedComponentArr = [];
+        return Component;
+    }(QE.HashObject));
+    QE.Component = Component;
+})(QE || (QE = {}));
+///<reference path="../core/object/Component.ts" />
+///<reference path="AnimationLoader.ts"/>
+var QE;
+///<reference path="../core/object/Component.ts" />
+///<reference path="AnimationLoader.ts"/>
+(function (QE) {
+    /**
+     * 动画播放器
+     * 动画控制器控制动画的状态切换
+     */
+    var Animator = /** @class */ (function (_super) {
+        __extends(Animator, _super);
+        function Animator() {
+            var _this = _super.call(this) || this;
+            _this._timePos = 0;
+            /**
+             * 更新动画
+             *@param {number} deltaTime 间隔时间
+             */
+            _this.onUpdate = function (deltaTime) {
+                if (!_this._playingClip) {
+                    return;
+                }
+                _this._timePos += deltaTime;
+                _this._playingClip.apply(_this.node, _this._timePos);
+                if (_this._timePos >= _this._playingClip.length) {
+                    _this.stop();
+                }
+            };
+            return _this;
+        }
+        Object.defineProperty(Animator.prototype, "animController", {
+            get: function () {
+                return this._animController;
+            },
+            set: function (animController) {
+                this._animController = animController;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Animator.prototype.play = function (animName) {
+            if (this._playingClip && this._playingClip.name === animName) {
+                return;
+            }
+            if (!this._animController) {
+                return;
+            }
+            var clips = this._animController.animationClips;
+            for (var i = 0, len = clips.length; i < len; i++) {
+                var clip = clips[i];
+                if (clip.name === animName) {
+                    this._playingClip = clip;
+                    break;
+                }
+            }
+            this._timePos = 0;
+        };
+        Animator.prototype.stop = function () {
+            this._playingClip = undefined;
+            this._timePos = 0;
+        };
+        return Animator;
+    }(QE.Component));
+    QE.Animator = Animator;
 })(QE || (QE = {}));
 var QE;
 (function (QE) {
     /**
-     * ��ɫ
+     * 动画控制器
+     * 动画控制器控制管理一组动画片段
      */
-    var Color = /** @class */ (function () {
-        function Color(r, g, b, a) {
-            if (r === void 0) { r = 255; }
-            if (g === void 0) { g = 255; }
-            if (b === void 0) { b = 255; }
-            if (a === void 0) { a = 255; }
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            this.a = a;
+    var AnimatorController = /** @class */ (function (_super) {
+        __extends(AnimatorController, _super);
+        function AnimatorController() {
+            var _this = _super.call(this) || this;
+            _this._animationClips = [];
+            return _this;
         }
-        Object.defineProperty(Color, "white", {
+        Object.defineProperty(AnimatorController.prototype, "animationClips", {
             get: function () {
-                return new Color();
+                return this._animationClips;
+            },
+            set: function (clips) {
+                this._animationClips = clips;
             },
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Color, "black", {
-            get: function () {
-                return new Color(0, 0, 0, 255);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Color, "red", {
-            get: function () {
-                return new Color(255, 0, 0, 255);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Color, "green", {
-            get: function () {
-                return new Color(0, 255, 0, 255);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Color, "blue", {
-            get: function () {
-                return new Color(0, 0, 255, 255);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Color.colorToHex = function (color) {
-            return color.r << 16 | color.g << 8 | color.b;
+        AnimatorController.prototype.addClip = function (clip) {
+            this._animationClips.push(clip);
         };
-        Color.colorToString = function (color) {
-            return '#' + Color.colorToHex(color).toString(16);
+        AnimatorController.prototype.removeClip = function (clip) {
+            var clips = this._animationClips;
+            var idx = clips.indexOf(clip);
+            if (idx != -1) {
+                clips.splice(idx, 1);
+            }
         };
-        Color.stringToColor = function (colorString) {
-            var hex = parseInt(colorString, 16);
-            return new Color(hex >> 16 & 0xff, hex >> 8 & 0xff, hex & 0xff);
-        };
-        Color.prototype.clone = function (oriangl) {
-            return new Color(oriangl.r, oriangl.g, oriangl.b, oriangl.a);
-        };
-        return Color;
-    }());
-    QE.Color = Color;
+        return AnimatorController;
+    }(QE.HashObject));
+    QE.AnimatorController = AnimatorController;
 })(QE || (QE = {}));
-///<reference path="../core/HashObject.ts" />
+///<reference path="../msic/HashObject.ts" />
 var QE;
-///<reference path="../core/HashObject.ts" />
+///<reference path="../msic/HashObject.ts" />
 (function (QE) {
     var GameObject = /** @class */ (function (_super) {
         __extends(GameObject, _super);
@@ -1176,6 +1237,1326 @@ var QE;
         return GameObject;
     }(QE.HashObject));
     QE.GameObject = GameObject;
+})(QE || (QE = {}));
+///<reference path="../core/object/GameObject.ts" />
+var QE;
+///<reference path="../core/object/GameObject.ts" />
+(function (QE) {
+    /**
+     * 骨骼
+     */
+    var Bone = /** @class */ (function () {
+        function Bone(skeleton, name) {
+            this._skeleton = skeleton;
+            this._name = name;
+        }
+        Object.defineProperty(Bone.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            set: function (val) {
+                this._name = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Bone.prototype, "handle", {
+            get: function () {
+                return this._handle;
+            },
+            set: function (val) {
+                this._handle = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Bone.prototype, "node", {
+            get: function () {
+                return this._node;
+            },
+            set: function (val) {
+                this._node = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Bone.prototype._update = function (updateChilren, parentHasChanged) {
+            this._node.transform.update(updateChilren, parentHasChanged);
+        };
+        return Bone;
+    }());
+    QE.Bone = Bone;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    /**
+     *
+     */
+    var KeyFrame = /** @class */ (function () {
+        function KeyFrame(time, value, inTangent, outTangent) {
+            if (inTangent === void 0) { inTangent = 0; }
+            if (outTangent === void 0) { outTangent = 0; }
+            this._interpolationMode = 0 /* Liner */;
+            this._time = time;
+            this._value = value;
+            this._inTangent = inTangent;
+            this._outTangent = outTangent;
+        }
+        Object.defineProperty(KeyFrame.prototype, "time", {
+            /**
+             * 返回关键帧所在时间，以毫秒为单位
+             *@return {number}
+             */
+            get: function () {
+                return this._time;
+            },
+            /**
+             * 设置关键帧所在时间，以毫秒为单位
+             *@param {number} val 时间
+             */
+            set: function (val) {
+                this._time = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(KeyFrame.prototype, "value", {
+            get: function () {
+                return this._value;
+            },
+            set: function (val) {
+                this._value = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(KeyFrame.prototype, "inTangent", {
+            get: function () {
+                return this._inTangent;
+            },
+            set: function (val) {
+                this._inTangent = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(KeyFrame.prototype, "outTangent", {
+            get: function () {
+                return this._outTangent;
+            },
+            set: function (val) {
+                this._outTangent = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(KeyFrame.prototype, "interpolationMode", {
+            get: function () {
+                return this._interpolationMode;
+            },
+            set: function (val) {
+                this._interpolationMode = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return KeyFrame;
+    }());
+    QE.KeyFrame = KeyFrame;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var Skeleton = /** @class */ (function () {
+        function Skeleton(name) {
+            this._boneMapByName = {};
+            this._boneMapByPath = {};
+            this._name = name;
+        }
+        Skeleton.prototype.createBone = function (name, relativePath) {
+            console.assert(!!this._boneMapByPath[name], '[Skeleton.createBone] A bone with the releativePath ' + relativePath + ' already exists');
+            var bone = new QE.Bone(this, name);
+            this._boneMapByName[name] = bone;
+            this._boneMapByPath[relativePath] = bone;
+            return bone;
+        };
+        Skeleton.prototype.getRootBone = function () {
+            var rootBones = this._rootBones;
+            if (!rootBones) {
+                rootBones = this._rootBones = [];
+            }
+            if (rootBones.length === 0) {
+                for (var i = 0; i < rootBones.length; i++) {
+                    var bone = rootBones[i];
+                    // 没有父节点的骨骼皆为根骨骼
+                    if (!bone.node.transform.parent) {
+                        rootBones.push(bone);
+                    }
+                }
+            }
+            return rootBones[0];
+        };
+        Skeleton.prototype.getBone = function (name) {
+            return this._boneMapByName[name];
+        };
+        Skeleton.prototype.getBoneByPath = function (relativePath) {
+            return this._boneMapByPath[relativePath];
+        };
+        Skeleton.prototype.hasBone = function (name) {
+            return !!this._boneMapByName[name];
+        };
+        Skeleton.prototype.updateTransforms = function () {
+            var rootBones = this._rootBones;
+            for (var i = 0, len = rootBones.length; i < len; i++) {
+                var rootBone = rootBones[i];
+                rootBone._update(true, false);
+            }
+        };
+        return Skeleton;
+    }());
+    QE.Skeleton = Skeleton;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    QE.__QE_EDITOR_MODE__ = false;
+    QE.__QE_DEBUG__ = true;
+    QE.__PROFILER__ = true;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    function run(data) {
+        QE.WebGLBufferManager.instance.init();
+        QE.RenderSystem.instance.init(data.div);
+        QE.SceneManager.instance.init();
+        window.onresize = function (ev) {
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            onResize(w, h);
+        };
+        // 准备内置资源
+        QE.ResourceManager.init(function () {
+            onResize(window.innerWidth, window.innerHeight);
+            frameUpdate(0);
+            if (data.onEnginePrepared) {
+                data.onEnginePrepared();
+            }
+        });
+    }
+    QE.run = run;
+    function frameUpdate(deltaTime) {
+        renderOneFrame(deltaTime / 1000);
+        requestAnimationFrame(frameUpdate);
+    }
+    function renderOneFrame(deltaTime) {
+        var mainScene = QE.SceneManager.instance.currentScene;
+        if (!mainScene) {
+            return;
+        }
+        mainScene.update(deltaTime);
+        QE.RenderSystem.instance.beginScene();
+        mainScene.render();
+        QE.RenderSystem.instance.endScene();
+        // mainScene.fixedUpdate(dt);
+    }
+    QE.renderOneFrame = renderOneFrame;
+    function onResize(w, h) {
+        QE.Screen.screenWidth = w;
+        QE.Screen.screenHeight = h;
+        QE.SceneManager.instance.currentScene.onResize(w, h);
+        QE.RenderSystem.instance.onResize(w, h);
+    }
+})(QE || (QE = {}));
+///<reference path="./msic/HashObject.ts" />
+var QE;
+///<reference path="./msic/HashObject.ts" />
+(function (QE) {
+    var Scene3D = /** @class */ (function (_super) {
+        __extends(Scene3D, _super);
+        function Scene3D() {
+            var _this = _super.call(this) || this;
+            _this._cameras = [];
+            _this._frameId = 0;
+            _this._rootChildren = [];
+            var mainCamera = _this.createNode().addComponent(QE.Camera);
+            mainCamera.setAspect(1280 / 720);
+            mainCamera.setOrthoWidth(1280);
+            mainCamera.setOrthoHeight(720);
+            mainCamera.setCameraType(0 /* Perspective */);
+            QE.Camera.MainCamera = mainCamera;
+            _this._mainCamera = mainCamera;
+            _this._cameras = [mainCamera];
+            return _this;
+        }
+        Object.defineProperty(Scene3D.prototype, "children", {
+            get: function () {
+                return this._rootChildren;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Scene3D.prototype.createNode = function (parent) {
+            var node = new QE.GameObject();
+            var transform = node.transform;
+            this._rootChildren.push(node);
+            if (parent) {
+                transform.parent = parent;
+            }
+            return node;
+        };
+        Scene3D.prototype.insertNode = function (node, index) {
+            var children = this._rootChildren;
+            if (QE.__QE_DEBUG__ && children.indexOf(node) !== -1) {
+                console.error('node already in the scene');
+            }
+            if (index !== undefined) {
+                if (QE.__QE_DEBUG__) {
+                    console.assert(!isNaN(index) && typeof (index) === 'number', 'the index is error' + index);
+                }
+                if (index < 0 || index >= children.length) {
+                    console.error('insert node failed. the index is error: ' + index);
+                    return;
+                }
+                children.splice(index, 0, node);
+            }
+            else {
+                children.push(node);
+            }
+        };
+        Scene3D.prototype.removeNode = function (node) {
+            var children = this._rootChildren;
+            if (QE.__QE_DEBUG__ && children.indexOf(node) === -1) {
+                console.error('node not in the scene');
+            }
+            children.splice(children.indexOf(node), 1);
+        };
+        Scene3D.prototype.onResize = function (w, h) {
+            var mainCamera = this._mainCamera;
+            if (mainCamera) {
+                mainCamera.setAspect(w / h);
+                mainCamera.setOrthoWidth(w);
+                mainCamera.setOrthoHeight(h);
+            }
+        };
+        Scene3D.prototype.render = function () {
+            var cameras = this._cameras;
+            for (var i = 0, len = cameras.length; i < len; i++) {
+                var camera = cameras[i];
+                this._currentCamera = camera;
+                camera.renderContext.doRender();
+            }
+            this._currentCamera = null;
+            QE.RenderSystem.instance.setRenderTarget(null);
+            this._frameId++;
+        };
+        Scene3D.prototype.update = function (deltaTime) {
+            QE.Component.load();
+            QE.Component.update(deltaTime);
+            var children = this._rootChildren;
+            // 更新动画?
+            for (var i = 0, len = children.length; i < len; i++) {
+                children[i].transform.update(true, true);
+            }
+        };
+        return Scene3D;
+    }(QE.HashObject));
+    QE.Scene3D = Scene3D;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var SceneManager = /** @class */ (function () {
+        function SceneManager() {
+            SceneManager._sInstance = this;
+            // 创建默认场景
+            this._currentScene = SceneManager.createScene();
+        }
+        Object.defineProperty(SceneManager, "instance", {
+            get: function () {
+                if (!SceneManager._sInstance) {
+                    SceneManager._sInstance = new SceneManager();
+                }
+                return this._sInstance;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SceneManager.prototype, "currentScene", {
+            get: function () {
+                return this._currentScene;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        SceneManager.createScene = function () {
+            return new QE.Scene3D();
+        };
+        SceneManager.prototype.init = function () {
+        };
+        return SceneManager;
+    }());
+    QE.SceneManager = SceneManager;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var Screen = /** @class */ (function () {
+        function Screen() {
+        }
+        Screen.screenWidth = 0;
+        Screen.screenHeight = 0;
+        return Screen;
+    }());
+    QE.Screen = Screen;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    /*
+       1-------2
+      /|      /|
+     / |     / |
+    5-------4  |
+    |  0----|--3
+    | /     | /
+    |/      |/
+    6-------7
+    */
+    QE.CUBE_SIZE = 1.0;
+    QE.CUBE_HALF_SIZE = QE.CUBE_SIZE / 2.0;
+    QE.CubeMeshData = {
+        vertices: [
+            // front side
+            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            // back side
+            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            // left side
+            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            // right side
+            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            // up side
+            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            // down side
+            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
+            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
+        ],
+        colors: [
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+        ],
+        indices: [
+            // front
+            0, 1, 2,
+            0, 2, 3,
+            // back
+            4, 5, 6,
+            4, 6, 7,
+            // left
+            8, 9, 10,
+            8, 10, 11,
+            // right
+            12, 13, 14,
+            12, 14, 15,
+            // up
+            16, 17, 18,
+            16, 18, 19,
+            // down
+            20, 21, 22,
+            20, 22, 23
+        ],
+        normals: [
+            0, 0, 1,
+            0, 0, 1,
+            0, 0, 1,
+            0, 0, 1,
+            0, 0, -1,
+            0, 0, -1,
+            0, 0, -1,
+            0, 0, -1,
+            -1, 0, 0,
+            -1, 0, 0,
+            -1, 0, 0,
+            -1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+            0, 1, 0,
+            0, 1, 0,
+            0, 1, 0,
+            0, 1, 0,
+            0, -1, 0,
+            0, -1, 0,
+            0, -1, 0,
+            0, -1, 0
+        ],
+        uvs: [
+            0, 1,
+            1, 1,
+            1, 0,
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
+            0, 0,
+            0, 1,
+            1, 1,
+            1, 0,
+            0, 0
+        ]
+    };
+    var BuiltinResFactory = /** @class */ (function () {
+        function BuiltinResFactory() {
+        }
+        BuiltinResFactory.init = function (onFinished) {
+            var tex = new QE.Texture(this.BUILTIN_TEX_DEFAULT);
+            tex.mipmaps = 0;
+            tex.format = 4 /* RGBA */;
+            tex.usage = 1 /* STATIC */;
+            var pixels = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255];
+            tex.loadRawData((new Uint8Array(pixels)).buffer, 2, 2);
+            this._builtResMap[this.BUILTIN_TEX_DEFAULT] = tex;
+            var cubeMesh = new QE.Mesh();
+            this.createCube(cubeMesh);
+            this._builtResMap[this.BUILTIN_MESH_CUBE] = cubeMesh;
+            var sphereMesh = new QE.Mesh();
+            this.createSphere(sphereMesh);
+            this._builtResMap[this.BUILTIN_MESH_SPHERE] = sphereMesh;
+            if (onFinished) {
+                onFinished();
+            }
+        };
+        BuiltinResFactory.getDefaultTex = function () {
+            return this._builtResMap[this.BUILTIN_TEX_DEFAULT];
+        };
+        BuiltinResFactory.getCube = function () {
+            var mesh = new QE.Mesh();
+            this.createCube(mesh);
+            return mesh;
+        };
+        BuiltinResFactory.getSphere = function () {
+            var mesh = new QE.Mesh();
+            this.createSphere(mesh);
+            return mesh;
+        };
+        BuiltinResFactory.createCube = function (mesh) {
+            var subMesh = new QE.SubMesh();
+            mesh.addSubMesh(subMesh);
+            var posBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
+            posBuf.type = QE.gl.FLOAT;
+            posBuf.semantic = 1 /* POSITION */;
+            posBuf.vertexCount = QE.CubeMeshData.vertices.length;
+            posBuf.writeData((new Float32Array(QE.CubeMeshData.vertices)).buffer);
+            posBuf.bindBuffer();
+            var colBuf = QE.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, 1 /* STATIC */);
+            colBuf.type = QE.gl.UNSIGNED_BYTE;
+            colBuf.semantic = 5 /* DIFFUSE */;
+            colBuf.vertexCount = QE.CubeMeshData.colors.length;
+            colBuf.writeData((new Uint8Array(QE.CubeMeshData.colors)).buffer);
+            colBuf.bindBuffer();
+            var normalBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
+            normalBuf.type = QE.gl.FLOAT;
+            normalBuf.semantic = 4 /* NORMAL */;
+            normalBuf.vertexCount = QE.CubeMeshData.normals.length;
+            normalBuf.writeData((new Float32Array(QE.CubeMeshData.normals)).buffer);
+            normalBuf.bindBuffer();
+            var uvBuf = QE.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, 1 /* STATIC */);
+            uvBuf.type = QE.gl.FLOAT;
+            uvBuf.semantic = 7 /* TEXTURE_COORDINATES */;
+            normalBuf.vertexCount = QE.CubeMeshData.uvs.length;
+            uvBuf.writeData((new Float32Array(QE.CubeMeshData.uvs)).buffer);
+            uvBuf.bindBuffer();
+            var vertexData = [];
+            vertexData[0] = posBuf;
+            vertexData[1] = colBuf;
+            vertexData[2] = normalBuf;
+            vertexData[3] = uvBuf;
+            subMesh.vertexData = vertexData;
+            var indicesBuf = QE.WebGLBufferManager.instance.createIndexBuffer(QE.CubeMeshData.indices, 1 /* STATIC */, false);
+            indicesBuf.bindBuffer();
+            subMesh.indexData = indicesBuf;
+        };
+        BuiltinResFactory.createSphere = function (mesh) {
+            var NUM_SEGMENTS = 24;
+            var NUM_RINGS = 24;
+            var SPHERE_RADIUS = 1;
+            var subMesh = new QE.SubMesh();
+            mesh.addSubMesh(subMesh);
+            var deltaRingAngle = (Math.PI / NUM_RINGS);
+            var deltaSegAngle = (2 * Math.PI / NUM_SEGMENTS);
+            var verticeIndex = 0;
+            var vertices = [], normals = [], uvs = [], colors = [], indices = [];
+            var vCount = 0;
+            for (var ring = 0; ring <= NUM_RINGS; ring++) {
+                var r0 = SPHERE_RADIUS * Math.sin(ring * deltaRingAngle);
+                var y0 = SPHERE_RADIUS * Math.cos(ring * deltaRingAngle);
+                // Generate the group of segments for the current ring
+                for (var seg = 0; seg <= NUM_SEGMENTS; seg++) {
+                    var x0 = r0 * Math.sin(seg * deltaSegAngle);
+                    var z0 = r0 * Math.cos(seg * deltaSegAngle);
+                    // Add one vertex to the strip which makes up the sphere
+                    vertices[vCount * 3 + 0] = x0;
+                    vertices[vCount * 3 + 1] = y0;
+                    vertices[vCount * 3 + 2] = z0;
+                    var vNormal = new QE.Vector3(x0, y0, z0).normalize();
+                    normals[vCount * 3 + 0] = vNormal.x;
+                    normals[vCount * 3 + 1] = vNormal.y;
+                    normals[vCount * 3 + 2] = vNormal.z;
+                    colors[vCount * 4 + 0] = 255.0;
+                    colors[vCount * 4 + 1] = 255.0;
+                    colors[vCount * 4 + 2] = 255.0;
+                    colors[vCount * 4 + 3] = 255.0;
+                    uvs[vCount * 2 + 0] = seg / NUM_SEGMENTS;
+                    uvs[vCount * 2 + 1] = ring / NUM_RINGS;
+                    if (ring !== NUM_RINGS) {
+                        // each vertex (except the last) has six indicies pointing to it
+                        indices[verticeIndex * 6 + 0] = verticeIndex + NUM_SEGMENTS + 1;
+                        indices[verticeIndex * 6 + 1] = verticeIndex;
+                        indices[verticeIndex * 6 + 2] = verticeIndex + NUM_SEGMENTS;
+                        indices[verticeIndex * 6 + 3] = verticeIndex + NUM_SEGMENTS + 1;
+                        indices[verticeIndex * 6 + 4] = verticeIndex + 1;
+                        indices[verticeIndex * 6 + 5] = verticeIndex;
+                        verticeIndex++;
+                    }
+                    vCount++;
+                }
+                // end for seg
+            } // end for ring
+            var posBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
+            posBuf.type = QE.gl.FLOAT;
+            posBuf.semantic = 1 /* POSITION */;
+            posBuf.vertexCount = vertices.length;
+            posBuf.writeData((new Float32Array(vertices)).buffer);
+            posBuf.bindBuffer();
+            var colorBuf = QE.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, 1 /* STATIC */);
+            colorBuf.type = QE.gl.UNSIGNED_BYTE;
+            colorBuf.semantic = 5 /* DIFFUSE */;
+            colorBuf.vertexCount = colors.length;
+            colorBuf.writeData((new Uint8Array(colors)).buffer);
+            colorBuf.bindBuffer();
+            var normalBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
+            normalBuf.type = QE.gl.FLOAT;
+            normalBuf.semantic = 4 /* NORMAL */;
+            normalBuf.vertexCount = normals.length;
+            normalBuf.writeData((new Float32Array(normals)).buffer);
+            normalBuf.bindBuffer();
+            var uvBuf = QE.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, 1 /* STATIC */);
+            uvBuf.type = QE.gl.FLOAT;
+            uvBuf.semantic = 7 /* TEXTURE_COORDINATES */;
+            normalBuf.vertexCount = uvs.length;
+            uvBuf.writeData((new Float32Array(uvs)).buffer);
+            uvBuf.bindBuffer();
+            var vertexData = [];
+            vertexData[0] = posBuf;
+            vertexData[1] = colorBuf;
+            vertexData[2] = normalBuf;
+            vertexData[3] = uvBuf;
+            subMesh.vertexData = vertexData;
+            var indicesBuf = QE.WebGLBufferManager.instance.createIndexBuffer(indices, 1 /* STATIC */, false);
+            indicesBuf.bindBuffer();
+            subMesh.indexData = indicesBuf;
+        };
+        BuiltinResFactory.BUILTIN_TEX_DEFAULT = '__builtin_tex_default.png';
+        BuiltinResFactory.BUILTIN_MESH_CUBE = '__builtin_mesh_cube.mesh';
+        BuiltinResFactory.BUILTIN_MESH_SPHERE = '__builtin_mesh_sphere.mesh';
+        BuiltinResFactory._builtResMap = {};
+        return BuiltinResFactory;
+    }());
+    QE.BuiltinResFactory = BuiltinResFactory;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    /**
+     * 资源类型
+     */
+    var ResType;
+    (function (ResType) {
+        ResType[ResType["Texture"] = 0] = "Texture";
+        ResType[ResType["TEXT"] = 1] = "TEXT";
+        ResType[ResType["BINARY"] = 2] = "BINARY";
+        ResType[ResType["FBX"] = 3] = "FBX";
+        ResType[ResType["MATERIAL"] = 4] = "MATERIAL";
+        ResType[ResType["SHADER"] = 5] = "SHADER";
+        ResType[ResType["SCENE"] = 6] = "SCENE";
+        ResType[ResType["ANIM"] = 7] = "ANIM";
+        ResType[ResType["FONT"] = 8] = "FONT";
+        ResType[ResType["PREFAB"] = 9] = "PREFAB"; // 预设资源
+    })(ResType = QE.ResType || (QE.ResType = {}));
+    var ExtNameMap = {
+        '.png': ResType.Texture,
+        '.jpg': ResType.Texture,
+        '.jpeg': ResType.Texture,
+        '.txt': ResType.TEXT,
+        '.bin': ResType.BINARY,
+        '.fbx': ResType.FBX,
+        '.mat': ResType.MATERIAL,
+        '.shader': ResType.SHADER,
+        '.scene': ResType.SCENE,
+        '.anim': ResType.ANIM,
+        '.font': ResType.FONT,
+        '.prefab': ResType.PREFAB,
+        'fallback': ResType.BINARY
+    };
+    function extNameToResType(extName) {
+        var type = ExtNameMap[extName];
+        if (type == null) {
+            type = ExtNameMap['fallback'];
+        }
+        return type;
+    }
+    function extname(path) {
+        // 文件扩展名匹配正则
+        var reg = /\.[^\.]+$/;
+        var matches = reg.exec(path);
+        if (matches) {
+            return matches[0];
+        }
+        return '';
+    }
+    QE.extname = extname;
+    var ResourceManager = /** @class */ (function () {
+        function ResourceManager() {
+        }
+        ResourceManager.get = function (path) {
+            var item = this._resMap[path];
+            if (item && item.state === 2 /* Loaded */) {
+                return item.res;
+            }
+            return null;
+        };
+        ResourceManager.load = function (path, onProgress) {
+            return __awaiter(this, void 0, void 0, function () {
+                var res, ext, loader, resRequest;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            res = this.get(path);
+                            if (res) {
+                                return [2 /*return*/, res];
+                            }
+                            ext = extname(path);
+                            loader = this._loaderMap[ext];
+                            if (!loader) {
+                                console.error('assets loader is not found: ' + path);
+                                return [2 /*return*/, null];
+                            }
+                            resRequest = this._resMap[path];
+                            if (!resRequest) {
+                                resRequest = {
+                                    state: 0 /* UnLoaded */,
+                                    listeners: []
+                                };
+                                this._resMap[path] = resRequest;
+                            }
+                            return [4 /*yield*/, new Promise(function (resolve, reject) {
+                                    resRequest.listeners.push(function (error, data) {
+                                        if (error) {
+                                            console.error(error);
+                                            reject(null);
+                                            return;
+                                        }
+                                        if (!data) {
+                                            console.error('file not exist');
+                                            reject(null);
+                                            return;
+                                        }
+                                        resolve(data);
+                                    });
+                                    if (resRequest.state === 1 /* Loading */) {
+                                        return;
+                                    }
+                                    resRequest.state = 1 /* Loading */;
+                                    loader.load(path, function (error, data) {
+                                        resRequest.state = 2 /* Loaded */;
+                                        resRequest.listeners.forEach(function (listener) {
+                                            listener(error, data);
+                                        });
+                                        resRequest.listeners.length = 0;
+                                    }, onProgress);
+                                })];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
+            });
+        };
+        ResourceManager.unload = function (url) {
+            var res = this._resMap[url];
+            if (!res) {
+                return;
+            }
+            delete this._resMap[url];
+            res.res.destroy();
+        };
+        ResourceManager.removeUnusedResources = function () {
+        };
+        ResourceManager.init = function (onFinished) {
+            this.setLoader(['.png', '.jpg', '.jpeg'], QE.TextureLoader.instance);
+            this.setLoader(['.txt', '.xml', '.json', '.plist', '.fnt', '.atlas'], QE.TextResourceLoader.instance);
+            this.setLoader(['.mesh'], QE.MeshLoader.instance);
+            this.setLoader(['.prefab'], QE.PrefabLoader.instance);
+            this.setLoader(['.model'], QE.ModelLoader.instance);
+            QE.BuiltinResFactory.init(onFinished);
+        };
+        ResourceManager.setLoader = function (extName, loader) {
+            var _this = this;
+            if (!Array.isArray(extName)) {
+                extName = [extName];
+            }
+            extName.forEach(function (value) {
+                _this._loaderMap[value] = loader;
+            });
+        };
+        ResourceManager._loaderMap = {};
+        ResourceManager._resMap = {};
+        return ResourceManager;
+    }());
+    QE.ResourceManager = ResourceManager;
+})(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+var QE;
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+(function (QE) {
+    var RefObj = /** @class */ (function (_super) {
+        __extends(RefObj, _super);
+        function RefObj() {
+            var _this = _super.call(this) || this;
+            _this._retainCount = 1;
+            return _this;
+        }
+        Object.defineProperty(RefObj.prototype, "retainCount", {
+            get: function () {
+                return this._retainCount;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        RefObj.prototype.retain = function () {
+            this._retainCount++;
+        };
+        RefObj.prototype.release = function () {
+            console.assert(this._retainCount > 0, 'retain count must greater than 0');
+            this._retainCount--;
+            if (this._retainCount === 0) {
+                this.destroy();
+            }
+        };
+        return RefObj;
+    }(QE.HashObject));
+    QE.RefObj = RefObj;
+})(QE || (QE = {}));
+///<reference path="../msic/HashObject.ts" />
+///<reference path="ResourceManager.ts" />
+///<reference path="../msic/RefObj.ts"/>
+var QE;
+///<reference path="../msic/HashObject.ts" />
+///<reference path="ResourceManager.ts" />
+///<reference path="../msic/RefObj.ts"/>
+(function (QE) {
+    var ResourceDependence = /** @class */ (function (_super) {
+        __extends(ResourceDependence, _super);
+        function ResourceDependence(mainRes, subRes) {
+            var _this = _super.call(this) || this;
+            _this._mainRes = mainRes;
+            _this._subRes = subRes;
+            _this._listener = new QE.QEListener(_this, ResourceDependence.prototype._onLoaded);
+            return _this;
+        }
+        ResourceDependence.prototype.getMainRes = function () {
+            return this._mainRes;
+        };
+        ResourceDependence.prototype.getSubRes = function () {
+            return this._subRes;
+        };
+        ResourceDependence.prototype.destroy = function () {
+            _super.prototype.destroy.call(this);
+            this._listener = null;
+            this._subRes = null;
+            this._mainRes = null;
+        };
+        ResourceDependence.prototype._onLoaded = function () {
+            this._mainRes._removeDependence(this._subRes);
+        };
+        return ResourceDependence;
+    }(QE.HashObject));
+    // Font,Shader,Material,Mesh,Skeleton,Texture,Audio,Video
+    var Resource = /** @class */ (function (_super) {
+        __extends(Resource, _super);
+        function Resource(name, group) {
+            var _this = _super.call(this) || this;
+            _this._dependenceFiles = [];
+            _this._state = 0 /* UnLoaded */;
+            _this._name = name;
+            _this._group = group;
+            return _this;
+        }
+        Object.defineProperty(Resource.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            set: function (name) {
+                this._name = name;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Resource.prototype, "priority", {
+            get: function () {
+                return this._priority;
+            },
+            set: function (priority) {
+                this._priority = priority;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Resource.prototype, "state", {
+            get: function () {
+                return this._state;
+            },
+            set: function (val) {
+                this._state = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Resource.prototype, "isComplete", {
+            get: function () {
+                return this._state === 2 /* Loaded */;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Resource.prototype.copy = function (object) {
+            _super.prototype.copy.call(this, object);
+        };
+        Resource.prototype._addDependence = function (subResource) {
+            var dep = new ResourceDependence(this, subResource);
+            this._dependenceFiles.push(dep);
+        };
+        Resource.prototype._removeDependence = function (pSubResource) {
+            var deps = this._dependenceFiles;
+            for (var i = 0, len = deps.length; i < len; i++) {
+                var dep = deps[i];
+                if (dep.instanceId === pSubResource.instanceId) {
+                    dep.destroy();
+                    deps.splice(i, 1);
+                    break;
+                }
+            }
+            if (this._state === 1 /* Loading */ && !this._hasDependencies()) {
+            }
+        };
+        Resource.prototype._removeAllDependence = function () {
+            var deps = this._dependenceFiles;
+            for (var k in deps) {
+                deps[k].destroy();
+            }
+            this._dependenceFiles.length = 0;
+        };
+        Resource.prototype._hasDependencies = function () {
+            return this._dependenceFiles.length > 0;
+        };
+        return Resource;
+    }(QE.RefObj));
+    QE.Resource = Resource;
+})(QE || (QE = {}));
+///<reference path="Resource.ts"/>
+var QE;
+///<reference path="Resource.ts"/>
+(function (QE) {
+    var TextResource = /** @class */ (function (_super) {
+        __extends(TextResource, _super);
+        function TextResource() {
+            var _this = _super.call(this) || this;
+            _this._text = '';
+            return _this;
+        }
+        Object.defineProperty(TextResource.prototype, "text", {
+            get: function () {
+                return this._text;
+            },
+            set: function (txt) {
+                this._text = txt;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        TextResource.prototype.clone = function () {
+            var obj = new TextResource();
+            obj._text = this._text;
+            return obj;
+        };
+        return TextResource;
+    }(QE.Resource));
+    QE.TextResource = TextResource;
+})(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+var QE;
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+(function (QE) {
+    var MeshLoader = /** @class */ (function () {
+        function MeshLoader() {
+        }
+        MeshLoader.prototype.load = function (path, onEnd, onProgress) {
+            var res = new QE.Mesh();
+            QE.Http.loadJsonAsync(path)
+                .then(function (value) {
+                QE.MeshSerializer.serializeByJson(value, res);
+                if (onEnd) {
+                    onEnd(null, res);
+                }
+            })
+                .catch(function (reason) {
+                if (onEnd) {
+                    onEnd(reason);
+                }
+            });
+            return res;
+        };
+        MeshLoader.instance = new MeshLoader();
+        return MeshLoader;
+    }());
+    QE.MeshLoader = MeshLoader;
+})(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+var QE;
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+(function (QE) {
+    var ModelLoader = /** @class */ (function () {
+        function ModelLoader() {
+        }
+        ModelLoader.prototype.load = function (path, onEnd, onProgress) {
+            var res = {
+                metadata: '',
+                meshes: []
+            };
+            QE.Http.loadTxtAsync(path)
+                .then(function (value) {
+                try {
+                    res = JSON.parse(value);
+                    if (onEnd) {
+                        onEnd(null, res);
+                    }
+                }
+                catch (e) {
+                    console.error(e);
+                    if (onEnd) {
+                        onEnd(null, res);
+                    }
+                }
+            })
+                .catch(function (reason) {
+                if (onEnd) {
+                    onEnd(reason);
+                }
+            });
+            return res;
+        };
+        ModelLoader.instance = new ModelLoader();
+        return ModelLoader;
+    }());
+    QE.ModelLoader = ModelLoader;
+})(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+var QE;
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+(function (QE) {
+    var PrefabLoader = /** @class */ (function () {
+        function PrefabLoader() {
+        }
+        PrefabLoader.prototype.load = function (path, onEnd, onProgress) {
+            var res = new QE.GameObject();
+            QE.Http.loadJsonAsync(path)
+                .then(function (value) {
+                if (onEnd) {
+                    onEnd(null, res);
+                }
+            })
+                .catch(function (reason) {
+                if (onEnd) {
+                    onEnd(reason);
+                }
+            });
+            return res;
+        };
+        PrefabLoader.instance = new PrefabLoader();
+        return PrefabLoader;
+    }());
+    QE.PrefabLoader = PrefabLoader;
+})(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+var QE;
+(function (QE) {
+    var TextResourceLoader = /** @class */ (function () {
+        function TextResourceLoader() {
+        }
+        TextResourceLoader.prototype.load = function (path, onEnd, onProgress) {
+            var res = new QE.TextResource();
+            QE.Http.loadTxtAsync(path)
+                .then(function (value) {
+                res.text = value;
+                if (onEnd) {
+                    onEnd(null, res);
+                }
+            })
+                .catch(function (reason) {
+                if (onEnd) {
+                    onEnd(reason);
+                }
+            });
+            return res;
+        };
+        TextResourceLoader.instance = new TextResourceLoader();
+        return TextResourceLoader;
+    }());
+    QE.TextResourceLoader = TextResourceLoader;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var TextureLoader = /** @class */ (function () {
+        function TextureLoader() {
+        }
+        TextureLoader.prototype.load = function (path, onEnd, onProgress) {
+            var res = new QE.Texture();
+            QE.Http.loadImageAsync(path)
+                .then(function (value) {
+                res.loadImage(value);
+                if (onEnd) {
+                    onEnd(null, res);
+                }
+            })
+                .catch(function (reason) {
+                if (onEnd) {
+                    onEnd(reason);
+                }
+            });
+            return res;
+        };
+        TextureLoader.instance = new TextureLoader();
+        return TextureLoader;
+    }());
+    QE.TextureLoader = TextureLoader;
+})(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+var QE;
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+(function (QE) {
+    var PrefabSerializer = /** @class */ (function () {
+        function PrefabSerializer() {
+        }
+        PrefabSerializer.serializeWithJson = function (jsonData) {
+        };
+        PrefabSerializer.serializeWithBinary = function () {
+        };
+        PrefabSerializer.deserializeToJson = function () {
+        };
+        PrefabSerializer.deserializeToBinary = function () {
+        };
+        return PrefabSerializer;
+    }());
+    QE.PrefabSerializer = PrefabSerializer;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var AABB = /** @class */ (function () {
+        function AABB() {
+        }
+        return AABB;
+    }());
+    QE.AABB = AABB;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    /**
+     * ��ɫ
+     */
+    var Color = /** @class */ (function () {
+        function Color(r, g, b, a) {
+            if (r === void 0) { r = 255; }
+            if (g === void 0) { g = 255; }
+            if (b === void 0) { b = 255; }
+            if (a === void 0) { a = 255; }
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+        }
+        Object.defineProperty(Color, "white", {
+            get: function () {
+                return new Color();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Color, "black", {
+            get: function () {
+                return new Color(0, 0, 0, 255);
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Color, "red", {
+            get: function () {
+                return new Color(255, 0, 0, 255);
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Color, "green", {
+            get: function () {
+                return new Color(0, 255, 0, 255);
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Color, "blue", {
+            get: function () {
+                return new Color(0, 0, 255, 255);
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Color.colorToHex = function (color) {
+            return color.r << 16 | color.g << 8 | color.b;
+        };
+        Color.colorToString = function (color) {
+            return '#' + Color.colorToHex(color).toString(16);
+        };
+        Color.stringToColor = function (colorString) {
+            var hex = parseInt(colorString, 16);
+            return new Color(hex >> 16 & 0xff, hex >> 8 & 0xff, hex & 0xff);
+        };
+        Color.prototype.clone = function (oriangl) {
+            return new Color(oriangl.r, oriangl.g, oriangl.b, oriangl.a);
+        };
+        return Color;
+    }());
+    QE.Color = Color;
 })(QE || (QE = {}));
 ///<reference path="../object/GameObject.ts" />
 var QE;
@@ -2959,289 +4340,964 @@ var QE;
     }());
     QE.Vector4 = Vector4;
 })(QE || (QE = {}));
+///<reference path="../assets/Resource.ts"/>
 var QE;
+///<reference path="../assets/Resource.ts"/>
 (function (QE) {
-    var Sound = /** @class */ (function () {
-        function Sound() {
+    var MeshFilter = /** @class */ (function (_super) {
+        __extends(MeshFilter, _super);
+        function MeshFilter() {
+            return _super !== null && _super.apply(this, arguments) || this;
         }
-        return Sound;
-    }());
-    QE.Sound = Sound;
+        Object.defineProperty(MeshFilter.prototype, "mesh", {
+            get: function () {
+                return this._mesh;
+            },
+            set: function (mesh) {
+                this._mesh = mesh;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return MeshFilter;
+    }(QE.Component));
+    QE.MeshFilter = MeshFilter;
+    /**
+     * 网格
+     */
+    var Mesh = /** @class */ (function (_super) {
+        __extends(Mesh, _super);
+        function Mesh() {
+            var _this = _super.call(this) || this;
+            /**
+             * 子网格数组
+             */
+            _this.subMeshes = [];
+            return _this;
+        }
+        Object.defineProperty(Mesh.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            set: function (val) {
+                this._name = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Mesh.prototype.copy = function (object) {
+            _super.prototype.copy.call(this, object);
+        };
+        Mesh.prototype.clone = function () {
+            var m = new Mesh();
+            m.copy(this);
+            return m;
+        };
+        Mesh.prototype.addSubMesh = function (subMesh) {
+            if (QE.__QE_DEBUG__) {
+                console.assert(subMesh != null);
+                console.assert(this.subMeshes.indexOf(subMesh) === -1);
+            }
+            subMesh.parent = this;
+            this.subMeshes.push(subMesh);
+        };
+        Mesh.prototype.createSubMesh = function (name) {
+            // TODO: implement here
+            return undefined;
+        };
+        return Mesh;
+    }(QE.Resource));
+    QE.Mesh = Mesh;
 })(QE || (QE = {}));
 var QE;
 (function (QE) {
-    var Video = /** @class */ (function () {
-        function Video() {
+    var MeshSerializer = /** @class */ (function () {
+        function MeshSerializer() {
         }
-        return Video;
+        MeshSerializer.serializeByJson = function (meshData, mesh) {
+            mesh.id = meshData.id;
+            mesh.name = meshData.name;
+            var vertices = [];
+            var colors = [];
+            var normals = [];
+            var uvs = [];
+            var indices = [];
+            // load mesh info
+            var position = meshData['position'] || [];
+            for (var i = 0; i < position.length; i += 3) {
+                vertices.push(position[i]);
+                vertices.push(position[i + 1]);
+                vertices.push(-position[i + 2]);
+            }
+            var color = meshData['color'] || [];
+            for (var i = 0; i < Math.floor(position.length / 3); i++) {
+                colors.push(255);
+                colors.push(255);
+                colors.push(255);
+                colors.push(255);
+            }
+            var normal = meshData['normal'] || [];
+            for (var i = 0; i < normal.length; i += 3) {
+                var p = normal[i];
+                normals.push(normal[i]);
+                normals.push(normal[i + 1]);
+                normals.push(normal[i + 2]);
+            }
+            var uv = meshData['uv'] || [];
+            for (var i = 0; i < uv.length; i += 2) {
+                uvs.push(uv[i]);
+                uvs.push(uv[i + 1]);
+            }
+            var posBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
+            posBuf.type = QE.gl.FLOAT;
+            posBuf.semantic = 1 /* POSITION */;
+            posBuf.vertexCount = vertices.length / 3;
+            posBuf.writeData((new Float32Array(vertices)).buffer);
+            posBuf.bindBuffer();
+            var colBuf = QE.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, 1 /* STATIC */);
+            colBuf.type = QE.gl.UNSIGNED_BYTE;
+            colBuf.semantic = 5 /* DIFFUSE */;
+            colBuf.vertexCount = colors.length;
+            colBuf.writeData((new Uint8Array(colors)).buffer);
+            colBuf.bindBuffer();
+            var normalBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
+            normalBuf.type = QE.gl.FLOAT;
+            normalBuf.semantic = 4 /* NORMAL */;
+            normalBuf.vertexCount = normals.length;
+            normalBuf.writeData((new Float32Array(normals)).buffer);
+            normalBuf.bindBuffer();
+            var uvBuf = QE.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, 1 /* STATIC */);
+            uvBuf.type = QE.gl.FLOAT;
+            uvBuf.semantic = 7 /* TEXTURE_COORDINATES */;
+            uvBuf.vertexCount = uvs.length;
+            uvBuf.writeData((new Float32Array(uvs)).buffer);
+            uvBuf.bindBuffer();
+            var sharedVertexData = [];
+            sharedVertexData[0] = posBuf;
+            sharedVertexData[1] = colBuf;
+            sharedVertexData[2] = normalBuf;
+            sharedVertexData[3] = uvBuf;
+            mesh.sharedVertexData = sharedVertexData;
+            var subMeshes = meshData['subMeshes'];
+            for (var i = 0, len = subMeshes.length; i < len; i++) {
+                var indicesData = meshData['subMeshes'][0]['indices'];
+                for (var j = 0; j < indicesData.length; j++) {
+                    indices.push(indicesData[i]);
+                }
+                var subMesh = new QE.SubMesh();
+                // 共享mesh顶点数据
+                subMesh.useSharedVertices = true;
+                // TODO: 解析material
+                var defmaterial = QE.Material.getDefaultCubeMaterial();
+                // 子网格索引数据
+                var indicesBuf = QE.WebGLBufferManager.instance.createIndexBuffer(indices, 1 /* STATIC */, false);
+                indicesBuf.bindBuffer();
+                subMesh.indexData = indicesBuf;
+                mesh.addSubMesh(subMesh);
+            }
+        };
+        MeshSerializer.loadModel = function (modelData) {
+            var currentScene = QE.SceneManager.instance.currentScene;
+            var rootNodes = [];
+            // export interface ModelData {
+            //    metadata: string;
+            //    materials?: string[];
+            //    textures?: string[];
+            //    skeleton?: SkeletonData[];
+            //    poses?: PoseData[];
+            //    hierarchy?: BoneData[];
+            //    meshes: MeshData[];
+            //    animations?: Object[];
+            // }
+            var hierarchyData = modelData.hierarchy;
+            var hierarchy = {};
+            for (var i = 0, len = hierarchyData.length; i < len; i++) {
+                var boneData = hierarchyData[i];
+                console.assert(!!!hierarchy[boneData.id], '重复的骨骼id: ' + boneData.id);
+                var parentBoneNode = hierarchy[boneData.parentId];
+                var boneNode = void 0;
+                // 存在父节点
+                if (parentBoneNode) {
+                    boneNode = currentScene.createNode(parentBoneNode.transform);
+                }
+                else {
+                    boneNode = currentScene.createNode();
+                    // root node
+                    rootNodes.push(boneNode);
+                }
+                boneNode.name = boneData.name;
+                hierarchy[boneData.id] = boneNode;
+                var boneTransform = boneNode.transform;
+                boneTransform.localPosition = new QE.Vector3(boneData.position[0], boneData.position[1], boneData.position[2]);
+                boneTransform.localScale = new QE.Vector3(boneData.scale[0], boneData.scale[1], boneData.scale[2]);
+                var eulerAngle = new QE.Vector3(boneData.eulerAngle[0], boneData.eulerAngle[1], boneData.eulerAngle[2]);
+                var tempQ = boneTransform.localRotation.fromEulerAngle(eulerAngle);
+                boneTransform.localRotation = tempQ;
+            }
+            // bind pose
+            var poseDatas = modelData.poses || [];
+            for (var i = 0, len = poseDatas.length; i < len; i++) {
+                var poseData = poseDatas[i];
+                if (poseData.isBindPose) {
+                    var isCharacter = poseData.isCharacter;
+                    var poseItems = poseData.items;
+                    var poseItemDict = {};
+                    for (var ii = 0, len2 = poseItems.length; ii < len2; ii++) {
+                        poseItemDict[poseItems[ii].id] = poseItems[ii];
+                    }
+                    for (var ii = 0, len2 = hierarchyData.length; ii < len2; ii++) {
+                        var data = hierarchyData[ii];
+                        var poseItem = poseItemDict[data.id];
+                        if (!poseItem) {
+                            continue;
+                        }
+                        var bindNode = hierarchy[data.id];
+                        if (!bindNode) {
+                            console.error('bind pose error. bone not find: ' + poseItem.id);
+                            continue;
+                        }
+                        var matrix = poseItem.matrix;
+                        var mat = new QE.Matrix4();
+                        mat.set(matrix[0], matrix[4], matrix[8], matrix[12], matrix[1], matrix[5], matrix[9], matrix[13], matrix[2], matrix[6], matrix[10], matrix[14], matrix[3], matrix[7], matrix[11], matrix[15]);
+                        if (poseItem.isLocalMatrix) {
+                            // bindNode.transform.position = mat.getTrans();
+                            var q = new QE.Quaternion();
+                            q.FromRotationMatrix(mat);
+                            // bindNode.transform.localRotation = bindNode.transform.localRotation.multiply(q);
+                        }
+                        else {
+                            // bindNode.transform.position = mat.getTrans();
+                            var q = new QE.Quaternion();
+                            q.FromRotationMatrix(mat);
+                            bindNode.transform.rotation = bindNode.transform.localRotation.multiply(q);
+                        }
+                    }
+                }
+            }
+            for (var i = 0, len = hierarchyData.length; i < len; i++) {
+                var boneData = hierarchyData[i];
+                var boneNode = hierarchy[boneData.id];
+                var boneTransform = boneNode.transform;
+                console.log('load bone {' + boneData.name + '}. pos: ' + JSON.stringify(boneTransform.localPosition) +
+                    '  \n euler: ' + JSON.stringify(boneTransform.localEulerAngle) +
+                    '  \n rot: ' + JSON.stringify(boneTransform.localRotation));
+            }
+            // add mesh component
+            var meshes = modelData.meshes;
+            for (var i = 0, len = meshes.length; i < len; i++) {
+                var meshData = meshes[i];
+                var meshNode = hierarchy[meshData.id];
+                if (!meshNode) {
+                    console.error('bind pose error. bone not find: ' + meshData.id);
+                    continue;
+                }
+                meshNode.name = meshData.name;
+                var mesh = new QE.Mesh();
+                MeshSerializer.serializeByJson(meshData, mesh);
+                var meshFilter = meshNode.addComponent(QE.MeshFilter);
+                meshFilter.mesh = mesh;
+                var meshRender = meshNode.addComponent(QE.MeshRender);
+                meshRender.mesh = mesh;
+                meshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
+            }
+            // load animation
+            var animations = modelData.animations || [];
+            if (animations && animations.length > 0) {
+                // 创建动画控制器
+                var animController = new QE.AnimatorController();
+                for (var i = 0, len = animations.length; i < len; i++) {
+                    var animData = animations[i];
+                    var clip = parseAnimationClip(animData);
+                    animController.addClip(clip);
+                }
+                // 添加Animator组件
+                var animator = rootNodes[0].addComponent(QE.Animator);
+                animator.animController = animController;
+            }
+            // animator.play("Take 001");
+            return rootNodes[0];
+        };
+        return MeshSerializer;
     }());
-    QE.Video = Video;
+    QE.MeshSerializer = MeshSerializer;
+    function parseAnimationClip(animData) {
+        // 创建动画片段
+        var posClip = new QE.AnimationClip();
+        posClip.name = 'Take 001';
+        var maxTime = 0;
+        for (var nodePath in animData) {
+            var nodeCurveData = animData[nodePath];
+            for (var curveName in nodeCurveData) {
+                if (curveName === '') {
+                    continue;
+                }
+                var curveData = nodeCurveData[curveName];
+                var curve = new QE.AnimationCurve();
+                for (var i = 0, len = curveData.length; i < len; i++) {
+                    var keyFrameData = curveData[i];
+                    var reverse = 1;
+                    if (curveName.indexOf('localEulerAngle.z') > -1 || curveName.indexOf('localPosition.z') > -1) {
+                        reverse = -1;
+                    }
+                    curve.addKeyFrameByValue(keyFrameData['time'], reverse * keyFrameData['value']);
+                    if (keyFrameData['time'] > maxTime) {
+                        maxTime = keyFrameData['time'];
+                    }
+                }
+                if (nodePath) {
+                    posClip.addCurve(nodePath, QE.Reflection.Type.typeOf(QE.Transform), curveName, curve);
+                }
+                else {
+                    posClip.addCurve('RootNode', QE.Reflection.Type.typeOf(QE.Transform), curveName, curve);
+                }
+            }
+        }
+        posClip.length = maxTime;
+        return posClip;
+    }
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var SubMesh = /** @class */ (function () {
+        function SubMesh() {
+        }
+        Object.defineProperty(SubMesh.prototype, "materialName", {
+            get: function () {
+                return this._materialName;
+            },
+            set: function (val) {
+                this._materialName = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * 复制一个新的SubMesh
+         * @param newName 新的SubMesh名称
+         * @param parentMesh 新的Submesh父Mesh, 如果为空, 父Mesh为被克隆的Mesh父Mesh
+         */
+        SubMesh.prototype.clone = function (newName, parentMesh) {
+            if (parentMesh) {
+                var newSubMesh = parentMesh.createSubMesh(newName);
+            }
+            else {
+                var newSubMesh = this.parent.createSubMesh(newName);
+            }
+        };
+        SubMesh.prototype.getRenderOperation = function (renderOp) {
+            renderOp.indexBuffer = this.indexData;
+            renderOp.renderOpType = this.renderOpType;
+            renderOp.vertexBuffers = this.useSharedVertices ? this.parent.sharedVertexData : this.vertexData;
+        };
+        return SubMesh;
+    }());
+    QE.SubMesh = SubMesh;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    function assert(cond, msg) {
+    }
+    QE.assert = assert;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var Dictionary = /** @class */ (function () {
+        function Dictionary(useOrderList) {
+            if (useOrderList === void 0) { useOrderList = false; }
+            this.data = {};
+            this.list = new Array();
+            if (useOrderList) {
+                this.list = new Array();
+            }
+        }
+        Dictionary.prototype.containsKey = function (key) {
+            if (this.data[key]) {
+                return true;
+            }
+            return false;
+        };
+        Dictionary.prototype.getValue = function (key) {
+            return this.data[key];
+        };
+        Dictionary.prototype.getKeys = function () {
+            return Object.keys(this.data);
+        };
+        Dictionary.prototype.getValues = function () {
+            return this.list;
+        };
+        Dictionary.prototype.add = function (key, value) {
+            this.data[key] = value;
+            if (this.list) {
+                this.list.push(value);
+            }
+        };
+        Dictionary.prototype.remove = function (key) {
+            if (this.list) {
+                var index = this.list.indexOf(this.data[key]);
+                if (index !== -1) {
+                    this.list.splice(index);
+                }
+            }
+            delete this.data[key];
+        };
+        Dictionary.prototype.dispose = function () {
+            delete this.data;
+            delete this.list;
+        };
+        return Dictionary;
+    }());
+    QE.Dictionary = Dictionary;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var QEListener = /** @class */ (function () {
+        function QEListener(listener, func) {
+            this._listener = listener;
+            this._func = func;
+        }
+        QEListener.prototype.onCall = function () {
+            this._func.call(this._listener);
+        };
+        return QEListener;
+    }());
+    QE.QEListener = QEListener;
+    var QEEvent = /** @class */ (function () {
+        function QEEvent() {
+            this._listeners = [];
+        }
+        QEEvent.prototype.add = function (listener) {
+            this._listeners.push(listener);
+        };
+        QEEvent.prototype.del = function (listener) {
+            var idx = this._listeners.indexOf(listener);
+            if (idx !== -1) {
+                this._listeners.splice(idx, 1);
+            }
+        };
+        QEEvent.prototype.clear = function () {
+            this._listeners = [];
+        };
+        QEEvent.prototype.dispatchEvent = function () {
+            var listeners = this._listeners;
+            for (var i = 0, len = listeners.length; i < len; i++) {
+                listeners[i].onCall();
+            }
+        };
+        return QEEvent;
+    }());
+    QE.QEEvent = QEEvent;
+    var QEListener1 = /** @class */ (function () {
+        function QEListener1(listener, func) {
+            this._listener = listener;
+            this._func = func;
+        }
+        QEListener1.prototype.onCall = function (p) {
+            this._func.call(this._listener, p);
+        };
+        return QEListener1;
+    }());
+    QE.QEListener1 = QEListener1;
+    var QEEvent1 = /** @class */ (function () {
+        function QEEvent1() {
+            this._listeners = [];
+        }
+        QEEvent1.prototype.add = function (listener) {
+            this._listeners.push(listener);
+        };
+        QEEvent1.prototype.del = function (listener) {
+            var idx = this._listeners.indexOf(listener);
+            if (idx !== -1) {
+                this._listeners.splice(idx, 1);
+            }
+        };
+        QEEvent1.prototype.clear = function () {
+            this._listeners = [];
+        };
+        QEEvent1.prototype.dispatchEvent = function (t) {
+            var listeners = this._listeners;
+            for (var i = 0, len = listeners.length; i < len; i++) {
+                listeners[i].onCall(t);
+            }
+        };
+        return QEEvent1;
+    }());
+    QE.QEEvent1 = QEEvent1;
+    var QEListener2 = /** @class */ (function () {
+        function QEListener2(listener, func) {
+            this._listener = listener;
+            this._func = func;
+        }
+        QEListener2.prototype.onCall = function (p1, p2) {
+            this._func.call(this._listener, p1, p2);
+        };
+        return QEListener2;
+    }());
+    QE.QEListener2 = QEListener2;
+    var QEEvent2 = /** @class */ (function () {
+        function QEEvent2() {
+            this._listeners = [];
+        }
+        QEEvent2.prototype.add = function (listener) {
+            this._listeners.push(listener);
+        };
+        QEEvent2.prototype.del = function (listener) {
+            var idx = this._listeners.indexOf(listener);
+            if (idx !== -1) {
+                this._listeners.splice(idx, 1);
+            }
+        };
+        QEEvent2.prototype.clear = function () {
+            this._listeners = [];
+        };
+        QEEvent2.prototype.dispatchEvent = function (p1, p2) {
+            var listeners = this._listeners;
+            for (var i = 0, len = listeners.length; i < len; i++) {
+                listeners[i].onCall(p1, p2);
+            }
+        };
+        return QEEvent2;
+    }());
+    QE.QEEvent2 = QEEvent2;
+    var QEListener3 = /** @class */ (function () {
+        function QEListener3(listener, func) {
+            this._listener = listener;
+            this._func = func;
+        }
+        QEListener3.prototype.onCall = function (p1, p2, p3) {
+            this._func.call(this._listener, p1, p2, p3);
+        };
+        return QEListener3;
+    }());
+    QE.QEListener3 = QEListener3;
+    var QEEvent3 = /** @class */ (function () {
+        function QEEvent3() {
+            this._listeners = [];
+        }
+        QEEvent3.prototype.add = function (listener) {
+            this._listeners.push(listener);
+        };
+        QEEvent3.prototype.del = function (listener) {
+            var idx = this._listeners.indexOf(listener);
+            if (idx !== -1) {
+                this._listeners.splice(idx, 1);
+            }
+        };
+        QEEvent3.prototype.clear = function () {
+            this._listeners = [];
+        };
+        QEEvent3.prototype.dispatchEvent = function (p1, p2, p3) {
+            var listeners = this._listeners;
+            for (var i = 0, len = listeners.length; i < len; i++) {
+                listeners[i].onCall(p1, p2, p3);
+            }
+        };
+        return QEEvent3;
+    }());
+    QE.QEEvent3 = QEEvent3;
+    var QEListener4 = /** @class */ (function () {
+        function QEListener4(listener, func) {
+            this._listener = listener;
+            this._func = func;
+        }
+        QEListener4.prototype.onCall = function (p1, p2, p3, p4) {
+            this._func.call(this._listener, p1, p2, p3, p4);
+        };
+        return QEListener4;
+    }());
+    QE.QEListener4 = QEListener4;
+    var QEEvent4 = /** @class */ (function () {
+        function QEEvent4() {
+            this._listeners = [];
+        }
+        QEEvent4.prototype.add = function (listener) {
+            this._listeners.push(listener);
+        };
+        QEEvent4.prototype.del = function (listener) {
+            var idx = this._listeners.indexOf(listener);
+            if (idx !== -1) {
+                this._listeners.splice(idx, 1);
+            }
+        };
+        QEEvent4.prototype.clear = function () {
+            this._listeners = [];
+        };
+        QEEvent4.prototype.dispatchEvent = function (p1, p2, p3, p4) {
+            var listeners = this._listeners;
+            for (var i = 0, len = listeners.length; i < len; i++) {
+                listeners[i].onCall(p1, p2, p3, p4);
+            }
+        };
+        return QEEvent4;
+    }());
+    QE.QEEvent4 = QEEvent4;
+    // ===================  Event4  ===================
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var Log = /** @class */ (function () {
+        function Log() {
+        }
+        Log.D = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            console.log.apply(this, arguments);
+        };
+        Log.I = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            console.info.apply(this, arguments);
+        };
+        Log.W = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            console.warn.apply(this, arguments);
+        };
+        Log.E = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            console.error.apply(this, arguments);
+        };
+        Log.F = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            console.error.apply(this, arguments);
+        };
+        return Log;
+    }());
+    QE.Log = Log;
 })(QE || (QE = {}));
 var QE;
 (function (QE) {
     /**
-     * @class
-     * @static
+     * 最小堆
      */
-    var Http = /** @class */ (function () {
-        function Http() {
+    var MinHeap = /** @class */ (function () {
+        function MinHeap(comparer) {
+            this._heap = [];
+            this._length = 0;
+            this._comparer = comparer;
         }
-        // 把参数data转为url查询参数
-        Http.getUrlParam = function (url, data) {
-            if (!data) {
-                return '';
-            }
-            var paramsStr = data instanceof Object ? Http.getQueryString(data) : data;
-            return (url.indexOf('?') !== -1) ? paramsStr : '?' + paramsStr;
-        };
-        // 获取ajax请求参数
-        Http.getQueryData = function (data) {
-            if (!data) {
-                return null;
-            }
-            if (typeof data === 'string') {
-                return data;
-            }
-            if (data instanceof FormData) {
-                return data;
-            }
-            return Http.getQueryString(data);
-        };
-        // 把对象转为查询字符串
-        Http.getQueryString = function (data) {
-            var paramsArr = [];
-            if (data instanceof Object) {
-                Object.keys(data).forEach(function (key) {
-                    var val = data[key];
-                    paramsArr.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
-                });
-            }
-            return paramsArr.join('&');
-        };
-        Http.ajax = function (options) {
-            options = options ? Object.assign(Http._defaultOptions, options) : Http._defaultOptions;
-            QE.assert(!options.url || !options.method || !options.responseType, '参数有误');
-            var xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function (ev) {
-                switch (xhr.readyState) {
-                    case 0 /* Uninitialized */:
-                        break;
-                    case 1 /* Open */:
-                        break;
-                    case 2 /* Sent */:
-                        break;
-                    case 3 /* Receiving */:
-                        break;
-                    case 4 /* Loaded */:
-                        var result = void 0;
-                        var err = void 0;
-                        var status_1 = xhr.status;
-                        if ((status_1 >= 200 && status_1 < 300) || status_1 === 304) {
-                            switch (xhr.responseType) {
-                                case 'arraybuffer':
-                                case 'blob':
-                                case 'json':
-                                    result = xhr.response;
-                                    break;
-                                case 'document':
-                                    result = xhr.responseXML;
-                                    break;
-                                case 'text':
-                                    result = xhr.responseText;
-                                    break;
-                                default:
-                                    result = xhr.responseText;
-                                    break;
-                            }
-                        }
-                        else if (status_1 === 408) {
-                            err = 'timeout';
-                        }
-                        else {
-                            err = 'load failed: ' + url;
-                        }
-                        if (options.callback) {
-                            options.callback.call(options.thisObj, err, result);
-                        }
-                        break;
-                    default:
-                        QE.Log.E('todo state: ' + xhr.readyState);
-                        break;
-                }
-            };
-            var url = options.url;
-            var sendData;
-            var method = options.method.toUpperCase();
-            if (method === 'GET') {
-                url += Http.getUrlParam(options.url, options.data);
-            }
-            else {
-                sendData = Http.getQueryData(options.data);
-            }
-            for (var _i = 0, _a = Object.keys(options.headers); _i < _a.length; _i++) {
-                var key = _a[_i];
-                xhr.setRequestHeader(key, options.headers[key]);
-            }
-            xhr.open(method, url, options.async);
-            xhr.responseType = options.responseType;
-            if (options.async && options.timeout) {
-                xhr.timeout = options.timeout;
-            }
-            xhr.send(sendData);
-            return xhr;
+        /**
+         * 元素入队
+         * @param x
+         */
+        MinHeap.prototype.enqueue = function (x) {
+            this._heap.push(x);
+            this.filterUp(this._length);
+            this._length++;
+            return true;
         };
         /**
-         *
-         * @param url
-         * @param data
-         * @param header
-         * @param callback
-         * @param thisObj
-         * @param isAsync
+         * 最小元素出队
          */
-        Http.get = function (url, data, callback, thisObj, isAsync) {
-            if (isAsync === void 0) { isAsync = true; }
-            return this.ajax({
-                url: url,
-                method: 'GET',
-                responseType: 'text',
-                data: data,
-                callback: callback,
-                thisObj: thisObj,
-                async: isAsync
-            });
+        MinHeap.prototype.dequeue = function () {
+            var heap = this._heap;
+            var x = heap[0];
+            heap[0] = heap[this._length - 1];
+            this._length--;
+            this.filterDown(0, this._length - 1); // 调整新的根节点
+            return x;
         };
-        Http.post = function (url, data, callback, thisObj, isAsync) {
-            if (isAsync === void 0) { isAsync = true; }
-            return this.ajax({
-                url: url,
-                method: 'POST',
-                responseType: 'text',
-                data: data,
-                callback: callback,
-                thisObj: thisObj,
-                async: isAsync
-            });
+        /**
+         * 查看最小元素
+         */
+        MinHeap.prototype.peek = function () {
+            return this._heap[0];
         };
-        Http.loadTxtAsync = function (url) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, new Promise(function (resolve, reject) {
-                                Http.ajax({
-                                    url: url,
-                                    method: 'GET',
-                                    responseType: 'text',
-                                    async: true,
-                                    callback: function (err, data, xhr, status) {
-                                        if (err) {
-                                            reject(err);
-                                        }
-                                        else {
-                                            resolve(data);
-                                        }
-                                    }
-                                });
-                            })];
-                        case 1: return [2 /*return*/, _a.sent()];
+        /**
+         * 堆元素数量
+         */
+        MinHeap.prototype.count = function () {
+            return this._length;
+        };
+        /**
+         * 清空队列
+         */
+        MinHeap.prototype.clear = function () {
+            this._heap = [];
+            this._length = 0;
+        };
+        MinHeap.prototype.filterDown = function (start, end) {
+            var i = start, j = 2 * i + 1;
+            var heap = this._heap;
+            var temp = heap[i];
+            var comparer = this._comparer;
+            if (comparer) {
+                while (j <= end) {
+                    if ((j < end) && (comparer(heap[j], heap[j + 1]) > 0)) {
+                        j++;
                     }
-                });
-            });
-        };
-        Http.loadImageAsync = function (path) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, new Promise(function (resolve, reject) {
-                            var image = new Image();
-                            image.onload = function () {
-                                resolve(image);
-                            };
-                            image.onerror = function () {
-                                reject('load image failed: ' + path);
-                            };
-                            image.src = path;
-                        })];
-                });
-            });
-        };
-        Http.loadArrayBufferAsync = function (url) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, new Promise(function (resolve, reject) {
-                            Http.ajax({
-                                url: url,
-                                method: 'GET',
-                                responseType: 'arraybuffer',
-                                async: true,
-                                callback: function (err, data, xhr, status) {
-                                    if (err) {
-                                        reject(err);
-                                    }
-                                    else {
-                                        resolve(data);
-                                    }
-                                }
-                            });
-                        })];
-                });
-            });
-        };
-        Http.loadAudioBufferAsync = function (url) {
-            return __awaiter(this, void 0, void 0, function () {
-                var arrayBuffer, e_1, buf, e_2;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            _a.trys.push([0, 2, , 3]);
-                            return [4 /*yield*/, this.loadArrayBufferAsync(url)];
-                        case 1:
-                            arrayBuffer = _a.sent();
-                            return [3 /*break*/, 3];
-                        case 2:
-                            e_1 = _a.sent();
-                            console.error(e_1);
-                            return [2 /*return*/, null];
-                        case 3:
-                            if (!arrayBuffer) {
-                                console.error('file is not exist: ' + url);
-                                return [2 /*return*/, null];
-                            }
-                            _a.label = 4;
-                        case 4:
-                            _a.trys.push([4, 6, , 7]);
-                            return [4 /*yield*/, this._context.decodeAudioData(arrayBuffer)];
-                        case 5:
-                            buf = _a.sent();
-                            if (buf) {
-                                return [2 /*return*/, buf];
-                            }
-                            else {
-                                console.log('decode audio data failed');
-                                return [2 /*return*/, null];
-                            }
-                            return [3 /*break*/, 7];
-                        case 6:
-                            e_2 = _a.sent();
-                            console.error(e_2);
-                            return [2 /*return*/, null];
-                        case 7: return [2 /*return*/];
+                    if (comparer(temp, heap[j]) <= 0) {
+                        break;
                     }
-                });
-            });
+                    else {
+                        heap[i] = heap[j];
+                        i = j;
+                        j = 2 * j + 1;
+                    }
+                }
+            }
+            else {
+                while (j <= end) {
+                    if ((j < end) && (heap[j] > heap[j + 1])) {
+                        j++;
+                    }
+                    if (temp <= heap[j]) {
+                        break;
+                    }
+                    else {
+                        heap[i] = heap[j];
+                        i = j;
+                        j = 2 * j + 1;
+                    }
+                }
+            }
+            heap[i] = temp;
         };
-        Http._defaultOptions = {
-            url: '',
-            method: 'GET',
-            responseType: 'json',
-            async: true,
-            data: null,
-            headers: {},
-            timeout: 1000,
+        MinHeap.prototype.filterUp = function (start) {
+            var j = start, i = Math.floor((j - 1) * 0.5); // i指向j的双亲节点
+            var heap = this._heap;
+            var temp = heap[j];
+            var comparer = this._comparer;
+            if (comparer) {
+                while (j > 0) {
+                    if (comparer(heap[i], temp) <= 0) {
+                        break;
+                    }
+                    else {
+                        heap[j] = heap[i];
+                        j = i;
+                        i = Math.floor((i - 1) * 0.5);
+                    }
+                }
+            }
+            else {
+                while (j > 0) {
+                    if (heap[i] <= temp) {
+                        break;
+                    }
+                    else {
+                        heap[j] = heap[i];
+                        j = i;
+                        i = Math.floor((i - 1) * 0.5);
+                    }
+                }
+            }
+            heap[j] = temp;
         };
-        Http._context = new (window['AudioContext'] || window['webkitAudioContext'])();
-        return Http;
+        return MinHeap;
     }());
-    QE.Http = Http;
+    QE.MinHeap = MinHeap;
+})(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+var QE;
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+(function (QE) {
+    /**
+     * 序列化属性
+     * @param {string|Function} fieldType
+     */
+    function SerializeField(fieldType) {
+        return function (target, name, descriptor) {
+            // console.log(`SerializeField field ${name}`);
+            if (QE.__QE_EDITOR_MODE__) {
+                var serializedFieldMap = target.constructor.__QE_SerializedFieldMap;
+                if (!serializedFieldMap) {
+                    serializedFieldMap = {};
+                    target.constructor.__QE_SerializedFieldMap = serializedFieldMap;
+                }
+                serializedFieldMap[name] = fieldType;
+            }
+            return descriptor;
+        };
+    }
+    QE.SerializeField = SerializeField;
+    var Serializer = /** @class */ (function () {
+        function Serializer() {
+        }
+        return Serializer;
+    }());
+    QE.Serializer = Serializer;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var Timer;
+    (function (Timer) {
+        var TimerHeap = /** @class */ (function (_super) {
+            __extends(TimerHeap, _super);
+            function TimerHeap() {
+                return _super !== null && _super.apply(this, arguments) || this;
+            }
+            TimerHeap.prototype.remove = function (timerId) {
+                var heap = this._heap;
+                var len = this._length;
+                for (var i = 0; i < len; i++) {
+                    var data = heap[i];
+                    if (data.id === timerId) {
+                        heap[i] = heap[this._length - 1];
+                        this._length--;
+                        this.filterDown(i, this._length - 1); // 调整新的根节点
+                        break;
+                    }
+                }
+            };
+            return TimerHeap;
+        }(QE.MinHeap));
+        function _TimerDataComparer(x, y) {
+            return x.endTick - y.endTick;
+        }
+        var _timerHeap = new TimerHeap(_TimerDataComparer);
+        var _timerId = 0;
+        var _tick = 0;
+        /**
+         * 添加一个定时器
+         * @param callback 回调函数
+         * @param delay    延迟时间, 单位毫秒
+         * @param repeat   重复次数, 默认为0, 不重复
+         * @param interval 重复间隔时间, 单位毫秒
+         * @return 定时器id
+         */
+        function addTimer(callback, delay, repeat, interval) {
+            if (repeat === void 0) { repeat = 0; }
+            if (interval === void 0) { interval = 0; }
+            var newTimerId = _timerId++;
+            var timerData = {
+                id: newTimerId,
+                callback: callback,
+                delay: delay,
+                repeat: repeat,
+                interval: interval,
+                endTick: _tick + Date.now()
+            };
+            _timerHeap.enqueue(timerData);
+            return timerData.id;
+        }
+        Timer.addTimer = addTimer;
+        /**
+         * 删除一个定时器
+         * @param timerId 定时器id
+         */
+        function killTimer(timerId) {
+            _timerHeap.remove(timerId);
+        }
+        Timer.killTimer = killTimer;
+        function update(dt) {
+            _tick += dt;
+            while (_timerHeap.count() > 0) {
+                var timerData = _timerHeap.peek();
+                if (_tick < timerData.endTick) {
+                    break;
+                }
+                _timerHeap.dequeue();
+                var repeatCount = timerData.repeat;
+                if (repeatCount === 0) {
+                    timerData.callback(dt);
+                }
+                else if (repeatCount === -1) {
+                    // 无限定时器
+                    timerData.callback(dt);
+                    timerData.endTick = _tick + timerData.interval;
+                    _timerHeap.enqueue(timerData);
+                }
+                else {
+                    timerData.callback(dt);
+                    timerData.repeat = repeatCount--;
+                    timerData.endTick = _tick + timerData.interval;
+                    _timerHeap.enqueue(timerData);
+                }
+            }
+        }
+        Timer.update = update;
+    })(Timer = QE.Timer || (QE.Timer = {}));
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    var UUID;
+    (function (UUID) {
+        // Private array of chars to use
+        var CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+        function uuid(len, radix) {
+            var chars = CHARS;
+            var ret = [];
+            var i;
+            radix = radix || chars.length;
+            if (len) {
+                // Compact form
+                for (i = 0; i < len; i++) {
+                    ret[i] = chars[0 | Math.random() * radix];
+                }
+            }
+            else {
+                // rfc4122, version 4 form
+                var r = void 0;
+                // rfc4122 requires these characters
+                ret[8] = ret[13] = ret[18] = ret[23] = '-';
+                ret[14] = '4';
+                // Fill in random data.  At i==19 set the high bits of clock sequence as
+                // per rfc4122, sec. 4.1.5
+                for (i = 0; i < 36; i++) {
+                    if (!ret[i]) {
+                        r = 0 | Math.random() * 16;
+                        ret[i] = chars[(i === 19) ? (r & 0x3) | 0x8 : r];
+                    }
+                }
+            }
+            return ret.join('');
+        }
+        // A more performant, but slightly bulkier, RFC4122v4 solution.  We boost performance
+        // by minimizing calls to random()
+        function uuidFast() {
+            var chars = CHARS;
+            var ret = new Array(36);
+            var rnd = 0;
+            var r;
+            for (var i = 0; i < 36; i++) {
+                if (i === 8 || i === 13 || i === 18 || i === 23) {
+                    ret[i] = '-';
+                }
+                else if (i === 14) {
+                    ret[i] = '4';
+                }
+                else {
+                    if (rnd <= 0x02) {
+                        rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
+                    }
+                    r = rnd & 0xf;
+                    rnd = rnd >> 4;
+                    ret[i] = chars[(i === 19) ? (r & 0x3) | 0x8 : r];
+                }
+            }
+            return ret.join('');
+        }
+        // A more compact, but less performant, RFC4122v4 solution:
+        function newUuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        UUID.newUuid = newUuid;
+    })(UUID = QE.UUID || (QE.UUID = {}));
 })(QE || (QE = {}));
 var QE;
 (function (QE) {
@@ -3259,147 +5315,6 @@ var QE;
         return BillboardSet;
     }(QE.GameObject));
     QE.BillboardSet = BillboardSet;
-})(QE || (QE = {}));
-///<reference path="../core/HashObject.ts" />
-var QE;
-///<reference path="../core/HashObject.ts" />
-(function (QE) {
-    function DisallowMultipleComponent(constructor) {
-        constructor.__QE_DisallowMultipleComponent__ = true;
-    }
-    QE.DisallowMultipleComponent = DisallowMultipleComponent;
-    var Component = /** @class */ (function (_super) {
-        __extends(Component, _super);
-        function Component() {
-            var _this = _super.call(this) || this;
-            _this._needCallStart = true;
-            _this._enable = false;
-            // 脚本函数
-            // 启动时调用
-            _this.onLoad = undefined;
-            // 更新时调用
-            _this.onUpdate = undefined;
-            // 调试调用
-            _this.onDebugDraw = undefined;
-            return _this;
-        }
-        Object.defineProperty(Component.prototype, "node", {
-            get: function () {
-                return this._node;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Component.prototype, "transform", {
-            get: function () {
-                return this.node.transform;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Component.prototype, "enabled", {
-            get: function () {
-                return this._enable;
-            },
-            set: function (val) {
-                if (this._enable === val) {
-                    return;
-                }
-                this._enable = val;
-                if (val) {
-                    this.enqueueComponent();
-                }
-                else {
-                    this.dequeueComponent();
-                }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        // 组件基本逻辑
-        Component.load = function () {
-            var unStartedComponentArr = Component.s_unStartedComponentArr;
-            for (var i = 0, len = unStartedComponentArr.length; i < len; i++) {
-                var comp = unStartedComponentArr[i];
-                comp._needCallStart = false;
-                Component.s_startedComponentArr.push(comp);
-                if (comp.onLoad) {
-                    comp.onLoad.call(comp);
-                }
-            }
-            Component.s_unStartedComponentArr.length = 0;
-        };
-        Component.update = function (deltaTime) {
-            var startedCompArr = Component.s_startedComponentArr;
-            for (var i = 0, len = startedCompArr.length; i < len; i++) {
-                var comp = startedCompArr[i];
-                if (comp.onUpdate) {
-                    comp.onUpdate.call(this, deltaTime);
-                }
-            }
-        };
-        Component.prototype.onDestroy = function () {
-            this.enabled = false;
-            this._node = null;
-        };
-        Component.prototype.compareTag = function (tag) {
-            return this.tag === tag;
-        };
-        Component.prototype.getComponent = function (compCls) {
-            return this.node.getComponent(compCls);
-        };
-        Component.prototype.getComponentInChildren = function (compCls, includeInactive) {
-            if (includeInactive === void 0) { includeInactive = false; }
-            return this.node.getComponentInChildren(compCls, includeInactive);
-        };
-        Component.prototype.GetComponentInParent = function (compCls) {
-            return this.node.GetComponentInParent(compCls);
-        };
-        Component.prototype.getComponents = function (compCls) {
-            return this.node.getComponents(compCls);
-        };
-        Component.prototype.getComponentsInChildren = function (compCls, includeInactive, outCompList) {
-            if (includeInactive === void 0) { includeInactive = false; }
-            return this.node.getComponentsInChildren(compCls, includeInactive, outCompList);
-        };
-        Component.prototype.getComponentsInParent = function (compCls, includeInactive, outCompList) {
-            if (includeInactive === void 0) { includeInactive = false; }
-            return this.node.getComponentsInParent(compCls, includeInactive, outCompList);
-        };
-        Component.prototype.notifyAttachNode = function (val) {
-            console.assert(!this._node, '重复挂载节点');
-            console.assert(!!val, '挂载节点为空');
-            this._node = val;
-        };
-        Component.prototype.enqueueComponent = function () {
-            if (this._needCallStart) {
-                Component.s_unStartedComponentArr.push(this);
-            }
-            else {
-                Component.s_startedComponentArr.push(this);
-            }
-        };
-        Component.prototype.dequeueComponent = function () {
-            if (this._needCallStart) {
-                var idx = Component.s_unStartedComponentArr.indexOf(this);
-                if (idx != -1) {
-                    Component.s_unStartedComponentArr.splice(idx, 1);
-                }
-            }
-            else {
-                var idx = Component.s_startedComponentArr.indexOf(this);
-                if (idx != -1) {
-                    Component.s_startedComponentArr.splice(idx, 1);
-                }
-            }
-        };
-        Component.__QE_DisallowMultipleComponent__ = false;
-        // 脚本管理
-        Component.s_unStartedComponentArr = [];
-        Component.s_startedComponentArr = [];
-        return Component;
-    }(QE.HashObject));
-    QE.Component = Component;
 })(QE || (QE = {}));
 ///<reference path="Component.ts" />
 var QE;
@@ -4007,1351 +5922,6 @@ var QE;
 })(QE || (QE = {}));
 var QE;
 (function (QE) {
-    var MeshFilter = /** @class */ (function (_super) {
-        __extends(MeshFilter, _super);
-        function MeshFilter() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        Object.defineProperty(MeshFilter.prototype, "mesh", {
-            get: function () {
-                return this._mesh;
-            },
-            set: function (mesh) {
-                this._mesh = mesh;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return MeshFilter;
-    }(QE.Component));
-    QE.MeshFilter = MeshFilter;
-    /**
-     * 网格
-     */
-    var Mesh = /** @class */ (function (_super) {
-        __extends(Mesh, _super);
-        function Mesh() {
-            var _this = _super.call(this) || this;
-            /**
-             * 子网格数组
-             */
-            _this.subMeshes = [];
-            return _this;
-        }
-        Object.defineProperty(Mesh.prototype, "name", {
-            get: function () {
-                return this._name;
-            },
-            set: function (val) {
-                this._name = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Mesh.prototype.copy = function (object) {
-            _super.prototype.copy.call(this, object);
-        };
-        Mesh.prototype.clone = function () {
-            var m = new Mesh();
-            m.copy(this);
-            return m;
-        };
-        Mesh.prototype.addSubMesh = function (subMesh) {
-            if (QE.__QE_DEBUG__) {
-                console.assert(subMesh != null);
-                console.assert(this.subMeshes.indexOf(subMesh) === -1);
-            }
-            subMesh.parent = this;
-            this.subMeshes.push(subMesh);
-        };
-        Mesh.prototype.createSubMesh = function (name) {
-            // TODO: implement here
-            return undefined;
-        };
-        Mesh.prototype.update = function () {
-        };
-        Mesh.prototype.loadImpl = function () {
-        };
-        Mesh.prototype.unloadImpl = function () {
-        };
-        return Mesh;
-    }(QE.HashObject));
-    QE.Mesh = Mesh;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var MeshManager = /** @class */ (function () {
-        function MeshManager() {
-        }
-        return MeshManager;
-    }());
-    QE.MeshManager = MeshManager;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var MeshSerializer = /** @class */ (function () {
-        function MeshSerializer() {
-        }
-        MeshSerializer.exportMeshWithJson = function (mesh, filename) {
-        };
-        MeshSerializer.exportMeshWithBinary = function (mesh, filename) {
-        };
-        MeshSerializer.importMeshWithJson = function (meshData, mesh) {
-            mesh.id = meshData.id;
-            mesh.name = meshData.name;
-            var vertices = [];
-            var colors = [];
-            var normals = [];
-            var uvs = [];
-            var indices = [];
-            // load mesh info
-            var position = meshData['position'] || [];
-            for (var i = 0; i < position.length; i += 3) {
-                vertices.push(position[i]);
-                vertices.push(position[i + 1]);
-                vertices.push(-position[i + 2]);
-            }
-            var color = meshData['color'] || [];
-            for (var i = 0; i < Math.floor(position.length / 3); i++) {
-                colors.push(255);
-                colors.push(255);
-                colors.push(255);
-                colors.push(255);
-            }
-            var normal = meshData['normal'] || [];
-            for (var i = 0; i < normal.length; i += 3) {
-                var p = normal[i];
-                normals.push(normal[i]);
-                normals.push(normal[i + 1]);
-                normals.push(normal[i + 2]);
-            }
-            var uv = meshData['uv'] || [];
-            for (var i = 0; i < uv.length; i += 2) {
-                uvs.push(uv[i]);
-                uvs.push(uv[i + 1]);
-            }
-            var posBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
-            posBuf.type = QE.gl.FLOAT;
-            posBuf.semantic = 1 /* POSITION */;
-            posBuf.vertexCount = vertices.length / 3;
-            posBuf.writeData((new Float32Array(vertices)).buffer);
-            posBuf.bindBuffer();
-            var colBuf = QE.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, 1 /* STATIC */);
-            colBuf.type = QE.gl.UNSIGNED_BYTE;
-            colBuf.semantic = 5 /* DIFFUSE */;
-            colBuf.vertexCount = colors.length;
-            colBuf.writeData((new Uint8Array(colors)).buffer);
-            colBuf.bindBuffer();
-            var normalBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
-            normalBuf.type = QE.gl.FLOAT;
-            normalBuf.semantic = 4 /* NORMAL */;
-            normalBuf.vertexCount = normals.length;
-            normalBuf.writeData((new Float32Array(normals)).buffer);
-            normalBuf.bindBuffer();
-            var uvBuf = QE.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, 1 /* STATIC */);
-            uvBuf.type = QE.gl.FLOAT;
-            uvBuf.semantic = 7 /* TEXTURE_COORDINATES */;
-            uvBuf.vertexCount = uvs.length;
-            uvBuf.writeData((new Float32Array(uvs)).buffer);
-            uvBuf.bindBuffer();
-            var sharedVertexData = [];
-            sharedVertexData[0] = posBuf;
-            sharedVertexData[1] = colBuf;
-            sharedVertexData[2] = normalBuf;
-            sharedVertexData[3] = uvBuf;
-            mesh.sharedVertexData = sharedVertexData;
-            var subMeshes = meshData['subMeshes'];
-            for (var i = 0, len = subMeshes.length; i < len; i++) {
-                var indicesData = meshData['subMeshes'][0]['indices'];
-                for (var i_1 = 0; i_1 < indicesData.length; i_1++) {
-                    indices.push(indicesData[i_1]);
-                }
-                var subMesh = new QE.SubMesh();
-                // 共享mesh顶点数据
-                subMesh.useSharedVertices = true;
-                // TODO: 解析material
-                var defmaterial = QE.Material.getDefaultCubeMaterial();
-                // 子网格索引数据
-                var indicesBuf = QE.WebGLBufferManager.instance.createIndexBuffer(indices.length, 1 /* STATIC */, false);
-                indicesBuf.writeData(indices);
-                indicesBuf.bindBuffer();
-                subMesh.indexData = indicesBuf;
-                mesh.addSubMesh(subMesh);
-            }
-        };
-        MeshSerializer.importMeshWithBinary = function (data, mesh) {
-        };
-        MeshSerializer.loadModel = function (modelData) {
-            var currentScene = QE.SceneManager.instance.currentScene;
-            var rootNodes = [];
-            // export interface ModelData {
-            //    metadata: string;
-            //    materials?: string[];
-            //    textures?: string[];
-            //    skeleton?: SkeletonData[];
-            //    poses?: PoseData[];
-            //    hierarchy?: BoneData[];
-            //    meshes: MeshData[];
-            //    animations?: Object[];
-            // }
-            var hierarchyData = modelData.hierarchy;
-            var hierarchy = {};
-            for (var i = 0, len = hierarchyData.length; i < len; i++) {
-                var boneData = hierarchyData[i];
-                console.assert(!!!hierarchy[boneData.id], '重复的骨骼id: ' + boneData.id);
-                var parentBoneNode = hierarchy[boneData.parentId];
-                var boneNode = void 0;
-                // 存在父节点
-                if (parentBoneNode) {
-                    boneNode = currentScene.createNode(parentBoneNode.transform);
-                }
-                else {
-                    boneNode = currentScene.createNode();
-                    // root node
-                    rootNodes.push(boneNode);
-                }
-                boneNode.name = boneData.name;
-                hierarchy[boneData.id] = boneNode;
-                var boneTransform = boneNode.transform;
-                boneTransform.localPosition = new QE.Vector3(boneData.position[0], boneData.position[1], boneData.position[2]);
-                boneTransform.localScale = new QE.Vector3(boneData.scale[0], boneData.scale[1], boneData.scale[2]);
-                var eulerAngle = new QE.Vector3(boneData.eulerAngle[0], boneData.eulerAngle[1], boneData.eulerAngle[2]);
-                var tempQ = boneTransform.localRotation.fromEulerAngle(eulerAngle);
-                boneTransform.localRotation = tempQ;
-            }
-            // bind pose
-            var poseDatas = modelData.poses || [];
-            for (var i = 0, len = poseDatas.length; i < len; i++) {
-                var poseData = poseDatas[i];
-                if (poseData.isBindPose) {
-                    var isCharacter = poseData.isCharacter;
-                    var poseItems = poseData.items;
-                    var poseItemDict = {};
-                    for (var ii = 0, len2 = poseItems.length; ii < len2; ii++) {
-                        poseItemDict[poseItems[ii].id] = poseItems[ii];
-                    }
-                    for (var ii = 0, len2 = hierarchyData.length; ii < len2; ii++) {
-                        var data = hierarchyData[ii];
-                        var poseItem = poseItemDict[data.id];
-                        if (!poseItem) {
-                            continue;
-                        }
-                        var bindNode = hierarchy[data.id];
-                        if (!bindNode) {
-                            console.error('bind pose error. bone not find: ' + poseItem.id);
-                            continue;
-                        }
-                        var matrix = poseItem.matrix;
-                        var mat = new QE.Matrix4();
-                        mat.set(matrix[0], matrix[4], matrix[8], matrix[12], matrix[1], matrix[5], matrix[9], matrix[13], matrix[2], matrix[6], matrix[10], matrix[14], matrix[3], matrix[7], matrix[11], matrix[15]);
-                        if (poseItem.isLocalMatrix) {
-                            // bindNode.transform.position = mat.getTrans();
-                            var q = new QE.Quaternion();
-                            q.FromRotationMatrix(mat);
-                            // bindNode.transform.localRotation = bindNode.transform.localRotation.multiply(q);
-                        }
-                        else {
-                            // bindNode.transform.position = mat.getTrans();
-                            var q = new QE.Quaternion();
-                            q.FromRotationMatrix(mat);
-                            bindNode.transform.rotation = bindNode.transform.localRotation.multiply(q);
-                        }
-                    }
-                }
-            }
-            for (var i = 0, len = hierarchyData.length; i < len; i++) {
-                var boneData = hierarchyData[i];
-                var boneNode = hierarchy[boneData.id];
-                var boneTransform = boneNode.transform;
-                console.log('load bone {' + boneData.name + '}. pos: ' + JSON.stringify(boneTransform.localPosition) +
-                    '  \n euler: ' + JSON.stringify(boneTransform.localEulerAngle) +
-                    '  \n rot: ' + JSON.stringify(boneTransform.localRotation));
-            }
-            // add mesh component
-            var meshes = modelData.meshes;
-            for (var i = 0, len = meshes.length; i < len; i++) {
-                var meshData = meshes[i];
-                var meshNode = hierarchy[meshData.id];
-                if (!meshNode) {
-                    console.error('bind pose error. bone not find: ' + meshData.id);
-                    continue;
-                }
-                meshNode.name = meshData.name;
-                var mesh = new QE.Mesh();
-                MeshSerializer.importMeshWithJson(meshData, mesh);
-                var meshFilter = meshNode.addComponent(QE.MeshFilter);
-                meshFilter.mesh = mesh;
-                var meshRender = meshNode.addComponent(QE.MeshRender);
-                meshRender.mesh = mesh;
-                meshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
-            }
-            // load animation
-            var animations = modelData.animations || [];
-            if (animations && animations.length > 0) {
-                // 创建动画控制器
-                var animController = new QE.AnimatorController();
-                for (var i = 0, len = animations.length; i < len; i++) {
-                    var animData = animations[i];
-                    var clip = parseAnimationClip(animData);
-                    animController.addClip(clip);
-                }
-                // 添加Animator组件
-                var animator = rootNodes[0].addComponent(QE.Animator);
-                animator.animController = animController;
-            }
-            // animator.play("Take 001");
-            return rootNodes[0];
-        };
-        return MeshSerializer;
-    }());
-    QE.MeshSerializer = MeshSerializer;
-    function parseAnimationClip(animData) {
-        // 创建动画片段
-        var posClip = new QE.AnimationClip();
-        posClip.name = 'Take 001';
-        var maxTime = 0;
-        for (var nodePath in animData) {
-            var nodeCurveData = animData[nodePath];
-            for (var curveName in nodeCurveData) {
-                if (curveName === '') {
-                    continue;
-                }
-                var curveData = nodeCurveData[curveName];
-                var curve = new QE.AnimationCurve();
-                for (var i = 0, len = curveData.length; i < len; i++) {
-                    var keyFrameData = curveData[i];
-                    var reverse = 1;
-                    if (curveName.indexOf('localEulerAngle.z') > -1 || curveName.indexOf('localPosition.z') > -1) {
-                        reverse = -1;
-                    }
-                    curve.addKeyFrameByValue(keyFrameData['time'], reverse * keyFrameData['value']);
-                    if (keyFrameData['time'] > maxTime) {
-                        maxTime = keyFrameData['time'];
-                    }
-                }
-                if (nodePath != '') {
-                    posClip.addCurve(nodePath, QE.Reflection.Type.typeOf(QE.Transform), curveName, curve);
-                }
-                else {
-                    posClip.addCurve('RootNode', QE.Reflection.Type.typeOf(QE.Transform), curveName, curve);
-                }
-            }
-        }
-        posClip.length = maxTime;
-        return posClip;
-    }
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var SubMesh = /** @class */ (function () {
-        function SubMesh() {
-        }
-        Object.defineProperty(SubMesh.prototype, "materialName", {
-            get: function () {
-                return this._materialName;
-            },
-            set: function (val) {
-                this._materialName = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * 复制一个新的SubMesh
-         * @param newName 新的SubMesh名称
-         * @param parentMesh 新的Submesh父Mesh, 如果为空, 父Mesh为被克隆的Mesh父Mesh
-         */
-        SubMesh.prototype.clone = function (newName, parentMesh) {
-            if (parentMesh) {
-                var newSubMesh = parentMesh.createSubMesh(newName);
-            }
-            else {
-                var newSubMesh = this.parent.createSubMesh(newName);
-            }
-        };
-        SubMesh.prototype.getRenderOperation = function (renderOp) {
-            renderOp.indexBuffer = this.indexData;
-            renderOp.renderOpType = this.renderOpType;
-            renderOp.vertexBuffers = this.useSharedVertices ? this.parent.sharedVertexData : this.vertexData;
-        };
-        return SubMesh;
-    }());
-    QE.SubMesh = SubMesh;
-})(QE || (QE = {}));
-///<reference path="../../../core/HashObject.ts" />
-var QE;
-///<reference path="../../../core/HashObject.ts" />
-(function (QE) {
-    /**
-     * 动画片段
-     * 动画片段包含一组动画曲线.每个曲线对应节点路径
-     */
-    var AnimationClip = /** @class */ (function (_super) {
-        __extends(AnimationClip, _super);
-        /**
-         *
-         */
-        function AnimationClip() {
-            var _this = _super.call(this) || this;
-            _this._frameRate = 0;
-            _this._length = 0;
-            _this._keyFrameTimes = [];
-            _this._positionCurveDict = {};
-            _this._scaleCurveDict = {};
-            _this._eulerCurveDict = {};
-            _this._numberCurveDict = {};
-            _this._objCurveDict = {};
-            return _this;
-        }
-        Object.defineProperty(AnimationClip.prototype, "frameRate", {
-            get: function () {
-                return this._frameRate;
-            },
-            set: function (val) {
-                this._frameRate = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(AnimationClip.prototype, "length", {
-            get: function () {
-                return this._length;
-            },
-            set: function (val) {
-                this._length = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(AnimationClip.prototype, "name", {
-            get: function () {
-                return this._name;
-            },
-            set: function (val) {
-                this._name = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * 添加一条曲线
-         * @param relativePath 曲线对应节点路径
-         * @param type 属性类型
-         * @param propertyName 属性名
-         * @param curve 曲线
-         */
-        AnimationClip.prototype.addCurve = function (relativePath, type, propertyName, curve) {
-            curve._propName = propertyName;
-            curve._valueType = type;
-            if (type.equal(QE.Reflection.Type.typeOf(QE.Transform))) {
-                var segmentProp = splitProperty(propertyName);
-                console.assert(segmentProp.length === 2, 'Transform属性长度为2');
-                var transCurveArr = void 0;
-                if (segmentProp[0] === 'localPosition') {
-                    transCurveArr = this._positionCurveDict[relativePath];
-                    if (!transCurveArr) {
-                        this._positionCurveDict[relativePath] = transCurveArr = [];
-                    }
-                }
-                else if (segmentProp[0] === 'localEulerAngle') {
-                    transCurveArr = this._eulerCurveDict[relativePath];
-                    if (!transCurveArr) {
-                        this._eulerCurveDict[relativePath] = transCurveArr = [];
-                    }
-                }
-                else if (segmentProp[0] === 'localScale') {
-                    transCurveArr = this._scaleCurveDict[relativePath];
-                    if (!transCurveArr) {
-                        this._scaleCurveDict[relativePath] = transCurveArr = [];
-                    }
-                }
-                else {
-                    console.error('不支持的变换属性：' + segmentProp[0]);
-                }
-                if (segmentProp[1] === 'x') {
-                    transCurveArr.splice(0, 1, curve);
-                }
-                else if (segmentProp[1] === 'y') {
-                    transCurveArr.splice(1, 1, curve);
-                }
-                else if (segmentProp[1] === 'z') {
-                    transCurveArr.splice(2, 1, curve);
-                }
-            }
-            else if (type.equal(QE.Reflection.Type.typeOf(Number))) {
-                var numberCurveArr = this._numberCurveDict[relativePath];
-                if (!numberCurveArr) {
-                    this._numberCurveDict[relativePath] = numberCurveArr = [];
-                }
-                numberCurveArr.push(curve);
-            }
-            else {
-                var objCurveArr = this._objCurveDict[relativePath];
-                if (objCurveArr) {
-                    this._objCurveDict[relativePath] = objCurveArr = [];
-                }
-                objCurveArr.push(curve);
-            }
-        };
-        AnimationClip.prototype.removeCurve = function (relativePath, type, propertyName) {
-            var curveArr = this._objCurveDict[relativePath];
-            if (!curveArr) {
-                console.warn('[AnimationClip.removeCurve] 删除的curve不存在. path: ' + relativePath + '  propertyName: ' + propertyName);
-                return;
-            }
-            for (var i = 0, len = curveArr.length; i < len; i++) {
-                var curve = curveArr[i];
-                if (curve._propName === propertyName) {
-                    curveArr.splice(i, 1);
-                    return;
-                }
-            }
-            console.warn('[AnimationClip.removeCurve] 删除的curve不存在. path: ' + relativePath + '  propertyName: ' + propertyName);
-        };
-        /**
-         * 清除动画数据
-         */
-        AnimationClip.prototype.clearAllCurves = function () {
-            this._positionCurveDict = {};
-            this._scaleCurveDict = {};
-            this._eulerCurveDict = {};
-            this._numberCurveDict = {};
-            this._objCurveDict = {};
-        };
-        AnimationClip.prototype.apply = function (node, timePos) {
-            var timeIndex = this.getTimeIndex(timePos);
-            // 变换缩放
-            this._applyScale(node, timeIndex, 1);
-            // 变换旋转
-            this._applyRotation(node, timeIndex, 1);
-            // 变换位移
-            this._applyPosition(node, timeIndex, 1);
-            // 对象属性变换
-            this._applyObj(node, timeIndex, 1);
-            if (!node.transform) {
-                return;
-            }
-            var meshFilter = node.transform.getComponent(QE.MeshFilter);
-            if (!meshFilter) {
-                return;
-            }
-            var mesh = meshFilter.mesh;
-            if (!mesh) {
-                return;
-            }
-            // 网格形变动画
-        };
-        AnimationClip.prototype._applyScale = function (node, timeIndex, weight) {
-            var curveDict = this._scaleCurveDict;
-            var timePos = timeIndex.timePos;
-            var keyIndex = timeIndex.keyIndex;
-            // apply position
-            for (var path in curveDict) {
-                var target = void 0;
-                // 如果路径为空，此曲线应用在动画根节点上
-                if (!path) {
-                    target = node.transform;
-                }
-                else {
-                    target = node.transform.find(path);
-                }
-                if (!target) {
-                    console.warn('[AnimationClip._applyScale] 动画对象节点不存在： ' + path);
-                    continue;
-                }
-                var objCurves = curveDict[path];
-                var curveX = objCurves[0];
-                var curveY = objCurves[1];
-                var curveZ = objCurves[2];
-                var interpolationX = curveX.getInterpolation(timePos, keyIndex);
-                var interpolationY = curveY.getInterpolation(timePos, keyIndex);
-                var interpolationZ = curveZ.getInterpolation(timePos, keyIndex);
-                // TODO: 计算权重
-                // 设置本地坐标
-                target.localScale = target.localScale.set(interpolationX, interpolationY, interpolationZ);
-            }
-        };
-        AnimationClip.prototype._applyRotation = function (node, timeIndex, weight) {
-            var curveDict = this._eulerCurveDict;
-            var timePos = timeIndex.timePos;
-            var keyIndex; // timeIndex.keyIndex;
-            // apply position
-            for (var path in curveDict) {
-                var target = void 0;
-                // 如果路径为空，此曲线应用在动画根节点上
-                if (!path) {
-                    target = node.transform;
-                }
-                else {
-                    target = node.transform.find(path);
-                }
-                if (!target) {
-                    console.warn('[AnimationClip._applyRotation] 动画对象节点不存在： ' + path);
-                    continue;
-                }
-                var objCurves = curveDict[path];
-                var curveX = objCurves[0];
-                var curveY = objCurves[1];
-                var curveZ = objCurves[2];
-                var interpolationX = curveX.getInterpolation(timePos);
-                var interpolationY = curveY.getInterpolation(timePos);
-                var interpolationZ = curveZ.getInterpolation(timePos);
-                // TODO: 计算权重
-                // 设置本地坐标
-                target.localRotation = target.localRotation.fromEulerAngleScalar(interpolationX, interpolationY, interpolationZ);
-            }
-        };
-        AnimationClip.prototype._applyPosition = function (node, timeIndex, weight) {
-            var curveDict = this._positionCurveDict;
-            var timePos = timeIndex.timePos;
-            var keyIndex = timeIndex.keyIndex;
-            // apply position
-            for (var path in curveDict) {
-                var target = void 0;
-                // 如果路径为空，此曲线应用在动画根节点上
-                if (!path) {
-                    target = node.transform;
-                }
-                else {
-                    target = node.transform.find(path);
-                }
-                if (!target) {
-                    console.warn('[AnimationClip._applyPosition] 动画对象节点不存在： ' + path);
-                    continue;
-                }
-                var objCurves = curveDict[path];
-                var curveX = objCurves[0];
-                var curveY = objCurves[1];
-                var curveZ = objCurves[2];
-                var interpolationX = curveX.getInterpolation(timePos);
-                var interpolationY = curveY.getInterpolation(timePos);
-                var interpolationZ = curveZ.getInterpolation(timePos);
-                // TODO: 计算权重
-                // 设置本地坐标
-                target.localPosition = target.localPosition.set(interpolationX, interpolationY, interpolationZ);
-            }
-        };
-        AnimationClip.prototype._applyObj = function (node, timeIndex, weight) {
-            var curveDict = this._objCurveDict;
-            var timePos = timeIndex.timePos;
-            var keyIndex = timeIndex.keyIndex;
-            for (var path in curveDict) {
-                var target = void 0;
-                // 如果路径为空，此曲线应用在动画根节点上
-                if (!path) {
-                    target = node.transform;
-                }
-                else {
-                    target = node.transform.find(path);
-                }
-                if (!target) {
-                    console.warn('[AnimationClip._applyObj] 动画对象节点不存在： ' + path);
-                    continue;
-                }
-                var objCurveArr = curveDict[path];
-                for (var i = 0, len = objCurveArr.length; i < len; i++) {
-                    var objCurve = objCurveArr[i];
-                    if (!objCurve._objInstance || !objCurve._objInstance.hasOwnProperty(objCurve._propName)) {
-                        console.error('脚本属性不存在. PropName: ' + objCurve._propName);
-                        continue;
-                    }
-                    var interpolation = objCurve.getInterpolation(timePos, keyIndex);
-                    objCurve._objInstance[objCurve._propName] = interpolation;
-                }
-            }
-        };
-        AnimationClip.prototype.getTimeIndex = function (timePos) {
-            if (this._keyFrameTimesDirty) {
-                this.buildKeyFrameTimeList();
-            }
-            var totalAnimationLength = this.length;
-            if (timePos > totalAnimationLength && totalAnimationLength > 0.0) {
-                timePos = timePos % totalAnimationLength;
-            }
-            var keyFrameTimes = this._keyFrameTimes;
-            var index = 0;
-            for (var i = 0, len = this._keyFrameTimes.length; i < len - 1; i++) {
-                var prev = keyFrameTimes[i];
-                var next = keyFrameTimes[i + 1];
-                if (timePos < prev) {
-                    index = i;
-                    break;
-                }
-                else if (timePos >= prev && timePos < next) {
-                    index = i + 1;
-                    break;
-                }
-                index = i + 1;
-            }
-            return { timePos: timePos, keyIndex: index };
-        };
-        AnimationClip.prototype.buildKeyFrameTimeList = function () {
-            var thisKeyFrameTimes = this._keyFrameTimes;
-            var thisCurveDict = this._positionCurveDict;
-            // let keys = Object.keys(thisCurveDict);
-            for (var key in thisCurveDict) {
-                var val = thisCurveDict[key];
-                for (var i = 0, len = val.length; i < len; i++) {
-                    var curve = val[i];
-                    curve._collectKeyFrameTimes(thisKeyFrameTimes);
-                }
-            }
-            this._keyFrameTimesDirty = false;
-        };
-        return AnimationClip;
-    }(QE.HashObject));
-    QE.AnimationClip = AnimationClip;
-    function splitProperty(prop) {
-        return prop.split('.');
-    }
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var AnimationCurve = /** @class */ (function () {
-        function AnimationCurve(objCurve) {
-            if (objCurve === void 0) { objCurve = false; }
-            this._isObjCurve = false;
-            this._keyFrames = [];
-            this._isObjCurve = objCurve;
-        }
-        AnimationCurve.prototype.isObjectKeyFrame = function () {
-            return false;
-        };
-        AnimationCurve.prototype.getKeyFrameCount = function () {
-            return this._keyFrames.length;
-        };
-        AnimationCurve.prototype.addKeyFrame = function (keyFrame, index) {
-            // 检查KeyFrame类型是否一致
-            if (QE.__QE_EDITOR_MODE__) {
-                if (this._keyFrames.length > 0) {
-                }
-            }
-            if (index === undefined || this._keyFrames.length <= index) {
-                this._keyFrames.push(keyFrame);
-                return;
-            }
-            this._keyFrames.splice(index, 0, keyFrame);
-        };
-        AnimationCurve.prototype.addKeyFrameByValue = function (time, value, inTangent, outTangent, index) {
-            // 检查KeyFrame类型是否一致
-            if (QE.__QE_EDITOR_MODE__) {
-                if (this._keyFrames.length > 0) {
-                }
-            }
-            var keyFrame = new QE.KeyFrame(time, value, inTangent, outTangent);
-            if (index === undefined || this._keyFrames.length <= index) {
-                this._keyFrames.push(keyFrame);
-                return;
-            }
-            this._keyFrames.splice(index, 0, keyFrame);
-        };
-        AnimationCurve.prototype.moveKeyFrame = function (index, keyFrame) {
-            var thisKeyFrame = this._keyFrames;
-            if (index < 0 || thisKeyFrame.length > index) {
-                return;
-            }
-            thisKeyFrame.splice(index, 1);
-            thisKeyFrame.splice(index, 0, keyFrame);
-        };
-        AnimationCurve.prototype.removeKeyFrame = function (index) {
-            var thisKeyFrame = this._keyFrames;
-            if (index < 0 || thisKeyFrame.length > index) {
-                return;
-            }
-            this._keyFrames.splice(index, 1);
-        };
-        /**
-         * 根据时间索引, 取得当前一对关键帧
-         * @param {number} timePos 动画时间位置，这个时间应当和动画片段的总时间做过取余计算
-         * @param {number} keyIndex 帧索引
-         * @return {KeyFramePair}
-         */
-        AnimationCurve.prototype.getKeyFramePairAtTime = function (timePos, keyIndex) {
-            var keyframe1, keyframe2;
-            var keys = this._keyFrames;
-            // 直接设置帧索引
-            if (keyIndex !== undefined) {
-                if (keyIndex + 1 === keys.length) {
-                    keyframe1 = keys[keyIndex];
-                    keyframe2 = keys[keyIndex];
-                }
-                else {
-                    keyframe1 = keys[keyIndex];
-                    keyframe2 = keys[keyIndex + 1];
-                }
-            }
-            else {
-                // 计算帧索引
-                var i = 1;
-                var len = keys.length;
-                for (; i < len; i++) {
-                    var frame = keys[i - 1];
-                    var nextFrame = keys[i];
-                    if (timePos < frame.time) {
-                        // 小于等于前一帧时间点，则命中
-                        // timePos---------firstKey_time---------k2_time
-                        i--;
-                        break;
-                    }
-                    else if (timePos >= frame.time && timePos <= nextFrame.time) {
-                        // 小于下一帧时间点，则命中
-                        // k1_time---------timePos---------k2_time
-                        break;
-                    }
-                    // 最后一帧还没有找到对应的时间点，意味着timepos超出了最后一帧，直接使用最后一帧作为关键帧
-                    if (i === len - 1) {
-                        // k1_time---------laseKey_time---------timePos
-                        i++;
-                        break;
-                    }
-                }
-                if (i === 0) {
-                    keyframe1 = keys[i];
-                    keyframe2 = keys[i];
-                }
-                else if (i === len) {
-                    keyframe1 = keys[i - 1];
-                    keyframe2 = keys[i - 1];
-                }
-                else {
-                    keyframe1 = keys[i - 1];
-                    keyframe2 = keys[i];
-                }
-            }
-            // timePos在两帧之间的比例
-            //       |------------total-------------|
-            //       |-elapsed-|
-            // k1_time----------timePos-------------k2_time
-            var total = keyframe2.time - keyframe1.time;
-            var elapsed = timePos - keyframe1.time;
-            var t = (total === 0 || elapsed === 0) ? 0 : elapsed / total;
-            var pair = {
-                keyframe1: keyframe1,
-                keyframe2: keyframe2,
-                t: t
-            };
-            return pair;
-        };
-        /**
-         * 根据时间索引, 计算关键帧插值
-         * @param {number} timePos 时间点
-         * @param {number} keyIndex 索引
-         */
-        AnimationCurve.prototype.getInterpolation = function (timePos, keyIndex) {
-            if (this._keyFrames.length === 0) {
-                return 0;
-            }
-            var ret = 0;
-            // #1 根据时间点, 取得前后一组关键帧
-            var keyFramePair = this.getKeyFramePairAtTime(timePos, keyIndex);
-            var k1 = keyFramePair.keyframe1;
-            var k2 = keyFramePair.keyframe2;
-            // 插值系数为0，直接返回k1帧的值
-            if (keyFramePair.t === 0) {
-                return k1.value;
-            }
-            // #2 求两关键帧在当前时间的插值
-            var interpolationMode = k1.interpolationMode;
-            switch (interpolationMode) {
-                case 0 /* Liner */:
-                    {
-                        QE.MathUtil.clampf;
-                        ret = QE.MathUtil.lerp(k1.value, k2.value, keyFramePair.t);
-                    }
-                    break;
-                case 1 /* Spline */:
-                    {
-                        // TODO: 补全样条插值
-                        ret = QE.MathUtil.lerp(k1.value, k2.value, keyFramePair.t);
-                    }
-                    break;
-                case 2 /* Constant */:
-                    {
-                        // 常数的话,直接使用k1的属性
-                        ret = k1.value;
-                    }
-                    break;
-                default:
-                    {
-                        // 是否支持自定义插值函数
-                        console.error('[AnimationCurve.getInterpolation] 不支持的插值类型: ' + interpolationMode);
-                    }
-                    break;
-            }
-            return ret;
-        };
-        /**
-         * 收集所有关键帧时间
-         * @param outKeyFrameTimes 关键帧时间数组
-         */
-        AnimationCurve.prototype._collectKeyFrameTimes = function (outKeyFrameTimes) {
-            var thisKeyFrames = this._keyFrames;
-            // 遍历所有关键帧, 如果outKeyFrameTimes没有包含关键帧时间, 插入关键帧时间
-            for (var i = 0, len = thisKeyFrames.length; i < len; i++) {
-                var keyFrame = thisKeyFrames[i];
-                var timePos = keyFrame.time;
-                var index = 0;
-                var keyTimePos = 0;
-                for (var j = 0, len_1 = outKeyFrameTimes.length; j < len_1 - 1; j++) {
-                    var prev = outKeyFrameTimes[j];
-                    var next = outKeyFrameTimes[j + 1];
-                    if (timePos < prev) {
-                        index = i;
-                        break;
-                    }
-                    else if (timePos >= prev && timePos < next) {
-                        index = i + 1;
-                        break;
-                    }
-                    index = i + 1;
-                }
-                if (index === len || timePos != keyTimePos) {
-                    outKeyFrameTimes.splice(index, 0, timePos);
-                }
-            }
-        };
-        AnimationCurve.prototype._buildKeyFrameIndexMap = function (outKeyFrameTimes) {
-            // Pre-allocate memory
-            // mKeyFrameIndexMap.resize(keyFrameTimes.size() + 1);
-            // size_t i = 0, j = 0;
-            // while (j <= keyFrameTimes.size()) {
-            //    mKeyFrameIndexMap[j] = static_cast<ushort>(i);
-            //    while (i < mKeyFrames.size() && mKeyFrames[i] ->getTime() <= keyFrameTimes[j])
-            //        ++i;
-            //    ++j;
-            // }
-        };
-        return AnimationCurve;
-    }());
-    QE.AnimationCurve = AnimationCurve;
-    // export class QuaternionCurve extends AnimationCurve {
-    //    public getInterpolation(timePos: number, keyIndex?: number): any {
-    //        let ret = new Quaternion();
-    //        // #1 根据时间点, 求得关键帧
-    //        let keyFramePair = this.getKeyFramePairAtTime(timePos, keyIndex);
-    //        let k1: QuaternionKeyFrame = keyFramePair.keyframe1 as QuaternionKeyFrame;
-    //        let k2: QuaternionKeyFrame = keyFramePair.keyframe2 as QuaternionKeyFrame;
-    //        // #2 求两关键帧在当前时间的插值
-    //        let interpolationMode = k1.interpolationMode;
-    //        switch (interpolationMode) {
-    //            case InterpolationMode.Liner: {
-    //                ret = ret.lerp(k1.value, k2.value, keyFramePair.t);
-    //            } break;
-    //            case InterpolationMode.Spline: {
-    //                // TODO: 补全样条插值
-    //                ret = ret.lerp(k1.value, k2.value, keyFramePair.t);
-    //            } break;
-    //            case InterpolationMode.Constant: {
-    //                // 常数的话,直接使用k1的属性
-    //                ret = ret.copy(k1.value);
-    //            } break;
-    //            default: {
-    //                console.error("[QuaternionCurve.getInterpolation] 不支持的插值类型: " + interpolationMode);
-    //            } break;
-    //        }
-    //        return ret;
-    //    }
-    //    public apply(go: Node, index: number, timePos: number, weight: number) {
-    //        let ret = this.getInterpolation(timePos) as Quaternion;
-    //        go.transform.rotation = ret.lerp(Quaternion.IDENTITY, ret, weight);
-    //    }
-    // }
-    // export class VectorCurve extends AnimationCurve {
-    //    public getInterpolation(timePos: number, keyIndex?: number): any {
-    //        let ret;
-    //        // #1 根据时间点, 求得关键帧
-    //        let k1: KeyFrame, k2: KeyFrame;
-    //        // #2 求两关键帧在当前时间的插值
-    //        return ret;
-    //    }
-    //    public apply(go: Node, index: number, timePos: number, weight: number) {
-    //        let ret = this.getInterpolation(timePos) as Vector3;
-    //        switch (this._propName) {
-    //            case 'position': {
-    //                go.transform.position = ret;
-    //            } break;
-    //            case 'scale': {
-    //                go.transform.position = ret;
-    //            } break;
-    //            default: go[this._propName] = ret; break;
-    //        }
-    //    }
-    // }
-    // export class NumericCurve extends AnimationCurve {
-    //    public getInterpolation(timePos: number, keyIndex?: number): any {
-    //        let ret;
-    //        // #1 根据时间点, 求得关键帧
-    //        let k1: KeyFrame, k2: KeyFrame;
-    //        // #2 求两关键帧在当前时间的插值
-    //        return ret;
-    //    }
-    //    public apply(go: Node, index: number, timePos: number, weight: number) {
-    //        let t = this.getInterpolation(timePos);
-    //        switch (this._propName) {
-    //            case 'x': {
-    //                go.transform.x = 0;
-    //            } break;
-    //            default: ; break;
-    //        }
-    //        if (this.isObjectKeyFrame()) {
-    //        } else {
-    //        }
-    //    }
-    // }
-    // export class ObjectCurve extends AnimationCurve {
-    //    public getInterpolation(timePos: number, keyIndex?: number): any {
-    //        let ret;
-    //        // #1 根据时间点, 求得关键帧
-    //        let k1: KeyFrame, k2: KeyFrame;
-    //        // #2 求两关键帧在当前时间的插值
-    //        return ret;
-    //    }
-    //    public apply(go: Node, index: number, timePos: number, weight: number) {
-    //        let t = this.getInterpolation(timePos, index);
-    //        switch (this._propName) {
-    //            case 'x': {
-    //                go.transform.x = 0;
-    //            } break;
-    //            default: ; break;
-    //        }
-    //        if (this.isObjectKeyFrame()) {
-    //        } else {
-    //        }
-    //    }
-    // }
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var AnimationLoader = /** @class */ (function () {
-        function AnimationLoader() {
-        }
-        AnimationLoader.load = function (fileJson) {
-        };
-        return AnimationLoader;
-    }());
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var AnimationBlendMode;
-    (function (AnimationBlendMode) {
-        AnimationBlendMode[AnimationBlendMode["Add"] = 0] = "Add";
-    })(AnimationBlendMode = QE.AnimationBlendMode || (QE.AnimationBlendMode = {}));
-    /**
-     * 动画控制器
-     * 动画控制器控制管理一组动画片段
-     */
-    var AnimationState = /** @class */ (function () {
-        function AnimationState() {
-            this._blendMode = AnimationBlendMode.Add;
-        }
-        Object.defineProperty(AnimationState.prototype, "blendMode", {
-            get: function () {
-                return this._blendMode;
-            },
-            set: function (val) {
-                this._blendMode = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(AnimationState.prototype, "clip", {
-            get: function () {
-                return this._clip;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        AnimationState.prototype.AddMixingTransform = function (mix, recursive) {
-            if (recursive === void 0) { recursive = true; }
-        };
-        AnimationState.prototype.RemoveMixingTransform = function (mix) {
-        };
-        return AnimationState;
-    }());
-    QE.AnimationState = AnimationState;
-})(QE || (QE = {}));
-///<reference path="../../Component.ts" />
-///<reference path="AnimationLoader.ts"/>
-var QE;
-///<reference path="../../Component.ts" />
-///<reference path="AnimationLoader.ts"/>
-(function (QE) {
-    /**
-     * 动画播放器
-     * 动画控制器控制动画的状态切换
-     */
-    var Animator = /** @class */ (function (_super) {
-        __extends(Animator, _super);
-        function Animator() {
-            var _this = _super.call(this) || this;
-            _this._timePos = 0;
-            /**
-             * 更新动画
-             *@param {number} deltaTime 间隔时间
-             */
-            _this.onUpdate = function (deltaTime) {
-                if (!_this._playingClip) {
-                    return;
-                }
-                _this._timePos += deltaTime;
-                _this._playingClip.apply(_this.node, _this._timePos);
-                if (_this._timePos >= _this._playingClip.length) {
-                    _this.stop();
-                }
-            };
-            return _this;
-        }
-        Object.defineProperty(Animator.prototype, "animController", {
-            get: function () {
-                return this._animController;
-            },
-            set: function (animController) {
-                this._animController = animController;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Animator.prototype.play = function (animName) {
-            if (this._playingClip && this._playingClip.name === animName) {
-                return;
-            }
-            if (!this._animController) {
-                return;
-            }
-            var clips = this._animController.animationClips;
-            for (var i = 0, len = clips.length; i < len; i++) {
-                var clip = clips[i];
-                if (clip.name === animName) {
-                    this._playingClip = clip;
-                    break;
-                }
-            }
-            this._timePos = 0;
-        };
-        Animator.prototype.stop = function () {
-            this._playingClip = undefined;
-            this._timePos = 0;
-        };
-        return Animator;
-    }(QE.Component));
-    QE.Animator = Animator;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    /**
-     * 动画控制器
-     * 动画控制器控制管理一组动画片段
-     */
-    var AnimatorController = /** @class */ (function (_super) {
-        __extends(AnimatorController, _super);
-        function AnimatorController() {
-            var _this = _super.call(this) || this;
-            _this._animationClips = [];
-            return _this;
-        }
-        Object.defineProperty(AnimatorController.prototype, "animationClips", {
-            get: function () {
-                return this._animationClips;
-            },
-            set: function (clips) {
-                this._animationClips = clips;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        AnimatorController.prototype.addClip = function (clip) {
-            this._animationClips.push(clip);
-        };
-        AnimatorController.prototype.removeClip = function (clip) {
-            var clips = this._animationClips;
-            var idx = clips.indexOf(clip);
-            if (idx != -1) {
-                clips.splice(idx, 1);
-            }
-        };
-        return AnimatorController;
-    }(QE.HashObject));
-    QE.AnimatorController = AnimatorController;
-})(QE || (QE = {}));
-///<reference path="../../GameObject.ts" />
-var QE;
-///<reference path="../../GameObject.ts" />
-(function (QE) {
-    /**
-     * 骨骼
-     */
-    var Bone = /** @class */ (function () {
-        function Bone(skeleton, name) {
-            this._skeleton = skeleton;
-            this._name = name;
-        }
-        Object.defineProperty(Bone.prototype, "name", {
-            get: function () {
-                return this._name;
-            },
-            set: function (val) {
-                this._name = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Bone.prototype, "handle", {
-            get: function () {
-                return this._handle;
-            },
-            set: function (val) {
-                this._handle = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Bone.prototype, "node", {
-            get: function () {
-                return this._node;
-            },
-            set: function (val) {
-                this._node = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Bone.prototype._update = function (updateChilren, parentHasChanged) {
-            this._node.transform.update(updateChilren, parentHasChanged);
-        };
-        return Bone;
-    }());
-    QE.Bone = Bone;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    /**
-     *
-     */
-    var KeyFrame = /** @class */ (function () {
-        function KeyFrame(time, value, inTangent, outTangent) {
-            if (inTangent === void 0) { inTangent = 0; }
-            if (outTangent === void 0) { outTangent = 0; }
-            this._interpolationMode = 0 /* Liner */;
-            this._time = time;
-            this._value = value;
-            this._inTangent = inTangent;
-            this._outTangent = outTangent;
-        }
-        Object.defineProperty(KeyFrame.prototype, "time", {
-            /**
-             * 返回关键帧所在时间，以毫秒为单位
-             *@return {number}
-             */
-            get: function () {
-                return this._time;
-            },
-            /**
-             * 设置关键帧所在时间，以毫秒为单位
-             *@param {number} val 时间
-             */
-            set: function (val) {
-                this._time = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(KeyFrame.prototype, "value", {
-            get: function () {
-                return this._value;
-            },
-            set: function (val) {
-                this._value = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(KeyFrame.prototype, "inTangent", {
-            get: function () {
-                return this._inTangent;
-            },
-            set: function (val) {
-                this._inTangent = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(KeyFrame.prototype, "outTangent", {
-            get: function () {
-                return this._outTangent;
-            },
-            set: function (val) {
-                this._outTangent = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(KeyFrame.prototype, "interpolationMode", {
-            get: function () {
-                return this._interpolationMode;
-            },
-            set: function (val) {
-                this._interpolationMode = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return KeyFrame;
-    }());
-    QE.KeyFrame = KeyFrame;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var Skeleton = /** @class */ (function () {
-        function Skeleton(name) {
-            this._boneMapByName = {};
-            this._boneMapByPath = {};
-            this._name = name;
-        }
-        Skeleton.prototype.createBone = function (name, relativePath) {
-            console.assert(!!this._boneMapByPath[name], '[Skeleton.createBone] A bone with the releativePath ' + relativePath + ' already exists');
-            var bone = new QE.Bone(this, name);
-            this._boneMapByName[name] = bone;
-            this._boneMapByPath[relativePath] = bone;
-            return bone;
-        };
-        Skeleton.prototype.getRootBone = function () {
-            var rootBones = this._rootBones;
-            if (!rootBones) {
-                rootBones = this._rootBones = [];
-            }
-            if (rootBones.length === 0) {
-                for (var i = 0; i < rootBones.length; i++) {
-                    var bone = rootBones[i];
-                    // 没有父节点的骨骼皆为根骨骼
-                    if (!bone.node.transform.parent) {
-                        rootBones.push(bone);
-                    }
-                }
-            }
-            return rootBones[0];
-        };
-        Skeleton.prototype.getBone = function (name) {
-            return this._boneMapByName[name];
-        };
-        Skeleton.prototype.getBoneByPath = function (relativePath) {
-            return this._boneMapByPath[relativePath];
-        };
-        Skeleton.prototype.hasBone = function (name) {
-            return !!this._boneMapByName[name];
-        };
-        Skeleton.prototype.updateTransforms = function () {
-            var rootBones = this._rootBones;
-            for (var i = 0, len = rootBones.length; i < len; i++) {
-                var rootBone = rootBones[i];
-                rootBone._update(true, false);
-            }
-        };
-        return Skeleton;
-    }());
-    QE.Skeleton = Skeleton;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
     var RenderOperation = /** @class */ (function () {
         function RenderOperation() {
             this.renderOpType = 3 /* TRIANGLE_LIST */;
@@ -5411,9 +5981,9 @@ var QE;
     }(QE.Component));
     QE.Renderable = Renderable;
 })(QE || (QE = {}));
-///<reference path="../render_system/Renderable.ts" />
+///<reference path="../rendersystem/Renderable.ts" />
 var QE;
-///<reference path="../render_system/Renderable.ts" />
+///<reference path="../rendersystem/Renderable.ts" />
 (function (QE) {
     var DebugRender = /** @class */ (function (_super) {
         __extends(DebugRender, _super);
@@ -5450,9 +6020,9 @@ var QE;
  * create by wjl at
  *
  */ 
-///<reference path="../render_system/Renderable.ts" />
+///<reference path="../rendersystem/Renderable.ts" />
 var QE;
-///<reference path="../render_system/Renderable.ts" />
+///<reference path="../rendersystem/Renderable.ts" />
 (function (QE) {
     var MeshRender = /** @class */ (function (_super) {
         __extends(MeshRender, _super);
@@ -5539,49 +6109,9 @@ var QE;
     }(QE.Renderable));
     QE.SkinedMeshRender = SkinedMeshRender;
 })(QE || (QE = {}));
-/**
- *  -
- *
- * create by wjl at
- *
- */
+///<reference path="../msic/Serializer.ts"/>
 var QE;
-/**
- *  -
- *
- * create by wjl at
- *
- */
-(function (QE) {
-    /**
-     * 序列化属性
-     * @param {string|Function} fieldType
-     */
-    function SerializeField(fieldType) {
-        return function (target, name, descriptor) {
-            // console.log(`SerializeField field ${name}`);
-            if (QE.__QE_EDITOR_MODE__) {
-                var serializedFieldMap = target.constructor.__QE_SerializedFieldMap;
-                if (!serializedFieldMap) {
-                    serializedFieldMap = {};
-                    target.constructor.__QE_SerializedFieldMap = serializedFieldMap;
-                }
-                serializedFieldMap[name] = fieldType;
-            }
-            return descriptor;
-        };
-    }
-    QE.SerializeField = SerializeField;
-    var Serializer = /** @class */ (function () {
-        function Serializer() {
-        }
-        return Serializer;
-    }());
-    QE.Serializer = Serializer;
-})(QE || (QE = {}));
-///<reference path="../res/prefab/serialize/Serializer.ts"/>
-var QE;
-///<reference path="../res/prefab/serialize/Serializer.ts"/>
+///<reference path="../msic/Serializer.ts"/>
 (function (QE) {
     var SpriteRender = /** @class */ (function (_super) {
         __extends(SpriteRender, _super);
@@ -5626,8 +6156,7 @@ var QE;
             renderOp.vertexBuffers[0] = posBuf;
             renderOp.vertexBuffers[1] = colBuf;
             renderOp.vertexBuffers[2] = texBuf;
-            var indexBuffer = QE.WebGLBufferManager.instance.createIndexBuffer(6, 2 /* DYNAMIC */, true);
-            indexBuffer.writeData([0, 2, 3, 0, 1, 2]);
+            var indexBuffer = QE.WebGLBufferManager.instance.createIndexBuffer([0, 2, 3, 0, 1, 2], 2 /* DYNAMIC */, true);
             indexBuffer.bindBuffer();
             renderOp.indexBuffer = indexBuffer;
             _this._renderOp = renderOp;
@@ -6275,7 +6804,7 @@ var QE;
         RenderSystem.prototype._setTexture = function (unit, enable, tex) {
             // 纹理未加载完成时,使用默认纹理
             if (!tex.getWebGLTexture()) {
-                tex = QE.ResourceManager.get(QE.ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
+                tex = QE.BuiltinResFactory.getDefaultTex();
             }
             if (!tex.getWebGLTexture()) {
                 return;
@@ -6354,10 +6883,6 @@ var QE;
         RenderSystem.prototype.bindGpuProgram = function (gpuProgram) {
             QE.gl.useProgram(gpuProgram.webglProgram);
         };
-        RenderSystem.prototype._bindVertexElement = function (vertexBuffer, shaderPass) {
-            QE.gl.bindBuffer(QE.gl.ARRAY_BUFFER, vertexBuffer.getGLBuffer());
-            QE.gl.enableVertexAttribArray(vertexBuffer.semantic);
-        };
         RenderSystem.prototype.onResize = function (w, h) {
             var thisCanvas = this._canvas;
             thisCanvas.width = w;
@@ -6407,7 +6932,7 @@ var QE;
             this._setTexture(unit, true, tex);
         };
         RenderSystem.prototype.setShaderPass = function (pass) {
-            if (this._currentShaderPass != pass) {
+            if (this._currentShaderPass !== pass) {
                 this._currentShaderPass = pass;
                 this._shaderPassChanged = true;
             }
@@ -6487,14 +7012,13 @@ var QE;
             var renderAttribsBound = [];
             // 绑定顶点属性
             var vbBuffers = renderOp.vertexBuffers;
-            for (var i = 0, len_6 = vbBuffers.length; i < len_6; i++) {
+            for (var i = 0, len = vbBuffers.length; i < len; i++) {
                 var vb = vbBuffers[i];
                 var location_1 = currentShaderPass.getAttribute(vb.semantic);
                 if (location_1 === undefined) {
                     continue;
                 }
-                QE.gl.bindBuffer(QE.gl.ARRAY_BUFFER, vb.getGLBuffer());
-                QE.gl.bufferData(QE.gl.ARRAY_BUFFER, vb._data, QE.WebGLBufferManager.getGLUsage(vb._usage));
+                vb.bindBuffer();
                 QE.GL_CHECK_ERROR();
                 QE.gl.enableVertexAttribArray(location_1);
                 QE.gl.vertexAttribPointer(location_1, vb._size, vb.type, vb._normalized, 0, 0);
@@ -6513,9 +7037,9 @@ var QE;
             QE.GL_CHECK_ERROR();
             // end render
             // 清除属性绑定
-            var len = renderAttribsBound.length;
-            if (len > 0) {
-                for (var i = 0; i < len; i++) {
+            var boundLen = renderAttribsBound.length;
+            if (boundLen > 0) {
+                for (var i = 0; i < boundLen; i++) {
                     QE.gl.disableVertexAttribArray(renderAttribsBound[i]);
                 }
             }
@@ -6592,7 +7116,7 @@ var QE;
             }
             // 检查帧缓冲区完整性, 状态参数参考12.5.4
             var status = QE.gl.checkFramebufferStatus(QE.gl.FRAMEBUFFER);
-            if (status != QE.gl.FRAMEBUFFER_COMPLETE) {
+            if (status !== QE.gl.FRAMEBUFFER_COMPLETE) {
                 if (QE.__QE_DEBUG__) {
                     // TODO: 打印状态描述
                     switch (status) {
@@ -6635,291 +7159,9 @@ var QE;
     }(QE.HashObject));
     QE.RenderTarget = RenderTarget;
 })(QE || (QE = {}));
+///<reference path="../../assets/Resource.ts"/>
 var QE;
-(function (QE) {
-    /**
-     * 资源类型
-     */
-    var ResType;
-    (function (ResType) {
-        ResType[ResType["Texture"] = 0] = "Texture";
-        ResType[ResType["TEXT"] = 1] = "TEXT";
-        ResType[ResType["BINARY"] = 2] = "BINARY";
-        ResType[ResType["FBX"] = 3] = "FBX";
-        ResType[ResType["MATERIAL"] = 4] = "MATERIAL";
-        ResType[ResType["SHADER"] = 5] = "SHADER";
-        ResType[ResType["SCENE"] = 6] = "SCENE";
-        ResType[ResType["ANIM"] = 7] = "ANIM";
-        ResType[ResType["FONT"] = 8] = "FONT";
-        ResType[ResType["PREFAB"] = 9] = "PREFAB"; // 预设资源
-    })(ResType = QE.ResType || (QE.ResType = {}));
-    var ExtNameMap = {
-        '.png': ResType.Texture,
-        '.jpg': ResType.Texture,
-        '.jpeg': ResType.Texture,
-        '.txt': ResType.TEXT,
-        '.bin': ResType.BINARY,
-        '.fbx': ResType.FBX,
-        '.mat': ResType.MATERIAL,
-        '.shader': ResType.SHADER,
-        '.scene': ResType.SCENE,
-        '.anim': ResType.ANIM,
-        '.font': ResType.FONT,
-        '.prefab': ResType.PREFAB,
-        'fallback': ResType.BINARY
-    };
-    function extNameToResType(extName) {
-        var type = ExtNameMap[extName];
-        if (type == null) {
-            type = ExtNameMap['fallback'];
-        }
-        return type;
-    }
-    function extname(path) {
-        // 文件扩展名匹配正则
-        var reg = /\.[^\.]+$/;
-        var matches = reg.exec(path);
-        if (matches) {
-            return matches[0];
-        }
-        return '';
-    }
-    QE.extname = extname;
-    var ResourceManager = /** @class */ (function () {
-        function ResourceManager() {
-        }
-        ResourceManager.get = function (path) {
-            var item = this._resMap[path];
-            if (item && item.state === 2 /* Loaded */) {
-                return item.res;
-            }
-            return null;
-        };
-        ResourceManager.load = function (path, onProgress) {
-            return __awaiter(this, void 0, void 0, function () {
-                var res, ext, loader, resRequest;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            res = this.get(path);
-                            if (res) {
-                                return [2 /*return*/, res];
-                            }
-                            ext = extname(path);
-                            loader = this._loaderMap[ext];
-                            if (!loader) {
-                                console.error('res loader is not found: ' + path);
-                                return [2 /*return*/, null];
-                            }
-                            resRequest = this._resMap[path];
-                            if (!resRequest) {
-                                resRequest = {
-                                    state: 0 /* UnLoaded */,
-                                    listeners: []
-                                };
-                                this._resMap[path] = resRequest;
-                            }
-                            return [4 /*yield*/, new Promise(function (resolve, reject) {
-                                    resRequest.listeners.push(function (error, data) {
-                                        if (error) {
-                                            console.error(error);
-                                            reject(null);
-                                            return;
-                                        }
-                                        if (!data) {
-                                            console.error('file not exist');
-                                            reject(null);
-                                            return;
-                                        }
-                                        resolve(data);
-                                    });
-                                    if (resRequest.state === 1 /* Loading */) {
-                                        return;
-                                    }
-                                    resRequest.state = 1 /* Loading */;
-                                    loader.load(path, function (error, data) {
-                                        resRequest.state = 2 /* Loaded */;
-                                        resRequest.listeners.forEach(function (listener) {
-                                            listener(error, data);
-                                        });
-                                        resRequest.listeners.length = 0;
-                                    }, onProgress);
-                                })];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
-                });
-            });
-        };
-        ResourceManager.unload = function (url) {
-            var res = this._resMap[url];
-            if (!res) {
-                return;
-            }
-            delete this._resMap[url];
-            res.res.destroy();
-        };
-        ResourceManager.removeUnusedResources = function () {
-        };
-        ResourceManager.init = function (onFinished) {
-            this.setLoader(['.png', '.jpg', '.jpeg'], QE.TextureLoader.instance);
-            this.setLoader(['.txt', '.xml', '.json', '.plist', '.fnt', '.atlas'], QE.TextResourceLoader.instance);
-            this.makeBuiltinRes(onFinished);
-        };
-        /**
-         * 构建引擎内置资源
-         * @param onFinished
-         */
-        ResourceManager.makeBuiltinRes = function (onFinished) {
-            var tex = new QE.Texture(ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
-            tex.mipmaps = 0;
-            tex.format = 4 /* RGBA */;
-            tex.usage = 1 /* STATIC */;
-            var pixels = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255];
-            tex.loadRawData((new Uint8Array(pixels)).buffer, 2, 2);
-            // this._resMap[ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME] = tex;
-            if (onFinished) {
-                onFinished.call(this);
-            }
-        };
-        ResourceManager.setLoader = function (extName, loader) {
-            var _this = this;
-            if (!Array.isArray(extName)) {
-                extName = [extName];
-            }
-            extName.forEach(function (value) {
-                _this._loaderMap[value] = loader;
-            });
-        };
-        ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME = '__builtin_defWhiteTex';
-        ResourceManager._loaderMap = {};
-        ResourceManager._resMap = {};
-        return ResourceManager;
-    }());
-    QE.ResourceManager = ResourceManager;
-})(QE || (QE = {}));
-///<reference path="../core/HashObject.ts" />
-///<reference path="ResourceManager.ts" />
-///<reference path="../core/RefObj.ts"/>
-var QE;
-///<reference path="../core/HashObject.ts" />
-///<reference path="ResourceManager.ts" />
-///<reference path="../core/RefObj.ts"/>
-(function (QE) {
-    var ResourceDependence = /** @class */ (function (_super) {
-        __extends(ResourceDependence, _super);
-        function ResourceDependence(mainRes, subRes) {
-            var _this = _super.call(this) || this;
-            _this._mainRes = mainRes;
-            _this._subRes = subRes;
-            _this._listener = new QE.QEListener(_this, ResourceDependence.prototype._onLoaded);
-            subRes._loadedEvent.add(_this._listener);
-            return _this;
-        }
-        ResourceDependence.prototype.getMainRes = function () {
-            return this._mainRes;
-        };
-        ResourceDependence.prototype.getSubRes = function () {
-            return this._subRes;
-        };
-        ResourceDependence.prototype.destroy = function () {
-            _super.prototype.destroy.call(this);
-            this._subRes._loadedEvent.del(this._listener);
-            this._listener = null;
-            this._subRes = null;
-            this._mainRes = null;
-        };
-        ResourceDependence.prototype._onLoaded = function () {
-            this._mainRes._removeDependence(this._subRes);
-        };
-        return ResourceDependence;
-    }(QE.HashObject));
-    // Font,Shader,Material,Mesh,Skeleton,Texture,Audio,Video
-    var Resource = /** @class */ (function (_super) {
-        __extends(Resource, _super);
-        function Resource(name, group) {
-            var _this = _super.call(this) || this;
-            _this._dependenceFiles = [];
-            _this._state = 0 /* UnLoaded */;
-            _this._loadedEvent = new QE.QEEvent1();
-            _this._unloadedEvent = new QE.QEEvent1();
-            _this._name = name;
-            _this._group = group;
-            return _this;
-        }
-        Object.defineProperty(Resource.prototype, "name", {
-            get: function () {
-                return this._name;
-            },
-            set: function (name) {
-                this._name = name;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Resource.prototype, "priority", {
-            get: function () {
-                return this._priority;
-            },
-            set: function (priority) {
-                this._priority = priority;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Resource.prototype, "state", {
-            get: function () {
-                return this._state;
-            },
-            set: function (val) {
-                this._state = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Resource.prototype, "isComplete", {
-            get: function () {
-                return this._state === 2 /* Loaded */;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Resource.prototype.copy = function (object) {
-            _super.prototype.copy.call(this, object);
-        };
-        Resource.prototype._addDependence = function (subResource) {
-            var dep = new ResourceDependence(this, subResource);
-            this._dependenceFiles.push(dep);
-        };
-        Resource.prototype._removeDependence = function (pSubResource) {
-            var deps = this._dependenceFiles;
-            for (var i = 0, len = deps.length; i < len; i++) {
-                var dep = deps[i];
-                if (dep.instanceId === pSubResource.instanceId) {
-                    dep.destroy();
-                    deps.splice(i, 1);
-                    break;
-                }
-            }
-            if (this._state === 1 /* Loading */ && !this._hasDependencies()) {
-            }
-        };
-        Resource.prototype._removeAllDependence = function () {
-            var deps = this._dependenceFiles;
-            for (var k in deps) {
-                deps[k].destroy();
-            }
-            this._dependenceFiles.length = 0;
-        };
-        Resource.prototype._hasDependencies = function () {
-            return this._dependenceFiles.length > 0;
-        };
-        return Resource;
-    }(QE.RefObj));
-    QE.Resource = Resource;
-})(QE || (QE = {}));
-///<reference path="../../res/Resource.ts"/>
-var QE;
-///<reference path="../../res/Resource.ts"/>
+///<reference path="../../assets/Resource.ts"/>
 (function (QE) {
     // 每个顶点都有一个纹理坐标.2D纹理坐标用2d坐标(s, t)表示,也称作(u, v)
     // 纹理图像的左下角由st坐标(0.0, 0.0)指定, 右上角st坐标(1.0, 1.0)指定. 坐标区间为[0.0, 1.0], 区间外坐标也是允许的.
@@ -7059,8 +7301,6 @@ var QE;
             QE.gl.texParameteri(QE.gl.TEXTURE_2D, QE.gl.TEXTURE_WRAP_T, QE.gl.CLAMP_TO_EDGE);
             this._webglTex = webglTex;
         };
-        Texture.prototype.unloadImpl = function () {
-        };
         Texture.Tid = 0;
         return Texture;
     }(QE.Resource));
@@ -7153,7 +7393,7 @@ var QE;
         }
         Material.getDefaultCubeMaterial = function () {
             if (!Material._defMatGLTex) {
-                Material._defMatGLTex = QE.ResourceManager.get(QE.ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
+                Material._defMatGLTex = QE.BuiltinResFactory.getDefaultTex();
             }
             var m = Material._defaultCubeMaterial;
             if (!m) {
@@ -7222,11 +7462,6 @@ var QE;
             m.copy(this);
             return m;
         };
-        Material.prototype.loadImpl = function () {
-        };
-        Material.prototype.unloadImpl = function () {
-        };
-        Material.ClassName = 'Material';
         return Material;
     }(QE.Resource));
     QE.Material = Material;
@@ -7256,7 +7491,7 @@ var QE;
         }
         SpriteMaterial.getDefaultSpriteMaterial = function () {
             if (!SpriteMaterial._defGLTex) {
-                SpriteMaterial._defGLTex = QE.ResourceManager.get(QE.ResourceManager.BUILTIN_DEF_WHITE_TEX_NAME);
+                SpriteMaterial._defGLTex = QE.BuiltinResFactory.getDefaultTex();
             }
             var m = SpriteMaterial._shared;
             if (!m) {
@@ -7305,9 +7540,9 @@ var QE;
     }(QE.Material));
     QE.SpriteMaterial = SpriteMaterial;
 })(QE || (QE = {}));
-///<reference path="../../core/IDisposable.ts" />
+///<reference path="../../msic/IDisposable.ts" />
 var QE;
-///<reference path="../../core/IDisposable.ts" />
+///<reference path="../../msic/IDisposable.ts" />
 (function (QE) {
     function loadPass() {
     }
@@ -7372,9 +7607,9 @@ var QE;
     }());
     QE.GLShaderManager = GLShaderManager;
 })(QE || (QE = {}));
-///<reference path="../../core/IDisposable.ts" />
+///<reference path="../../msic/IDisposable.ts" />
 var QE;
-///<reference path="../../core/IDisposable.ts" />
+///<reference path="../../msic/IDisposable.ts" />
 (function (QE) {
     var WebGLShaderPass = /** @class */ (function () {
         function WebGLShaderPass() {
@@ -7479,9 +7714,9 @@ var QE;
     }());
     QE.WebGLShaderPass = WebGLShaderPass;
 })(QE || (QE = {}));
-///<reference path="../../core/IDisposable.ts" />
+///<reference path="../../msic/IDisposable.ts" />
 var QE;
-///<reference path="../../core/IDisposable.ts" />
+///<reference path="../../msic/IDisposable.ts" />
 (function (QE) {
     var GLShaderProgram = /** @class */ (function () {
         function GLShaderProgram(vsCode, fsCode) {
@@ -7609,8 +7844,8 @@ var QE;
         };
         WebGLBufferManager.prototype.init = function () {
         };
-        WebGLBufferManager.prototype.createIndexBuffer = function (numIndexes, usage, useShadowBuffer) {
-            var buf = new QE.WebGLIndexBuffer(numIndexes, usage, useShadowBuffer);
+        WebGLBufferManager.prototype.createIndexBuffer = function (indexes, usage, useShadowBuffer) {
+            var buf = new QE.WebGLIndexBuffer(indexes, usage, useShadowBuffer);
             this._indexBuffers.push(buf);
             return buf;
         };
@@ -7626,15 +7861,14 @@ var QE;
 var QE;
 (function (QE) {
     var WebGLIndexBuffer = /** @class */ (function () {
-        function WebGLIndexBuffer(numIndexes, usage, useShadowBuffer) {
-            this._data = new Uint16Array(numIndexes);
-            this._count = numIndexes;
+        function WebGLIndexBuffer(indexes, usage, useShadowBuffer) {
+            this._data = new Uint16Array(indexes);
             this._usage = usage;
             this.createBuffer();
         }
         Object.defineProperty(WebGLIndexBuffer.prototype, "count", {
             get: function () {
-                return this._count;
+                return this._data.length;
             },
             enumerable: true,
             configurable: true
@@ -7657,9 +7891,6 @@ var QE;
             if (this._data) {
                 this._data = undefined;
             }
-        };
-        WebGLIndexBuffer.prototype.writeData = function (data) {
-            this._data.set(data);
         };
         WebGLIndexBuffer.prototype.bindBuffer = function () {
             if (!this._buffer || !this._data) {
@@ -7756,418 +7987,406 @@ var QE;
     }());
     QE.WebGLVertexBuffer = WebGLVertexBuffer;
 })(QE || (QE = {}));
-///<reference path="Resource.ts"/>
 var QE;
-///<reference path="Resource.ts"/>
 (function (QE) {
-    var TextResource = /** @class */ (function (_super) {
-        __extends(TextResource, _super);
-        function TextResource() {
-            var _this = _super.call(this) || this;
-            _this._text = '';
-            return _this;
+    var Sound = /** @class */ (function () {
+        function Sound() {
         }
-        Object.defineProperty(TextResource.prototype, "text", {
-            get: function () {
-                return this._text;
-            },
-            set: function (txt) {
-                this._text = txt;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        TextResource.prototype.clone = function () {
-            var obj = new TextResource();
-            obj._text = this._text;
-            return obj;
-        };
-        return TextResource;
-    }(QE.Resource));
-    QE.TextResource = TextResource;
+        return Sound;
+    }());
+    QE.Sound = Sound;
 })(QE || (QE = {}));
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
 var QE;
 (function (QE) {
-    var TextResourceLoader = /** @class */ (function () {
-        function TextResourceLoader() {
-            this._isLoading = false;
+    var Video = /** @class */ (function () {
+        function Video() {
         }
-        TextResourceLoader.prototype.load = function (path, onEnd, onProgress) {
-            var res = new QE.TextResource();
-            if (this._isLoading) {
-                this._tasks.push(onEnd);
-                return this._res;
+        return Video;
+    }());
+    QE.Video = Video;
+})(QE || (QE = {}));
+var QE;
+(function (QE) {
+    /**
+     * @class
+     * @static
+     */
+    var Http = /** @class */ (function () {
+        function Http() {
+        }
+        // 把参数data转为url查询参数
+        Http.getUrlParam = function (url, data) {
+            if (!data) {
+                return '';
             }
-            this._res = res;
-            QE.Http.loadTxtAsync(path)
-                .then(function (value) {
-                res.text = value;
-                if (onEnd) {
-                    onEnd(null, res);
+            var paramsStr = data instanceof Object ? Http.getQueryString(data) : data;
+            return (url.indexOf('?') !== -1) ? paramsStr : '?' + paramsStr;
+        };
+        // 获取ajax请求参数
+        Http.getQueryData = function (data) {
+            if (!data) {
+                return null;
+            }
+            if (typeof data === 'string') {
+                return data;
+            }
+            if (data instanceof FormData) {
+                return data;
+            }
+            return Http.getQueryString(data);
+        };
+        // 把对象转为查询字符串
+        Http.getQueryString = function (data) {
+            var paramsArr = [];
+            if (data instanceof Object) {
+                Object.keys(data).forEach(function (key) {
+                    var val = data[key];
+                    paramsArr.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
+                });
+            }
+            return paramsArr.join('&');
+        };
+        Http.ajax = function (options) {
+            options = options ? Object.assign(Http._defaultOptions, options) : Http._defaultOptions;
+            QE.assert(!options.url || !options.method || !options.responseType, '参数有误');
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function (ev) {
+                switch (xhr.readyState) {
+                    case 0 /* Uninitialized */:
+                        break;
+                    case 1 /* Open */:
+                        break;
+                    case 2 /* Sent */:
+                        break;
+                    case 3 /* Receiving */:
+                        break;
+                    case 4 /* Loaded */:
+                        var result = void 0;
+                        var err = void 0;
+                        var status_1 = xhr.status;
+                        if ((status_1 >= 200 && status_1 < 300) || status_1 === 304) {
+                            switch (xhr.responseType) {
+                                case 'arraybuffer':
+                                case 'blob':
+                                case 'json':
+                                    result = xhr.response;
+                                    break;
+                                case 'document':
+                                    result = xhr.responseXML;
+                                    break;
+                                case 'text':
+                                    result = xhr.responseText;
+                                    break;
+                                default:
+                                    result = xhr.responseText;
+                                    break;
+                            }
+                        }
+                        else if (status_1 === 408) {
+                            err = 'timeout';
+                        }
+                        else {
+                            err = 'load failed: ' + url;
+                        }
+                        if (options.callback) {
+                            options.callback.call(options.thisObj, err, result);
+                        }
+                        break;
+                    default:
+                        QE.Log.E('todo state: ' + xhr.readyState);
+                        break;
                 }
-            })
-                .catch(function (reason) {
-                if (onEnd) {
-                    onEnd(reason);
-                }
+            };
+            var url = options.url;
+            var sendData;
+            var method = options.method.toUpperCase();
+            if (method === 'GET') {
+                url += Http.getUrlParam(options.url, options.data);
+            }
+            else {
+                sendData = Http.getQueryData(options.data);
+            }
+            for (var _i = 0, _a = Object.keys(options.headers); _i < _a.length; _i++) {
+                var key = _a[_i];
+                xhr.setRequestHeader(key, options.headers[key]);
+            }
+            xhr.open(method, url, options.async);
+            xhr.responseType = options.responseType;
+            if (options.async && options.timeout) {
+                xhr.timeout = options.timeout;
+            }
+            xhr.send(sendData);
+            return xhr;
+        };
+        /**
+         *
+         * @param url
+         * @param data
+         * @param header
+         * @param callback
+         * @param thisObj
+         * @param isAsync
+         */
+        Http.get = function (url, data, callback, thisObj, isAsync) {
+            if (isAsync === void 0) { isAsync = true; }
+            return this.ajax({
+                url: url,
+                method: 'GET',
+                responseType: 'text',
+                data: data,
+                callback: callback,
+                thisObj: thisObj,
+                async: isAsync
             });
-            return res;
         };
-        TextResourceLoader.instance = new TextResourceLoader();
-        return TextResourceLoader;
-    }());
-    QE.TextResourceLoader = TextResourceLoader;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var TextureLoader = /** @class */ (function () {
-        function TextureLoader() {
-        }
-        TextureLoader.prototype.load = function (path, onEnd, onProgress) {
-            var res = new QE.Texture();
-            QE.Http.loadImageAsync(path)
-                .then(function (value) {
-                res.loadImage(value);
-                if (onEnd) {
-                    onEnd(null, res);
-                }
-            })
-                .catch(function (reason) {
-                if (onEnd) {
-                    onEnd(reason);
-                }
+        Http.post = function (url, data, callback, thisObj, isAsync) {
+            if (isAsync === void 0) { isAsync = true; }
+            return this.ajax({
+                url: url,
+                method: 'POST',
+                responseType: 'text',
+                data: data,
+                callback: callback,
+                thisObj: thisObj,
+                async: isAsync
             });
-            return res;
         };
-        TextureLoader.instance = new TextureLoader();
-        return TextureLoader;
-    }());
-    QE.TextureLoader = TextureLoader;
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    var FbxPrefab = /** @class */ (function () {
-        function FbxPrefab() {
-        }
-        FbxPrefab.prototype.load = function (json) {
-        };
-        return FbxPrefab;
-    }());
-})(QE || (QE = {}));
-var QE;
-(function (QE) {
-    /*
-       1-------2
-      /|      /|
-     / |     / |
-    5-------4  |
-    |  0----|--3
-    | /     | /
-    |/      |/
-    6-------7
-    */
-    QE.CUBE_SIZE = 1.0;
-    QE.CUBE_HALF_SIZE = QE.CUBE_SIZE / 2.0;
-    QE.CubeMeshData = {
-        vertices: [
-            // front side
-            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            // back side
-            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            // left side
-            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            // right side
-            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            // up side
-            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            // down side
-            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE,
-            QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-            -QE.CUBE_HALF_SIZE, -QE.CUBE_HALF_SIZE, QE.CUBE_HALF_SIZE,
-        ],
-        colors: [
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-            255, 255, 255, 255,
-        ],
-        indices: [
-            // front
-            0, 1, 2,
-            0, 2, 3,
-            // back
-            4, 5, 6,
-            4, 6, 7,
-            // left
-            8, 9, 10,
-            8, 10, 11,
-            // right
-            12, 13, 14,
-            12, 14, 15,
-            // up
-            16, 17, 18,
-            16, 18, 19,
-            // down
-            20, 21, 22,
-            20, 22, 23
-        ],
-        normals: [
-            0, 0, 1,
-            0, 0, 1,
-            0, 0, 1,
-            0, 0, 1,
-            0, 0, -1,
-            0, 0, -1,
-            0, 0, -1,
-            0, 0, -1,
-            -1, 0, 0,
-            -1, 0, 0,
-            -1, 0, 0,
-            -1, 0, 0,
-            1, 0, 0,
-            1, 0, 0,
-            1, 0, 0,
-            1, 0, 0,
-            0, 1, 0,
-            0, 1, 0,
-            0, 1, 0,
-            0, 1, 0,
-            0, -1, 0,
-            0, -1, 0,
-            0, -1, 0,
-            0, -1, 0
-        ],
-        uvs: [
-            0, 1,
-            1, 1,
-            1, 0,
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0,
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0,
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0,
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0,
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0,
-            0, 0
-        ]
-    };
-    var PrefabFactory = /** @class */ (function () {
-        function PrefabFactory() {
-        }
-        PrefabFactory.createCube = function (mesh) {
-            var subMesh = new QE.SubMesh();
-            mesh.addSubMesh(subMesh);
-            var posBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
-            posBuf.type = QE.gl.FLOAT;
-            posBuf.semantic = 1 /* POSITION */;
-            posBuf.vertexCount = QE.CubeMeshData.vertices.length;
-            posBuf.writeData((new Float32Array(QE.CubeMeshData.vertices)).buffer);
-            posBuf.bindBuffer();
-            var colBuf = QE.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, 1 /* STATIC */);
-            colBuf.type = QE.gl.UNSIGNED_BYTE;
-            colBuf.semantic = 5 /* DIFFUSE */;
-            colBuf.vertexCount = QE.CubeMeshData.colors.length;
-            colBuf.writeData((new Uint8Array(QE.CubeMeshData.colors)).buffer);
-            colBuf.bindBuffer();
-            var normalBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
-            normalBuf.type = QE.gl.FLOAT;
-            normalBuf.semantic = 4 /* NORMAL */;
-            normalBuf.vertexCount = QE.CubeMeshData.normals.length;
-            normalBuf.writeData((new Float32Array(QE.CubeMeshData.normals)).buffer);
-            normalBuf.bindBuffer();
-            var uvBuf = QE.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, 1 /* STATIC */);
-            uvBuf.type = QE.gl.FLOAT;
-            uvBuf.semantic = 7 /* TEXTURE_COORDINATES */;
-            normalBuf.vertexCount = QE.CubeMeshData.uvs.length;
-            uvBuf.writeData((new Float32Array(QE.CubeMeshData.uvs)).buffer);
-            uvBuf.bindBuffer();
-            var vertexData = [];
-            vertexData[0] = posBuf;
-            vertexData[1] = colBuf;
-            vertexData[2] = normalBuf;
-            vertexData[3] = uvBuf;
-            subMesh.vertexData = vertexData;
-            var indicesBuf = QE.WebGLBufferManager.instance.createIndexBuffer(QE.CubeMeshData.indices.length, 1 /* STATIC */, false);
-            indicesBuf.writeData(QE.CubeMeshData.indices);
-            indicesBuf.bindBuffer();
-            subMesh.indexData = indicesBuf;
-        };
-        PrefabFactory.createSphere = function (mesh) {
-            var NUM_SEGMENTS = 24;
-            var NUM_RINGS = 24;
-            var SPHERE_RADIUS = 1;
-            var subMesh = new QE.SubMesh();
-            mesh.addSubMesh(subMesh);
-            var deltaRingAngle = (Math.PI / NUM_RINGS);
-            var deltaSegAngle = (2 * Math.PI / NUM_SEGMENTS);
-            var verticeIndex = 0;
-            var vertices = [], normals = [], uvs = [], colors = [], indices = [];
-            var vCount = 0;
-            for (var ring = 0; ring <= NUM_RINGS; ring++) {
-                var r0 = SPHERE_RADIUS * Math.sin(ring * deltaRingAngle);
-                var y0 = SPHERE_RADIUS * Math.cos(ring * deltaRingAngle);
-                // Generate the group of segments for the current ring
-                for (var seg = 0; seg <= NUM_SEGMENTS; seg++) {
-                    var x0 = r0 * Math.sin(seg * deltaSegAngle);
-                    var z0 = r0 * Math.cos(seg * deltaSegAngle);
-                    // Add one vertex to the strip which makes up the sphere
-                    vertices[vCount * 3 + 0] = x0;
-                    vertices[vCount * 3 + 1] = y0;
-                    vertices[vCount * 3 + 2] = z0;
-                    var vNormal = new QE.Vector3(x0, y0, z0).normalize();
-                    normals[vCount * 3 + 0] = vNormal.x;
-                    normals[vCount * 3 + 1] = vNormal.y;
-                    normals[vCount * 3 + 2] = vNormal.z;
-                    colors[vCount * 4 + 0] = 255.0;
-                    colors[vCount * 4 + 1] = 255.0;
-                    colors[vCount * 4 + 2] = 255.0;
-                    colors[vCount * 4 + 3] = 255.0;
-                    uvs[vCount * 2 + 0] = seg / NUM_SEGMENTS;
-                    uvs[vCount * 2 + 1] = ring / NUM_RINGS;
-                    if (ring != NUM_RINGS) {
-                        // each vertex (except the last) has six indicies pointing to it
-                        indices[verticeIndex * 6 + 0] = verticeIndex + NUM_SEGMENTS + 1;
-                        indices[verticeIndex * 6 + 1] = verticeIndex;
-                        indices[verticeIndex * 6 + 2] = verticeIndex + NUM_SEGMENTS;
-                        indices[verticeIndex * 6 + 3] = verticeIndex + NUM_SEGMENTS + 1;
-                        indices[verticeIndex * 6 + 4] = verticeIndex + 1;
-                        indices[verticeIndex * 6 + 5] = verticeIndex;
-                        verticeIndex++;
+        Http.loadTxtAsync = function (url) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, new Promise(function (resolve, reject) {
+                                Http.ajax({
+                                    url: url,
+                                    method: 'GET',
+                                    responseType: 'text',
+                                    async: true,
+                                    callback: function (err, data, xhr, status) {
+                                        if (err) {
+                                            reject(err);
+                                        }
+                                        else {
+                                            resolve(data);
+                                        }
+                                    }
+                                });
+                            })];
+                        case 1: return [2 /*return*/, _a.sent()];
                     }
-                    vCount++;
-                }
-                // end for seg
-            } // end for ring
-            var posBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
-            posBuf.type = QE.gl.FLOAT;
-            posBuf.semantic = 1 /* POSITION */;
-            posBuf.vertexCount = vertices.length;
-            posBuf.writeData((new Float32Array(vertices)).buffer);
-            posBuf.bindBuffer();
-            var colorBuf = QE.WebGLBufferManager.instance.createVertexBuffer(4 * Uint8Array.BYTES_PER_ELEMENT, 4, true, 1 /* STATIC */);
-            colorBuf.type = QE.gl.UNSIGNED_BYTE;
-            colorBuf.semantic = 5 /* DIFFUSE */;
-            colorBuf.vertexCount = colors.length;
-            colorBuf.writeData((new Uint8Array(colors)).buffer);
-            colorBuf.bindBuffer();
-            var normalBuf = QE.WebGLBufferManager.instance.createVertexBuffer(3 * Float32Array.BYTES_PER_ELEMENT, 3, false, 1 /* STATIC */);
-            normalBuf.type = QE.gl.FLOAT;
-            normalBuf.semantic = 4 /* NORMAL */;
-            normalBuf.vertexCount = normals.length;
-            normalBuf.writeData((new Float32Array(normals)).buffer);
-            normalBuf.bindBuffer();
-            var uvBuf = QE.WebGLBufferManager.instance.createVertexBuffer(2 * Float32Array.BYTES_PER_ELEMENT, 2, false, 1 /* STATIC */);
-            uvBuf.type = QE.gl.FLOAT;
-            uvBuf.semantic = 7 /* TEXTURE_COORDINATES */;
-            normalBuf.vertexCount = uvs.length;
-            uvBuf.writeData((new Float32Array(uvs)).buffer);
-            uvBuf.bindBuffer();
-            var vertexData = [];
-            vertexData[0] = posBuf;
-            vertexData[1] = colorBuf;
-            vertexData[2] = normalBuf;
-            vertexData[3] = uvBuf;
-            subMesh.vertexData = vertexData;
-            var indicesBuf = QE.WebGLBufferManager.instance.createIndexBuffer(indices.length, 1 /* STATIC */, false);
-            indicesBuf.writeData(indices);
-            indicesBuf.bindBuffer();
-            subMesh.indexData = indicesBuf;
+                });
+            });
         };
-        return PrefabFactory;
+        Http.loadJsonAsync = function (url) {
+            return __awaiter(this, void 0, void 0, function () {
+                var text, jsonObj;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.loadTxtAsync(url)];
+                        case 1:
+                            text = _a.sent();
+                            jsonObj = JSON.parse(text);
+                            return [2 /*return*/, jsonObj];
+                    }
+                });
+            });
+        };
+        Http.loadImageAsync = function (path) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            var image = new Image();
+                            image.onload = function () {
+                                resolve(image);
+                            };
+                            image.onerror = function () {
+                                reject('load image failed: ' + path);
+                            };
+                            image.src = path;
+                        })];
+                });
+            });
+        };
+        Http.loadArrayBufferAsync = function (url) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            Http.ajax({
+                                url: url,
+                                method: 'GET',
+                                responseType: 'arraybuffer',
+                                async: true,
+                                callback: function (err, data, xhr, status) {
+                                    if (err) {
+                                        reject(err);
+                                    }
+                                    else {
+                                        resolve(data);
+                                    }
+                                }
+                            });
+                        })];
+                });
+            });
+        };
+        Http.loadAudioBufferAsync = function (url) {
+            return __awaiter(this, void 0, void 0, function () {
+                var arrayBuffer, e_1, buf, e_2;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            return [4 /*yield*/, this.loadArrayBufferAsync(url)];
+                        case 1:
+                            arrayBuffer = _a.sent();
+                            return [3 /*break*/, 3];
+                        case 2:
+                            e_1 = _a.sent();
+                            console.error(e_1);
+                            return [2 /*return*/, null];
+                        case 3:
+                            if (!arrayBuffer) {
+                                console.error('file is not exist: ' + url);
+                                return [2 /*return*/, null];
+                            }
+                            _a.label = 4;
+                        case 4:
+                            _a.trys.push([4, 6, , 7]);
+                            return [4 /*yield*/, this._context.decodeAudioData(arrayBuffer)];
+                        case 5:
+                            buf = _a.sent();
+                            if (buf) {
+                                return [2 /*return*/, buf];
+                            }
+                            else {
+                                console.log('decode audio data failed');
+                                return [2 /*return*/, null];
+                            }
+                            return [3 /*break*/, 7];
+                        case 6:
+                            e_2 = _a.sent();
+                            console.error(e_2);
+                            return [2 /*return*/, null];
+                        case 7: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        Http._defaultOptions = {
+            url: '',
+            method: 'GET',
+            responseType: 'json',
+            async: true,
+            data: null,
+            headers: {},
+            timeout: 1000,
+        };
+        Http._context = new (window['AudioContext'] || window['webkitAudioContext'])();
+        return Http;
     }());
-    QE.PrefabFactory = PrefabFactory;
+    QE.Http = Http;
 })(QE || (QE = {}));
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
 var QE;
 (function (QE) {
     var Reflection;

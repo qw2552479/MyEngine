@@ -1,22 +1,4 @@
 declare namespace QE {
-    let __QE_EDITOR_MODE__: boolean;
-    let __QE_DEBUG__: boolean;
-    let __PROFILER__: boolean;
-}
-declare namespace QE {
-    interface RunData {
-        width: number;
-        height: number;
-        div?: HTMLElement;
-        clearColor?: Color;
-        debugMode?: boolean;
-        frameRate?: number;
-        onEnginePrepared?: Function;
-    }
-    function run(data: RunData): void;
-    function renderOneFrame(deltaTime: number): void;
-}
-declare namespace QE {
     enum HideFlags {
         None = 0,
         HideInHierarchy = 1,
@@ -43,6 +25,316 @@ declare namespace QE {
         copy(object: HashObject): void;
         clone(): HashObject;
     }
+}
+declare namespace QE {
+    const enum VertexAnimationType {
+        NONE = 0,
+        MORPH = 1,
+        POSE = 2
+    }
+    /**
+     * 动画片段
+     * 动画片段包含一组动画曲线.每个曲线对应节点路径
+     */
+    class AnimationClip extends HashObject {
+        private _frameRate;
+        frameRate: number;
+        private _length;
+        length: number;
+        protected _name: string;
+        name: string;
+        private _keyFrameTimes;
+        private _keyFrameTimesDirty;
+        private _positionCurveDict;
+        private _scaleCurveDict;
+        private _eulerCurveDict;
+        private _numberCurveDict;
+        private _objCurveDict;
+        /**
+         *
+         */
+        constructor();
+        /**
+         * 添加一条曲线
+         * @param relativePath 曲线对应节点路径
+         * @param type 属性类型
+         * @param propertyName 属性名
+         * @param curve 曲线
+         */
+        addCurve(relativePath: string, type: Reflection.Type, propertyName: string, curve: AnimationCurve): void;
+        removeCurve(relativePath: string, type: string, propertyName: string): void;
+        /**
+         * 清除动画数据
+         */
+        clearAllCurves(): void;
+        apply(node: GameObject, timePos: number): void;
+        private _applyScale;
+        private _applyRotation;
+        private _applyPosition;
+        private _applyObj;
+        getTimeIndex(timePos: number): TimeIndex;
+        private buildKeyFrameTimeList;
+    }
+}
+declare namespace QE {
+    namespace AnimationCurve {
+        /**
+         * 插值模式
+         */
+        const enum InterpolationMode {
+            Liner = 0,
+            Spline = 1,
+            Constant = 2
+        }
+    }
+    /**
+     * 关键帧索引数据
+     */
+    interface TimeIndex {
+        timePos: number;
+        keyIndex: number;
+    }
+    /**
+     * timeline的指定时间点上，相邻的一对关键帧，以及时间系数
+     */
+    interface KeyFramePair {
+        t: number;
+        keyframe1: KeyFrame;
+        keyframe2: KeyFrame;
+        firstKeyFrameIndex?: number;
+    }
+    class AnimationCurve {
+        private _isObjCurve;
+        private _keyFrames;
+        _propName: string;
+        _valueType: Object;
+        _objInstance: Object;
+        constructor(objCurve?: boolean);
+        isObjectKeyFrame(): boolean;
+        getKeyFrameCount(): number;
+        addKeyFrame(keyFrame: KeyFrame, index?: number): void;
+        addKeyFrameByValue(time: number, value: number, inTangent?: number, outTangent?: number, index?: number): void;
+        moveKeyFrame(index: number, keyFrame: KeyFrame): void;
+        removeKeyFrame(index: number): void;
+        /**
+         * 根据时间索引, 取得当前一对关键帧
+         * @param {number} timePos 动画时间位置，这个时间应当和动画片段的总时间做过取余计算
+         * @param {number} keyIndex 帧索引
+         * @return {KeyFramePair}
+         */
+        protected getKeyFramePairAtTime(timePos: number, keyIndex?: number): KeyFramePair;
+        /**
+         * 根据时间索引, 计算关键帧插值
+         * @param {number} timePos 时间点
+         * @param {number} keyIndex 索引
+         */
+        getInterpolation(timePos: number, keyIndex?: number): number;
+        /**
+         * 收集所有关键帧时间
+         * @param outKeyFrameTimes 关键帧时间数组
+         */
+        _collectKeyFrameTimes(outKeyFrameTimes: number[]): void;
+        _buildKeyFrameIndexMap(outKeyFrameTimes: number[]): void;
+    }
+}
+declare namespace QE {
+}
+declare namespace QE {
+    enum AnimationBlendMode {
+        Add = 0
+    }
+    /**
+     * 动画控制器
+     * 动画控制器控制管理一组动画片段
+     */
+    class AnimationState {
+        private _blendMode;
+        blendMode: AnimationBlendMode;
+        private _clip;
+        readonly clip: AnimationClip;
+        enabled: boolean;
+        layer: number;
+        length: number;
+        name: string;
+        normalizedSpeed: number;
+        normalizedTime: number;
+        speed: number;
+        time: number;
+        weight: number;
+        wrapMode: AnimationCurve.InterpolationMode;
+        AddMixingTransform(mix: Transform, recursive?: boolean): void;
+        RemoveMixingTransform(mix: Transform): void;
+    }
+}
+declare namespace QE {
+    interface IScriptable {
+        onLoad?: () => void;
+        onUpdate?: (deltaTime: number) => void;
+    }
+    function DisallowMultipleComponent(constructor: any): void;
+    class Component extends HashObject implements IScriptable {
+        readonly node: GameObject;
+        readonly transform: Transform;
+        enabled: boolean;
+        constructor();
+        protected static __QE_DisallowMultipleComponent__: boolean;
+        protected static __QE_SerializedFieldMap?: {
+            [key: string]: any;
+        };
+        private static s_unStartedComponentArr;
+        private static s_startedComponentArr;
+        tag: string;
+        private _needCallStart;
+        private _node;
+        private _enable;
+        onLoad: () => void;
+        onUpdate: (deltaTime: number) => void;
+        onDebugDraw: () => void;
+        static load(): void;
+        static update(deltaTime: number): void;
+        protected onDestroy(): void;
+        compareTag(tag: string): boolean;
+        getComponent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponentInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean): T;
+        GetComponentInParent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponents<T extends Component>(compCls: ComponentClassType<T>): T[];
+        getComponentsInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
+        getComponentsInParent<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
+        notifyAttachNode(val: GameObject): void;
+        private enqueueComponent;
+        private dequeueComponent;
+    }
+}
+declare namespace QE {
+    /**
+     * 动画播放器
+     * 动画控制器控制动画的状态切换
+     */
+    class Animator extends Component {
+        private _animController;
+        animController: AnimatorController;
+        private _playingClip;
+        private _timePos;
+        constructor();
+        play(animName: string): void;
+        stop(): void;
+        /**
+         * 更新动画
+         *@param {number} deltaTime 间隔时间
+         */
+        onUpdate: (deltaTime: number) => void;
+    }
+}
+declare namespace QE {
+    /**
+     * 动画控制器
+     * 动画控制器控制管理一组动画片段
+     */
+    class AnimatorController extends HashObject {
+        private _animationClips;
+        animationClips: AnimationClip[];
+        constructor();
+        addClip(clip: AnimationClip): void;
+        removeClip(clip: AnimationClip): void;
+    }
+}
+declare namespace QE {
+    type ComponentClassType<T extends Component> = new () => T;
+    class GameObject extends HashObject {
+        protected _transform: Transform;
+        protected _worldAABB: AABB;
+        protected _isActive: boolean;
+        private _componentList;
+        protected _name: string;
+        name: string;
+        readonly transform: Transform;
+        constructor(name?: string);
+        updateRenderQueue(renderQueue: RenderQueue): void;
+        addComponent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponentInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean): T;
+        GetComponentInParent<T extends Component>(compCls: ComponentClassType<T>): T;
+        getComponents<T extends Component>(compCls: ComponentClassType<T>): T[];
+        getComponentsInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
+        getComponentsInParent<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
+    }
+}
+declare namespace QE {
+    /**
+     * 骨骼
+     */
+    class Bone {
+        private _skeleton;
+        private _name;
+        name: string;
+        private _handle;
+        handle: number;
+        private _node;
+        node: GameObject;
+        private _firstChild;
+        constructor(skeleton: Skeleton, name?: string);
+        _update(updateChilren: boolean, parentHasChanged: boolean): void;
+    }
+}
+declare namespace QE {
+    /**
+     *
+     */
+    class KeyFrame {
+        protected _time: number;
+        /**
+         * 返回关键帧所在时间，以毫秒为单位
+         *@return {number}
+         */
+        /**
+        * 设置关键帧所在时间，以毫秒为单位
+        *@param {number} val 时间
+        */
+        time: number;
+        protected _value: number;
+        value: number;
+        private _inTangent;
+        inTangent: number;
+        private _outTangent;
+        outTangent: number;
+        protected _interpolationMode: AnimationCurve.InterpolationMode;
+        interpolationMode: AnimationCurve.InterpolationMode;
+        protected _parentTrack: any;
+        constructor(time: number, value: number, inTangent?: number, outTangent?: number);
+    }
+}
+declare namespace QE {
+    class Skeleton {
+        private _name;
+        private _rootBones;
+        private _boneMapByName;
+        private _boneMapByPath;
+        constructor(name: string);
+        createBone(name: string, relativePath: string): Bone;
+        getRootBone(): Bone;
+        getBone(name: string): Bone;
+        getBoneByPath(relativePath: string): Bone;
+        hasBone(name: string): boolean;
+        updateTransforms(): void;
+    }
+}
+declare namespace QE {
+    let __QE_EDITOR_MODE__: boolean;
+    let __QE_DEBUG__: boolean;
+    let __PROFILER__: boolean;
+}
+declare namespace QE {
+    interface RunData {
+        width: number;
+        height: number;
+        div?: HTMLElement;
+        clearColor?: Color;
+        debugMode?: boolean;
+        frameRate?: number;
+        onEnginePrepared?: () => void;
+    }
+    function run(data: RunData): void;
+    function renderOneFrame(deltaTime: number): void;
 }
 declare namespace QE {
     class Scene3D extends HashObject {
@@ -87,173 +379,55 @@ declare namespace QE {
     }
 }
 declare namespace QE {
-    function assert(cond: any, msg: any): void;
-}
-declare namespace QE {
-    interface IStringDictionary<TValue> {
-        [key: string]: TValue;
-    }
-    interface INumberDictionary<TValue> {
-        [key: string]: TValue;
-    }
-    class Dictionary<TValue> {
-        private data;
-        private list;
-        constructor(useOrderList?: boolean);
-        containsKey(key: string): boolean;
-        getValue(key: string): TValue;
-        getKeys(): string[];
-        getValues(): Array<TValue>;
-        add(key: string, value: TValue): void;
-        remove(key: string): void;
-        dispose(): void;
-    }
-}
-declare namespace QE {
-    type Action = () => void;
-    type Action1<T> = (t: T) => void;
-    type Action2<T1, T2> = (t: T1, t2: T2) => void;
-    type Action3<T1, T2, T3> = (t: T1, t2: T2, t3: T3) => void;
-    type Action4<T1, T2, T3, T4> = (t: T1, t2: T2, t3: T3, t4: T4) => void;
-    type Func<TResult> = () => TResult;
-    type Func1<T, TResult> = (t: T) => TResult;
-    type Func2<T1, T2, TResult> = (t: T1, t2: T2) => TResult;
-    type Func3<T1, T2, T3, TResult> = (t: T1, t2: T2, t3: T3) => TResult;
-    type Func4<T1, T2, T3, T4, TResult> = (t: T1, t2: T2, t3: T3, t4: T4) => TResult;
-    interface IQEListener {
-        _func: Action;
-        onCall: Action;
-    }
-    class QEListener<T> implements IQEListener {
-        _listener: T;
-        _func: Action;
-        constructor(listener: T, func: Action);
-        onCall(): void;
-    }
-    class QEEvent {
-        private _listeners;
-        add(listener: IQEListener): void;
-        del(listener: IQEListener): void;
-        clear(): void;
-        dispatchEvent(): void;
-    }
-    interface IQEListener1<P> {
-        _func: Action1<P>;
-        onCall: Action1<P>;
-    }
-    class QEListener1<T, P> implements IQEListener1<P> {
-        _listener: T;
-        _func: Action1<P>;
-        constructor(listener: T, func: Action1<P>);
-        onCall(p: P): void;
-    }
-    class QEEvent1<P> {
-        private _listeners;
-        add(listener: IQEListener1<P>): void;
-        del(listener: IQEListener1<P>): void;
-        clear(): void;
-        dispatchEvent(t: P): void;
-    }
-    interface IQEListener2<P1, P2> {
-        _func: Action2<P1, P2>;
-        onCall: Action2<P1, P2>;
-    }
-    class QEListener2<T, P1, P2> implements IQEListener2<P1, P2> {
-        _listener: T;
-        _func: Action2<P1, P2>;
-        constructor(listener: T, func: Action2<P1, P2>);
-        onCall(p1: P1, p2: P2): void;
-    }
-    class QEEvent2<P1, P2> {
-        private _listeners;
-        add(listener: IQEListener2<P1, P2>): void;
-        del(listener: IQEListener2<P1, P2>): void;
-        clear(): void;
-        dispatchEvent(p1: P1, p2: P2): void;
-    }
-    interface IQEListener3<P1, P2, P3> {
-        _func: Action3<P1, P2, P3>;
-        onCall: Action3<P1, P2, P3>;
-    }
-    class QEListener3<T, P1, P2, P3> implements IQEListener3<P1, P2, P3> {
-        _listener: T;
-        _func: Action3<P1, P2, P3>;
-        constructor(listener: T, func: Action3<P1, P2, P3>);
-        onCall(p1: P1, p2: P2, p3: P3): void;
-    }
-    class QEEvent3<P1, P2, P3> {
-        private _listeners;
-        add(listener: IQEListener3<P1, P2, P3>): void;
-        del(listener: IQEListener3<P1, P2, P3>): void;
-        clear(): void;
-        dispatchEvent(p1: P1, p2: P2, p3: P3): void;
-    }
-    interface IQEListener4<P1, P2, P3, P4> {
-        _func: Action4<P1, P2, P3, P4>;
-        onCall: Action4<P1, P2, P3, P4>;
-    }
-    class QEListener4<T, P1, P2, P3, P4> implements IQEListener4<P1, P2, P3, P4> {
-        _listener: T;
-        _func: Action4<P1, P2, P3, P4>;
-        constructor(listener: T, func: Action4<P1, P2, P3, P4>);
-        onCall(p1: P1, p2: P2, p3: P3, p4: P4): void;
-    }
-    class QEEvent4<P1, P2, P3, P4> {
-        private _listeners;
-        add(listener: IQEListener4<P1, P2, P3, P4>): void;
-        del(listener: IQEListener4<P1, P2, P3, P4>): void;
-        clear(): void;
-        dispatchEvent(p1: P1, p2: P2, p3: P3, p4: P4): void;
+    const CUBE_SIZE = 1;
+    const CUBE_HALF_SIZE: number;
+    const CubeMeshData: {
+        vertices: number[];
+        colors: number[];
+        indices: number[];
+        normals: number[];
+        uvs: number[];
+    };
+    class BuiltinResFactory {
+        private static BUILTIN_TEX_DEFAULT;
+        private static BUILTIN_MESH_CUBE;
+        private static BUILTIN_MESH_SPHERE;
+        private static _builtResMap;
+        static init(onFinished: () => void): void;
+        static getDefaultTex(): Texture;
+        static getCube(): Mesh;
+        static getSphere(): Mesh;
+        private static createCube;
+        private static createSphere;
     }
 }
 declare namespace QE {
-    interface IDestroyable {
-        isDestroyed(): boolean;
-        destroy(): void;
-    }
-}
-declare namespace QE {
-    class Log {
-        static D(...args: any[]): void;
-        static I(...args: any[]): void;
-        static W(...args: any[]): void;
-        static E(...args: any[]): void;
-        static F(...args: any[]): void;
-    }
-}
-declare namespace QE {
-    type MinHeapComparer<T> = (x: T, y: T) => number;
     /**
-     * 最小堆
+     * 资源类型
      */
-    class MinHeap<T> {
-        protected _heap: T[];
-        protected _comparer: MinHeapComparer<T>;
-        protected _length: number;
-        constructor(comparer?: MinHeapComparer<T>);
-        /**
-         * 元素入队
-         * @param x
-         */
-        enqueue(x: T): boolean;
-        /**
-         * 最小元素出队
-         */
-        dequeue(): T;
-        /**
-         * 查看最小元素
-         */
-        peek(): T;
-        /**
-         * 堆元素数量
-         */
-        count(): number;
-        /**
-         * 清空队列
-         */
-        clear(): void;
-        protected filterDown(start: number, end: number): void;
-        protected filterUp(start: number): void;
+    enum ResType {
+        Texture = 0,
+        TEXT = 1,
+        BINARY = 2,
+        FBX = 3,
+        MATERIAL = 4,
+        SHADER = 5,
+        SCENE = 6,
+        ANIM = 7,
+        FONT = 8,
+        PREFAB = 9
+    }
+    type ResourceClassType<T extends Resource> = new (filePath: string) => T;
+    function extname(path: string): string;
+    class ResourceManager {
+        private static _loaderMap;
+        private static _resMap;
+        static get<T extends Resource>(path: string): T;
+        static load<T extends Resource>(path: string, onProgress?: (progress: number) => void): Promise<T>;
+        static unload(url: string): void;
+        static removeUnusedResources(): void;
+        static init(onFinished: () => void): void;
+        static setLoader(extName: string | string[], loader: IResLoader<any>): void;
     }
 }
 /**
@@ -272,27 +446,152 @@ declare namespace QE {
     }
 }
 declare namespace QE {
-    module Timer {
-        /**
-         * 添加一个定时器
-         * @param callback 回调函数
-         * @param delay    延迟时间, 单位毫秒
-         * @param repeat   重复次数, 默认为0, 不重复
-         * @param interval 重复间隔时间, 单位毫秒
-         * @return 定时器id
-         */
-        function addTimer(callback: (dt: number) => void, delay: number, repeat?: number, interval?: number): number;
-        /**
-         * 删除一个定时器
-         * @param timerId 定时器id
-         */
-        function killTimer(timerId: number): void;
-        function update(dt: number): void;
+    /**
+     * 资源加载状态
+     */
+    const enum ResState {
+        UnLoaded = 0,
+        Loading = 1,
+        Loaded = 2,
+        Prepared = 3,
+        Preparing = 4
+    }
+    class ResourceDependence extends HashObject {
+        _mainRes: Resource;
+        _subRes: Resource;
+        _listener: QEListener<ResourceDependence>;
+        constructor(mainRes: Resource, subRes: Resource);
+        getMainRes(): Resource;
+        getSubRes(): Resource;
+        destroy(): void;
+        private _onLoaded;
+    }
+    abstract class Resource extends RefObj {
+        protected _group: string;
+        protected _dependenceFiles: Array<ResourceDependence>;
+        protected _name: string;
+        name: string;
+        _priority: number;
+        priority: number;
+        protected _state: ResState;
+        state: ResState;
+        readonly isComplete: boolean;
+        protected constructor(name?: string, group?: string);
+        abstract clone(): HashObject;
+        copy(object: HashObject): void;
+        _addDependence(subResource: Resource): void;
+        _removeDependence(pSubResource: Resource): void;
+        _removeAllDependence(): void;
+        _hasDependencies(): boolean;
     }
 }
 declare namespace QE {
-    module UUID {
-        function newUuid(): string;
+    class TextResource extends Resource {
+        private _text;
+        text: string;
+        constructor();
+        clone(): HashObject;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+declare namespace QE {
+    interface LoadResResult<T> {
+        error?: string;
+        res?: T;
+    }
+    interface IResLoader<T> {
+        load(path: string, onEnd?: (error?: string, data?: T) => void, onProgress?: (progress: null) => void): T;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+declare namespace QE {
+    class MeshLoader implements IResLoader<Mesh> {
+        static readonly instance: MeshLoader;
+        load(path: string, onEnd?: (error?: string, data?: Mesh) => void, onProgress?: (progress: null) => void): Mesh;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+declare namespace QE {
+    class ModelLoader implements IResLoader<ModelData> {
+        static readonly instance: ModelLoader;
+        load(path: string, onEnd?: (error?: string, data?: ModelData) => void, onProgress?: (progress: null) => void): ModelData;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+declare namespace QE {
+    class PrefabLoader implements IResLoader<GameObject> {
+        static readonly instance: PrefabLoader;
+        load(path: string, onEnd?: (error?: string, data?: GameObject) => void, onProgress?: (progress: null) => void): GameObject;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+declare namespace QE {
+    class TextResourceLoader implements IResLoader<TextResource> {
+        static readonly instance: TextResourceLoader;
+        load(path: string, onEnd?: (error?: string, data?: TextResource) => void, onProgress?: (progress: null) => void): TextResource;
+    }
+}
+declare namespace QE {
+    class TextureLoader implements IResLoader<Texture> {
+        static readonly instance: TextureLoader;
+        load(path: string, onEnd?: (error?: string, data?: Texture) => void, onProgress?: (progress: null) => void): Texture;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+declare namespace QE {
+    class PrefabSerializer {
+        static serializeWithJson(jsonData: any): void;
+        static serializeWithBinary(): void;
+        static deserializeToJson(): void;
+        static deserializeToBinary(): void;
     }
 }
 declare namespace QE {
@@ -322,27 +621,6 @@ declare namespace QE {
         static colorToString(color: Color): string;
         static stringToColor(colorString: string): Color;
         clone(oriangl: Color): Color;
-    }
-}
-declare namespace QE {
-    type ComponentClassType<T extends Component> = new () => T;
-    class GameObject extends HashObject {
-        protected _transform: Transform;
-        protected _worldAABB: AABB;
-        protected _isActive: boolean;
-        private _componentList;
-        protected _name: string;
-        name: string;
-        readonly transform: Transform;
-        constructor(name?: string);
-        updateRenderQueue(renderQueue: RenderQueue): void;
-        addComponent<T extends Component>(compCls: ComponentClassType<T>): T;
-        getComponent<T extends Component>(compCls: ComponentClassType<T>): T;
-        getComponentInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean): T;
-        GetComponentInParent<T extends Component>(compCls: ComponentClassType<T>): T;
-        getComponents<T extends Component>(compCls: ComponentClassType<T>): T[];
-        getComponentsInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
-        getComponentsInParent<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
     }
 }
 declare namespace QE {
@@ -958,63 +1236,315 @@ declare namespace QE {
     }
 }
 declare namespace QE {
-    class Sound {
-        constructor();
+    class MeshFilter extends Component {
+        private _mesh;
+        mesh: Mesh;
     }
-}
-declare namespace QE {
-    class Video {
-        constructor();
-    }
-}
-declare namespace QE {
-    const enum XHRState {
-        Uninitialized = 0,
-        Open = 1,
-        Sent = 2,
-        Receiving = 3,
-        Loaded = 4
-    }
-    interface IAjaxOptions {
-        url: string;
-        method: string;
-        responseType: XMLHttpRequestResponseType;
-        async?: boolean;
-        data?: any;
-        headers?: {
-            [key: string]: string;
-        };
-        timeout?: number;
-        callback?: (err: string, data: any, xhr: XMLHttpRequest, status: number) => void;
-        thisObj?: Object;
-    }
-    type ResponseCallback = (err: string, data: any, xhr: XMLHttpRequest, status: number) => void;
     /**
-     * @class
-     * @static
+     * 网格
      */
-    class Http /** @lends QE.Http */ {
-        static _defaultOptions: IAjaxOptions;
-        private static _context;
-        static getUrlParam(url: any, data: any): any;
-        static getQueryData(data: any): string | FormData;
-        static getQueryString(data: any): string;
-        static ajax(options: IAjaxOptions): XMLHttpRequest;
+    class Mesh extends Resource {
+        sharedVertexData: WebGLVertexBuffer[];
+        id: number;
+        protected _name: string;
+        name: string;
         /**
-         *
-         * @param url
-         * @param data
-         * @param header
-         * @param callback
-         * @param thisObj
-         * @param isAsync
+         * 子网格数组
          */
-        static get(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
-        static post(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
-        static loadTxtAsync(url: string): Promise<string>;
-        static loadImageAsync(path: string): Promise<HTMLImageElement>;
-        static loadArrayBufferAsync(url: string): Promise<ArrayBuffer>;
-        static loadAudioBufferAsync(url: string): Promise<AudioBuffer>;
+        subMeshes: SubMesh[];
+        constructor();
+        copy(object: Mesh): void;
+        clone(): HashObject;
+        addSubMesh(subMesh: SubMesh): void;
+        createSubMesh(name: string): SubMesh;
+    }
+}
+declare namespace QE {
+    interface SubMeshData {
+        test: string;
+    }
+    interface MeshData {
+        id: number;
+        parent: number;
+        name: string;
+        normal: number[];
+        uv: number[];
+        position: number[];
+        subMeshes: SubMeshData[];
+        skinInfo?: any;
+    }
+    interface SkinData {
+        test: string;
+    }
+    interface SkinnedMeshData extends MeshData {
+        skins: SkinData[];
+    }
+    interface BoneData {
+        name: string;
+        id: number;
+        parentId: number;
+        position: Number3;
+        eulerAngle: Number3;
+        scale: Number3;
+    }
+    interface SkeletonData {
+        id: number;
+        size: number;
+        type: number;
+    }
+    interface PoseItem {
+        eNodeId: number;
+        id: number;
+        isLocalMatrix: boolean;
+        matrix: number[];
+    }
+    interface PoseData {
+        isBindPose: boolean;
+        isCharacter: boolean;
+        items: PoseItem[];
+    }
+    interface ModelData {
+        metadata: string;
+        materials?: string[];
+        textures?: string[];
+        skeleton?: SkeletonData[];
+        poses?: PoseData[];
+        hierarchy?: BoneData[];
+        meshes: MeshData[];
+        animations?: Object[];
+    }
+    class MeshSerializer {
+        static serializeByJson(meshData: MeshData, mesh: Mesh): void;
+        static loadModel(modelData: ModelData): GameObject;
+    }
+}
+declare namespace QE {
+    class SubMesh {
+        useSharedVertices: boolean;
+        vertexData: WebGLVertexBuffer[];
+        indexData: WebGLIndexBuffer;
+        renderOpType: RenderOperationType;
+        protected vertexAnimationType: VertexAnimationType;
+        parent: Mesh;
+        protected _materialName: string;
+        materialName: string;
+        constructor();
+        /**
+         * 复制一个新的SubMesh
+         * @param newName 新的SubMesh名称
+         * @param parentMesh 新的Submesh父Mesh, 如果为空, 父Mesh为被克隆的Mesh父Mesh
+         */
+        clone(newName: string, parentMesh?: Mesh): void;
+        getRenderOperation(renderOp: RenderOperation): void;
+    }
+}
+declare namespace QE {
+    function assert(cond: any, msg: any): void;
+}
+declare namespace QE {
+    interface IStringDictionary<TValue> {
+        [key: string]: TValue;
+    }
+    interface INumberDictionary<TValue> {
+        [key: string]: TValue;
+    }
+    class Dictionary<TValue> {
+        private data;
+        private list;
+        constructor(useOrderList?: boolean);
+        containsKey(key: string): boolean;
+        getValue(key: string): TValue;
+        getKeys(): string[];
+        getValues(): Array<TValue>;
+        add(key: string, value: TValue): void;
+        remove(key: string): void;
+        dispose(): void;
+    }
+}
+declare namespace QE {
+    type Action = () => void;
+    type Action1<T> = (t: T) => void;
+    type Action2<T1, T2> = (t: T1, t2: T2) => void;
+    type Action3<T1, T2, T3> = (t: T1, t2: T2, t3: T3) => void;
+    type Action4<T1, T2, T3, T4> = (t: T1, t2: T2, t3: T3, t4: T4) => void;
+    type Func<TResult> = () => TResult;
+    type Func1<T, TResult> = (t: T) => TResult;
+    type Func2<T1, T2, TResult> = (t: T1, t2: T2) => TResult;
+    type Func3<T1, T2, T3, TResult> = (t: T1, t2: T2, t3: T3) => TResult;
+    type Func4<T1, T2, T3, T4, TResult> = (t: T1, t2: T2, t3: T3, t4: T4) => TResult;
+    interface IQEListener {
+        _func: Action;
+        onCall: Action;
+    }
+    class QEListener<T> implements IQEListener {
+        _listener: T;
+        _func: Action;
+        constructor(listener: T, func: Action);
+        onCall(): void;
+    }
+    class QEEvent {
+        private _listeners;
+        add(listener: IQEListener): void;
+        del(listener: IQEListener): void;
+        clear(): void;
+        dispatchEvent(): void;
+    }
+    interface IQEListener1<P> {
+        _func: Action1<P>;
+        onCall: Action1<P>;
+    }
+    class QEListener1<T, P> implements IQEListener1<P> {
+        _listener: T;
+        _func: Action1<P>;
+        constructor(listener: T, func: Action1<P>);
+        onCall(p: P): void;
+    }
+    class QEEvent1<P> {
+        private _listeners;
+        add(listener: IQEListener1<P>): void;
+        del(listener: IQEListener1<P>): void;
+        clear(): void;
+        dispatchEvent(t: P): void;
+    }
+    interface IQEListener2<P1, P2> {
+        _func: Action2<P1, P2>;
+        onCall: Action2<P1, P2>;
+    }
+    class QEListener2<T, P1, P2> implements IQEListener2<P1, P2> {
+        _listener: T;
+        _func: Action2<P1, P2>;
+        constructor(listener: T, func: Action2<P1, P2>);
+        onCall(p1: P1, p2: P2): void;
+    }
+    class QEEvent2<P1, P2> {
+        private _listeners;
+        add(listener: IQEListener2<P1, P2>): void;
+        del(listener: IQEListener2<P1, P2>): void;
+        clear(): void;
+        dispatchEvent(p1: P1, p2: P2): void;
+    }
+    interface IQEListener3<P1, P2, P3> {
+        _func: Action3<P1, P2, P3>;
+        onCall: Action3<P1, P2, P3>;
+    }
+    class QEListener3<T, P1, P2, P3> implements IQEListener3<P1, P2, P3> {
+        _listener: T;
+        _func: Action3<P1, P2, P3>;
+        constructor(listener: T, func: Action3<P1, P2, P3>);
+        onCall(p1: P1, p2: P2, p3: P3): void;
+    }
+    class QEEvent3<P1, P2, P3> {
+        private _listeners;
+        add(listener: IQEListener3<P1, P2, P3>): void;
+        del(listener: IQEListener3<P1, P2, P3>): void;
+        clear(): void;
+        dispatchEvent(p1: P1, p2: P2, p3: P3): void;
+    }
+    interface IQEListener4<P1, P2, P3, P4> {
+        _func: Action4<P1, P2, P3, P4>;
+        onCall: Action4<P1, P2, P3, P4>;
+    }
+    class QEListener4<T, P1, P2, P3, P4> implements IQEListener4<P1, P2, P3, P4> {
+        _listener: T;
+        _func: Action4<P1, P2, P3, P4>;
+        constructor(listener: T, func: Action4<P1, P2, P3, P4>);
+        onCall(p1: P1, p2: P2, p3: P3, p4: P4): void;
+    }
+    class QEEvent4<P1, P2, P3, P4> {
+        private _listeners;
+        add(listener: IQEListener4<P1, P2, P3, P4>): void;
+        del(listener: IQEListener4<P1, P2, P3, P4>): void;
+        clear(): void;
+        dispatchEvent(p1: P1, p2: P2, p3: P3, p4: P4): void;
+    }
+}
+declare namespace QE {
+    interface IDestroyable {
+        isDestroyed(): boolean;
+        destroy(): void;
+    }
+}
+declare namespace QE {
+    class Log {
+        static D(...args: any[]): void;
+        static I(...args: any[]): void;
+        static W(...args: any[]): void;
+        static E(...args: any[]): void;
+        static F(...args: any[]): void;
+    }
+}
+declare namespace QE {
+    type MinHeapComparer<T> = (x: T, y: T) => number;
+    /**
+     * 最小堆
+     */
+    class MinHeap<T> {
+        protected _heap: T[];
+        protected _comparer: MinHeapComparer<T>;
+        protected _length: number;
+        constructor(comparer?: MinHeapComparer<T>);
+        /**
+         * 元素入队
+         * @param x
+         */
+        enqueue(x: T): boolean;
+        /**
+         * 最小元素出队
+         */
+        dequeue(): T;
+        /**
+         * 查看最小元素
+         */
+        peek(): T;
+        /**
+         * 堆元素数量
+         */
+        count(): number;
+        /**
+         * 清空队列
+         */
+        clear(): void;
+        protected filterDown(start: number, end: number): void;
+        protected filterUp(start: number): void;
+    }
+}
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */
+declare namespace QE {
+    /**
+     * 序列化属性
+     * @param {string|Function} fieldType
+     */
+    function SerializeField<T extends Component>(fieldType: 'number' | 'string' | 'function' | 'object' | 'array' | (new () => T)): (target: any, name: any, descriptor: any) => any;
+    class Serializer {
+    }
+}
+declare namespace QE {
+    module Timer {
+        /**
+         * 添加一个定时器
+         * @param callback 回调函数
+         * @param delay    延迟时间, 单位毫秒
+         * @param repeat   重复次数, 默认为0, 不重复
+         * @param interval 重复间隔时间, 单位毫秒
+         * @return 定时器id
+         */
+        function addTimer(callback: (dt: number) => void, delay: number, repeat?: number, interval?: number): number;
+        /**
+         * 删除一个定时器
+         * @param timerId 定时器id
+         */
+        function killTimer(timerId: number): void;
+        function update(dt: number): void;
+    }
+}
+declare namespace QE {
+    module UUID {
+        function newUuid(): string;
     }
 }
 declare namespace QE {
@@ -1023,45 +1553,6 @@ declare namespace QE {
     class BillboardSet extends GameObject {
         private _renderable;
         constructor();
-    }
-}
-declare namespace QE {
-    interface IScriptable {
-        onLoad?: () => void;
-        onUpdate?: (deltaTime: number) => void;
-    }
-    function DisallowMultipleComponent(constructor: any): void;
-    class Component extends HashObject implements IScriptable {
-        readonly node: GameObject;
-        readonly transform: Transform;
-        enabled: boolean;
-        constructor();
-        protected static __QE_DisallowMultipleComponent__: boolean;
-        protected static __QE_SerializedFieldMap?: {
-            [key: string]: any;
-        };
-        private static s_unStartedComponentArr;
-        private static s_startedComponentArr;
-        tag: string;
-        private _needCallStart;
-        private _node;
-        private _enable;
-        onLoad: () => void;
-        onUpdate: (deltaTime: number) => void;
-        onDebugDraw: () => void;
-        static load(): void;
-        static update(deltaTime: number): void;
-        protected onDestroy(): void;
-        compareTag(tag: string): boolean;
-        getComponent<T extends Component>(compCls: ComponentClassType<T>): T;
-        getComponentInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean): T;
-        GetComponentInParent<T extends Component>(compCls: ComponentClassType<T>): T;
-        getComponents<T extends Component>(compCls: ComponentClassType<T>): T[];
-        getComponentsInChildren<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
-        getComponentsInParent<T extends Component>(compCls: ComponentClassType<T>, includeInactive?: boolean, outCompList?: T[]): T[];
-        notifyAttachNode(val: GameObject): void;
-        private enqueueComponent;
-        private dequeueComponent;
     }
 }
 declare namespace QE {
@@ -1246,351 +1737,6 @@ declare namespace QE {
     }
 }
 declare namespace QE {
-    class MeshFilter extends Component {
-        private _mesh;
-        mesh: Mesh;
-    }
-    /**
-     * 网格
-     */
-    class Mesh extends HashObject {
-        sharedVertexData: WebGLVertexBuffer[];
-        id: number;
-        protected _name: string;
-        name: string;
-        /**
-         * 子网格数组
-         */
-        subMeshes: SubMesh[];
-        constructor();
-        copy(object: Mesh): void;
-        clone(): HashObject;
-        addSubMesh(subMesh: SubMesh): void;
-        createSubMesh(name: string): SubMesh;
-        update(): void;
-        protected loadImpl(): void;
-        protected unloadImpl(): void;
-    }
-}
-declare namespace QE {
-    class MeshManager {
-        static instance: MeshManager;
-        constructor();
-    }
-}
-declare namespace QE {
-    interface SubMeshData {
-    }
-    interface MeshData {
-        id: number;
-        parent: number;
-        name: string;
-        normal: number[];
-        uv: number[];
-        position: number[];
-        subMeshes: SubMeshData[];
-        skinInfo?: any;
-    }
-    interface SkinData {
-    }
-    interface SkinnedMeshData extends MeshData {
-        skins: SkinData[];
-    }
-    interface BoneData {
-        name: string;
-        id: number;
-        parentId: number;
-        position: Number3;
-        eulerAngle: Number3;
-        scale: Number3;
-    }
-    interface SkeletonData {
-        id: number;
-        size: number;
-        type: number;
-    }
-    interface PoseItem {
-        eNodeId: number;
-        id: number;
-        isLocalMatrix: boolean;
-        matrix: number[];
-    }
-    interface PoseData {
-        isBindPose: boolean;
-        isCharacter: boolean;
-        items: PoseItem[];
-    }
-    interface ModelData {
-        metadata: string;
-        materials?: string[];
-        textures?: string[];
-        skeleton?: SkeletonData[];
-        poses?: PoseData[];
-        hierarchy?: BoneData[];
-        meshes: MeshData[];
-        animations?: Object[];
-    }
-    class MeshSerializer {
-        static exportMeshWithJson(mesh: Mesh, filename: string): void;
-        static exportMeshWithBinary(mesh: Mesh, filename: string): void;
-        static importMeshWithJson(meshData: MeshData, mesh: Mesh): void;
-        static importMeshWithBinary(data: ArrayBuffer, mesh: Mesh): void;
-        static loadModel(modelData: ModelData): GameObject;
-    }
-}
-declare namespace QE {
-    class SubMesh {
-        useSharedVertices: boolean;
-        vertexData: WebGLVertexBuffer[];
-        indexData: WebGLIndexBuffer;
-        renderOpType: RenderOperationType;
-        protected vertexAnimationType: VertexAnimationType;
-        parent: Mesh;
-        protected _materialName: string;
-        materialName: string;
-        constructor();
-        /**
-         * 复制一个新的SubMesh
-         * @param newName 新的SubMesh名称
-         * @param parentMesh 新的Submesh父Mesh, 如果为空, 父Mesh为被克隆的Mesh父Mesh
-         */
-        clone(newName: string, parentMesh?: Mesh): void;
-        getRenderOperation(renderOp: RenderOperation): void;
-    }
-}
-declare namespace QE {
-    const enum VertexAnimationType {
-        NONE = 0,
-        MORPH = 1,
-        POSE = 2
-    }
-    /**
-     * 动画片段
-     * 动画片段包含一组动画曲线.每个曲线对应节点路径
-     */
-    class AnimationClip extends HashObject {
-        private _frameRate;
-        frameRate: number;
-        private _length;
-        length: number;
-        protected _name: string;
-        name: string;
-        private _keyFrameTimes;
-        private _keyFrameTimesDirty;
-        private _positionCurveDict;
-        private _scaleCurveDict;
-        private _eulerCurveDict;
-        private _numberCurveDict;
-        private _objCurveDict;
-        /**
-         *
-         */
-        constructor();
-        /**
-         * 添加一条曲线
-         * @param relativePath 曲线对应节点路径
-         * @param type 属性类型
-         * @param propertyName 属性名
-         * @param curve 曲线
-         */
-        addCurve(relativePath: string, type: Reflection.Type, propertyName: string, curve: AnimationCurve): void;
-        removeCurve(relativePath: string, type: string, propertyName: string): void;
-        /**
-         * 清除动画数据
-         */
-        clearAllCurves(): void;
-        apply(node: GameObject, timePos: number): void;
-        private _applyScale;
-        private _applyRotation;
-        private _applyPosition;
-        private _applyObj;
-        getTimeIndex(timePos: number): TimeIndex;
-        private buildKeyFrameTimeList;
-    }
-}
-declare namespace QE {
-    namespace AnimationCurve {
-        /**
-         * 插值模式
-         */
-        const enum InterpolationMode {
-            Liner = 0,
-            Spline = 1,
-            Constant = 2
-        }
-    }
-    /**
-     * 关键帧索引数据
-     */
-    interface TimeIndex {
-        timePos: number;
-        keyIndex: number;
-    }
-    /**
-     * timeline的指定时间点上，相邻的一对关键帧，以及时间系数
-     */
-    interface KeyFramePair {
-        t: number;
-        keyframe1: KeyFrame;
-        keyframe2: KeyFrame;
-        firstKeyFrameIndex?: number;
-    }
-    class AnimationCurve {
-        private _isObjCurve;
-        private _keyFrames;
-        _propName: string;
-        _valueType: Object;
-        _objInstance: Object;
-        constructor(objCurve?: boolean);
-        isObjectKeyFrame(): boolean;
-        getKeyFrameCount(): number;
-        addKeyFrame(keyFrame: KeyFrame, index?: number): void;
-        addKeyFrameByValue(time: number, value: number, inTangent?: number, outTangent?: number, index?: number): void;
-        moveKeyFrame(index: number, keyFrame: KeyFrame): void;
-        removeKeyFrame(index: number): void;
-        /**
-         * 根据时间索引, 取得当前一对关键帧
-         * @param {number} timePos 动画时间位置，这个时间应当和动画片段的总时间做过取余计算
-         * @param {number} keyIndex 帧索引
-         * @return {KeyFramePair}
-         */
-        protected getKeyFramePairAtTime(timePos: number, keyIndex?: number): KeyFramePair;
-        /**
-         * 根据时间索引, 计算关键帧插值
-         * @param {number} timePos 时间点
-         * @param {number} keyIndex 索引
-         */
-        getInterpolation(timePos: number, keyIndex?: number): number;
-        /**
-         * 收集所有关键帧时间
-         * @param outKeyFrameTimes 关键帧时间数组
-         */
-        _collectKeyFrameTimes(outKeyFrameTimes: number[]): void;
-        _buildKeyFrameIndexMap(outKeyFrameTimes: number[]): void;
-    }
-}
-declare namespace QE {
-}
-declare namespace QE {
-    enum AnimationBlendMode {
-        Add = 0
-    }
-    /**
-     * 动画控制器
-     * 动画控制器控制管理一组动画片段
-     */
-    class AnimationState {
-        private _blendMode;
-        blendMode: AnimationBlendMode;
-        private _clip;
-        readonly clip: AnimationClip;
-        enabled: boolean;
-        layer: number;
-        length: number;
-        name: string;
-        normalizedSpeed: number;
-        normalizedTime: number;
-        speed: number;
-        time: number;
-        weight: number;
-        wrapMode: AnimationCurve.InterpolationMode;
-        AddMixingTransform(mix: Transform, recursive?: boolean): void;
-        RemoveMixingTransform(mix: Transform): void;
-    }
-}
-declare namespace QE {
-    /**
-     * 动画播放器
-     * 动画控制器控制动画的状态切换
-     */
-    class Animator extends Component {
-        private _animController;
-        animController: AnimatorController;
-        private _playingClip;
-        private _timePos;
-        constructor();
-        play(animName: string): void;
-        stop(): void;
-        /**
-         * 更新动画
-         *@param {number} deltaTime 间隔时间
-         */
-        onUpdate: (deltaTime: number) => void;
-    }
-}
-declare namespace QE {
-    /**
-     * 动画控制器
-     * 动画控制器控制管理一组动画片段
-     */
-    class AnimatorController extends HashObject {
-        private _animationClips;
-        animationClips: AnimationClip[];
-        constructor();
-        addClip(clip: AnimationClip): void;
-        removeClip(clip: AnimationClip): void;
-    }
-}
-declare namespace QE {
-    /**
-     * 骨骼
-     */
-    class Bone {
-        private _skeleton;
-        private _name;
-        name: string;
-        private _handle;
-        handle: number;
-        private _node;
-        node: GameObject;
-        private _firstChild;
-        constructor(skeleton: Skeleton, name?: string);
-        _update(updateChilren: boolean, parentHasChanged: boolean): void;
-    }
-}
-declare namespace QE {
-    /**
-     *
-     */
-    class KeyFrame {
-        protected _time: number;
-        /**
-         * 返回关键帧所在时间，以毫秒为单位
-         *@return {number}
-         */
-        /**
-        * 设置关键帧所在时间，以毫秒为单位
-        *@param {number} val 时间
-        */
-        time: number;
-        protected _value: number;
-        value: number;
-        private _inTangent;
-        inTangent: number;
-        private _outTangent;
-        outTangent: number;
-        protected _interpolationMode: AnimationCurve.InterpolationMode;
-        interpolationMode: AnimationCurve.InterpolationMode;
-        protected _parentTrack: any;
-        constructor(time: number, value: number, inTangent?: number, outTangent?: number);
-    }
-}
-declare namespace QE {
-    class Skeleton {
-        private _name;
-        private _rootBones;
-        private _boneMapByName;
-        private _boneMapByPath;
-        constructor(name: string);
-        createBone(name: string, relativePath: string): Bone;
-        getRootBone(): Bone;
-        getBone(name: string): Bone;
-        getBoneByPath(relativePath: string): Bone;
-        hasBone(name: string): boolean;
-        updateTransforms(): void;
-    }
-}
-declare namespace QE {
     const enum RenderOperationType {
         POINT_LIST = 0,
         LINE_LIST = 1,
@@ -1672,21 +1818,6 @@ declare namespace QE {
         isMultiMaterial(): boolean;
         getRenderOperation(): RenderOperation;
         getWorldTransforms(): Matrix4;
-    }
-}
-/**
- *  -
- *
- * create by wjl at
- *
- */
-declare namespace QE {
-    /**
-     * 序列化属性
-     * @param {string|Function} fieldType
-     */
-    function SerializeField<T extends Component>(fieldType: 'number' | 'string' | 'function' | 'object' | 'array' | (new () => T)): (target: any, name: any, descriptor: any) => any;
-    class Serializer {
     }
 }
 declare namespace QE {
@@ -2003,7 +2134,6 @@ declare namespace QE {
         _setTexture(unit: number, enable: boolean, tex: Texture): void;
         private _bindRenderState;
         bindGpuProgram(gpuProgram: GLShaderProgram): void;
-        private _bindVertexElement;
         onResize(w: number, h: number): void;
         setWorldMatrix(worldMatrix: Matrix4): void;
         getWorldMatrix(): Matrix4;
@@ -2050,83 +2180,6 @@ declare namespace QE {
     }
 }
 declare namespace QE {
-    /**
-     * 资源类型
-     */
-    enum ResType {
-        Texture = 0,
-        TEXT = 1,
-        BINARY = 2,
-        FBX = 3,
-        MATERIAL = 4,
-        SHADER = 5,
-        SCENE = 6,
-        ANIM = 7,
-        FONT = 8,
-        PREFAB = 9
-    }
-    type ResourceClassType<T extends Resource> = new (filePath: string) => T;
-    function extname(path: string): string;
-    class ResourceManager {
-        static readonly BUILTIN_DEF_WHITE_TEX_NAME: string;
-        private static _loaderMap;
-        private static _resMap;
-        static get<T extends Resource>(path: string): T;
-        static load<T extends Resource>(path: string, onProgress?: (progress: number) => void): Promise<T>;
-        static unload(url: string): void;
-        static removeUnusedResources(): void;
-        static init(onFinished: () => void): void;
-        /**
-         * 构建引擎内置资源
-         * @param onFinished
-         */
-        static makeBuiltinRes(onFinished?: Function): void;
-        static setLoader(extName: string | string[], loader: IResLoader<any>): void;
-    }
-}
-declare namespace QE {
-    /**
-     * 资源加载状态
-     */
-    const enum ResState {
-        UnLoaded = 0,
-        Loading = 1,
-        Loaded = 2,
-        Prepared = 3,
-        Preparing = 4
-    }
-    class ResourceDependence extends HashObject {
-        _mainRes: Resource;
-        _subRes: Resource;
-        _listener: QEListener<ResourceDependence>;
-        constructor(mainRes: Resource, subRes: Resource);
-        getMainRes(): Resource;
-        getSubRes(): Resource;
-        destroy(): void;
-        private _onLoaded;
-    }
-    abstract class Resource extends RefObj {
-        protected _group: string;
-        protected _dependenceFiles: Array<ResourceDependence>;
-        protected _name: string;
-        name: string;
-        _priority: number;
-        priority: number;
-        protected _state: ResState;
-        state: ResState;
-        readonly isComplete: boolean;
-        _loadedEvent: QEEvent1<Resource>;
-        _unloadedEvent: QEEvent1<Resource>;
-        protected constructor(name?: string, group?: string);
-        abstract clone(): HashObject;
-        copy(object: HashObject): void;
-        _addDependence(subResource: Resource): void;
-        _removeDependence(pSubResource: Resource): void;
-        _removeAllDependence(): void;
-        _hasDependencies(): boolean;
-    }
-}
-declare namespace QE {
     const enum TextureUsage {
         STATIC = 1,
         DYNAMIC = 2,
@@ -2168,7 +2221,6 @@ declare namespace QE {
         loadRawData(data: ArrayBuffer, width: number, height: number): void;
         destroy(): void;
         protected createWebGLTexture(): void;
-        protected unloadImpl(): void;
     }
 }
 declare namespace QE {
@@ -2177,7 +2229,6 @@ declare namespace QE {
      */
     class Material extends Resource {
         constructor(name?: string);
-        static ClassName: string;
         private static _defaultCubeMaterial;
         private static _defMatGLTex;
         name: any;
@@ -2203,8 +2254,6 @@ declare namespace QE {
         static getDefaultCubeMaterial(): Material;
         copy(object: HashObject): void;
         clone(): HashObject;
-        protected loadImpl(): void;
-        protected unloadImpl(): void;
     }
 }
 declare namespace QE {
@@ -2380,22 +2429,20 @@ declare namespace QE {
         protected _vertexBuffers: WebGLVertexBuffer[];
         static getGLUsage(usage: BufferUsage): number;
         init(): void;
-        createIndexBuffer(numIndexes: number, usage: BufferUsage, useShadowBuffer: boolean): WebGLIndexBuffer;
+        createIndexBuffer(indexes: number[], usage: BufferUsage, useShadowBuffer: boolean): WebGLIndexBuffer;
         createVertexBuffer(stride: number, count: number, normalize: boolean, usage: BufferUsage): WebGLVertexBuffer;
     }
 }
 declare namespace QE {
     class WebGLIndexBuffer {
+        private readonly _usage;
         private _buffer;
-        _usage: BufferUsage;
-        private _count;
-        readonly count: number;
         _data: Uint16Array;
-        constructor(numIndexes: number, usage: BufferUsage, useShadowBuffer: boolean);
+        readonly count: number;
+        constructor(indexes: number[], usage: BufferUsage, useShadowBuffer: boolean);
         createBuffer(): void;
         getGLIndexBuffer(): WebGLBuffer;
         dispose(): void;
-        writeData(data: number[]): void;
         bindBuffer(): void;
     }
 }
@@ -2414,8 +2461,8 @@ declare namespace QE {
         _size: number;
         _stride: number;
         _normalized: boolean;
-        _usage: BufferUsage;
-        _data: ArrayBuffer;
+        private readonly _usage;
+        private _data;
         type: VertexElementType;
         semantic: VertexElementSemantic;
         vertexCount: number;
@@ -2436,96 +2483,168 @@ declare namespace QE {
     }
 }
 declare namespace QE {
-    class TextResource extends Resource {
-        private _text;
-        text: string;
+    class Sound {
         constructor();
-        clone(): HashObject;
-    }
-}
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-declare namespace QE {
-    interface LoadResResult<T> {
-        error?: string;
-        res?: T;
-    }
-    interface IResLoader<T> {
-        load(path: string, onEnd?: (error?: string, data?: T) => void, onProgress?: (progress: null) => void): T;
-    }
-}
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-/**
- *  -
- *
- * create by wjl at
- *
- */ 
-declare namespace QE {
-    class TextResourceLoader implements IResLoader<TextResource> {
-        static readonly instance: TextResourceLoader;
-        private _tasks;
-        private _isLoading;
-        private _res;
-        load(path: string, onEnd?: (error?: string, data?: TextResource) => void, onProgress?: (progress: null) => void): TextResource;
     }
 }
 declare namespace QE {
-    class TextureLoader implements IResLoader<Texture> {
-        static readonly instance: TextureLoader;
-        load(path: string, onEnd?: (error?: string, data?: Texture) => void, onProgress?: (progress: null) => void): Texture;
+    class Video {
+        constructor();
     }
 }
 declare namespace QE {
-}
-declare namespace QE {
-    const CUBE_SIZE = 1;
-    const CUBE_HALF_SIZE: number;
-    const CubeMeshData: {
-        vertices: number[];
-        colors: number[];
-        indices: number[];
-        normals: number[];
-        uvs: number[];
-    };
-    class PrefabFactory {
-        static createCube(mesh: Mesh): void;
-        static createSphere(mesh: Mesh): void;
+    const enum XHRState {
+        Uninitialized = 0,
+        Open = 1,
+        Sent = 2,
+        Receiving = 3,
+        Loaded = 4
+    }
+    interface IAjaxOptions {
+        url: string;
+        method: string;
+        responseType: XMLHttpRequestResponseType;
+        async?: boolean;
+        data?: any;
+        headers?: {
+            [key: string]: string;
+        };
+        timeout?: number;
+        callback?: (err: string, data: any, xhr: XMLHttpRequest, status: number) => void;
+        thisObj?: Object;
+    }
+    type ResponseCallback = (err: string, data: any, xhr: XMLHttpRequest, status: number) => void;
+    /**
+     * @class
+     * @static
+     */
+    class Http /** @lends QE.Http */ {
+        static _defaultOptions: IAjaxOptions;
+        private static _context;
+        static getUrlParam(url: any, data: any): any;
+        static getQueryData(data: any): string | FormData;
+        static getQueryString(data: any): string;
+        static ajax(options: IAjaxOptions): XMLHttpRequest;
+        /**
+         *
+         * @param url
+         * @param data
+         * @param header
+         * @param callback
+         * @param thisObj
+         * @param isAsync
+         */
+        static get(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
+        static post(url: string, data?: any, callback?: ResponseCallback, thisObj?: any, isAsync?: boolean): XMLHttpRequest;
+        static loadTxtAsync(url: string): Promise<string>;
+        static loadJsonAsync(url: string): Promise<any>;
+        static loadImageAsync(path: string): Promise<HTMLImageElement>;
+        static loadArrayBufferAsync(url: string): Promise<ArrayBuffer>;
+        static loadAudioBufferAsync(url: string): Promise<AudioBuffer>;
     }
 }
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
+/**
+ *  -
+ *
+ * create by wjl at
+ *
+ */ 
 declare namespace QE {
     module Reflection {
         class Type {
