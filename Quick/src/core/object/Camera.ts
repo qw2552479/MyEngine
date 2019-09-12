@@ -80,7 +80,7 @@ namespace QE {
         }
 
         public setCameraType(cameraType: CameraType) {
-            if (this._cameraType != cameraType) {
+            if (this._cameraType !== cameraType) {
                 this._cameraType = cameraType;
                 this._isDirty = true;
             }
@@ -91,7 +91,7 @@ namespace QE {
         }
 
         public setFOV(fovY: number) {
-            if (this._fovY != fovY) {
+            if (this._fovY !== fovY) {
                 this._fovY = fovY;
                 this._viewportDirty = true;
             }
@@ -102,7 +102,7 @@ namespace QE {
         }
 
         public setNearClip(near: number) {
-            if (this._near != near) {
+            if (this._near !== near) {
                 this._near = near;
                 this._viewportDirty = true;
             }
@@ -113,7 +113,7 @@ namespace QE {
         }
 
         public setFarClip(far: number) {
-            if (this._far != far) {
+            if (this._far !== far) {
                 this._far = far;
                 this._viewportDirty = true;
             }
@@ -124,7 +124,7 @@ namespace QE {
         }
 
         public setAspect(aspect: number) {
-            if (this._aspect != aspect) {
+            if (this._aspect !== aspect) {
                 this._aspect = aspect;
                 this._viewportDirty = true;
             }

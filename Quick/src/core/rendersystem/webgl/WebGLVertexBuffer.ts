@@ -13,8 +13,8 @@ namespace QE {
         public semantic: VertexElementSemantic; // 顶点数据语义, 指明此顶点代表哪种类型的顶点
 
         public vertexCount = 0;
+        public usage: BufferUsage;
 
-        private readonly _usage: BufferUsage;
         private _data: ArrayBuffer;
         private _webGLBuffer: WebGLBuffer;
 
@@ -28,8 +28,8 @@ namespace QE {
         public constructor(stride: number, size: number, normalize: boolean, usage: BufferUsage) {
             this.stride = stride;
             this.size = size;
-            this._usage = usage;
             this.normalized = normalize;
+            this.usage = usage;
 
             this.createBuffer();
         }
@@ -83,7 +83,7 @@ namespace QE {
             }
 
             gl.bindBuffer(gl.ARRAY_BUFFER, this._webGLBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, this._data, WebGLBufferManager.getGLUsage(this._usage));
+            gl.bufferData(gl.ARRAY_BUFFER, this._data, WebGLBufferManager.getGLUsage(this.usage));
         }
     }
 

@@ -184,7 +184,7 @@ namespace QE {
             //    meshes: MeshData[];
             //    animations?: Object[];
             // }
-            const hierarchyData = modelData.hierarchy;
+            const hierarchyData = modelData.hierarchy || [];
             const hierarchy: { [key: number]: GameObject } = {};
             for (let i = 0, len = hierarchyData.length; i < len; i++) {
 

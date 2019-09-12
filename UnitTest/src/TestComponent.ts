@@ -1,26 +1,26 @@
-﻿module UnitTest {
+module UnitTest {
 
     class TestComponent extends QE.Component {
 
         onLoad = function () {
-            console.log("UnitTest.TestComponent onLoad");
-        }
+            console.log('UnitTest.TestComponent onLoad');
+        };
 
         onUpdate = function () {
-            console.log("UnitTest.TestComponent onUpdate");
-        }
+            console.log('UnitTest.TestComponent onUpdate');
+        };
 
     }
 
     export function testComponent() {
 
-        let mainScene = QE.SceneManager.instance.currentScene;
-       
-        let emptyNode = mainScene.createNode();
+        const mainScene = QE.SceneManager.instance.currentScene;
 
-        let testComponent = emptyNode.addComponent<TestComponent>(TestComponent);
+        const emptyNode = mainScene.createNode();
+
+        const testComponent = emptyNode.addComponent<TestComponent>(TestComponent);
 
         return testComponent;
     }
 
-} 
+}

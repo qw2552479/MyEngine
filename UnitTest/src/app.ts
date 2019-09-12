@@ -15,15 +15,15 @@ module UnitTest {
             height: 1280,
             div: div,
             debugMode: false,
-            onEnginePrepared: () => {
+            onEnginePrepared: async () => {
                 // testTextLoader();
                 // testEvent();
                 // TestGetSet.run();
                 // testMinHeap();
                 // UnitTest.TestMatrix.run();
-                testSprite();
+                // await testSprite();
                 // testAnimation();
-                // testGeometry();
+                testGeometry();
                 // testFbxModel();
             }
         });

@@ -18,7 +18,7 @@ namespace QE {
     export class RenderOperation {
 
         public indexBuffer: WebGLIndexBuffer;
-        public vertexBuffers: WebGLVertexBuffer[]; // 顶点缓冲数组, 颜色缓冲,深度缓冲,模板缓冲
+        public vertexBuffers: WebGLVertexBuffer[] = []; // 顶点缓冲数组, 颜色缓冲,深度缓冲,模板缓冲
         public renderOpType: RenderOperationType = RenderOperationType.TRIANGLE_LIST;
         public primCount: number;
         public numberOfInstances = 0;

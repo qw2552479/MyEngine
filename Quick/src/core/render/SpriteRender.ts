@@ -103,7 +103,6 @@ namespace QE {
             texBuf.vertexCount = 8;
             texBuf.writeData((new Float32Array([0, 0, 1, 0, 1, 1, 0, 1])).buffer);
 
-            renderOp.vertexBuffers = [];
             renderOp.vertexBuffers[0] = posBuf;
             renderOp.vertexBuffers[1] = colBuf;
             renderOp.vertexBuffers[2] = texBuf;

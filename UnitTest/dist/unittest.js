@@ -12,10 +12,11 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -59,9 +60,8 @@ var UnitTest;
         var cameraNode = mainCamera.transform;
         cameraNode.localPosition = new QE.Vector3(0, 0, -6);
         // mesh
-        var mesh = new QE.Mesh();
+        var mesh = QE.BuiltinResFactory.getCube();
         mesh.name = 'myMesh';
-        QE.PrefabFactory.createCube(mesh);
         var node = mainScene.createNode();
         var meshRender = node.addComponent(QE.MeshRender);
         meshRender.mesh = mesh;
@@ -69,15 +69,14 @@ var UnitTest;
         node.transform.localPosition = new QE.Vector3(0, 0, 0);
         node.name = 'Node';
         // mesh
-        var sphereMesh = new QE.Mesh();
+        var sphereMesh = QE.BuiltinResFactory.getSphere();
         sphereMesh.name = 'mySphereMesh';
-        QE.PrefabFactory.createCube(sphereMesh);
         var sphereNode = mainScene.createNode(node.transform);
         sphereNode.name = 'sphereNode';
         var sphereMeshRender = sphereNode.addComponent(QE.MeshRender);
         sphereMeshRender.mesh = sphereMesh;
         sphereMeshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
-        QE.ResourceManager.load('assets/res/icon.png').then(function (tex) {
+        QE.ResourceManager.load('assets/assets/icon.png').then(function (tex) {
             sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
             sphereNode.transform.localPosition = new QE.Vector3(1, 0, 0);
             sphereNode.transform.localScale = new QE.Vector3(0.5, 0.5, 0.5);
@@ -130,10 +129,10 @@ var UnitTest;
         function TestComponent() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.onLoad = function () {
-                console.log("UnitTest.TestComponent onLoad");
+                console.log('UnitTest.TestComponent onLoad');
             };
             _this.onUpdate = function () {
-                console.log("UnitTest.TestComponent onUpdate");
+                console.log('UnitTest.TestComponent onUpdate');
             };
             return _this;
         }
@@ -272,17 +271,19 @@ var UnitTest;
         cameraNode.localPosition = new QE.Vector3(0, 0, -3);
         cameraNode.localEulerAngle = new QE.Vector3(45, 45, 0);
         // mesh
-        var mesh = new QE.Mesh();
+        var mesh = QE.BuiltinResFactory.getCube();
         mesh.name = 'myMesh';
-        QE.PrefabFactory.createCube(mesh);
         // mesh
-        var sphereMesh = new QE.Mesh();
+        var sphereMesh = QE.BuiltinResFactory.getSphere();
         sphereMesh.name = 'mySphereMesh';
-        QE.PrefabFactory.createSphere(sphereMesh);
         var node = mainScene.createNode();
         var meshRender = node.addComponent(QE.MeshRender);
         meshRender.mesh = sphereMesh;
         meshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
+        // meshRender.getMaterial().textures
+        QE.ResourceManager.load('UnitTest/assets/res/icon.png').then(function (tex) {
+            QE.Material.getDefaultCubeMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
+        });
         node.transform.localPosition = new QE.Vector3(0, 0, 0);
         node.name = 'Node';
         var rot = new QE.Quaternion();
@@ -290,7 +291,7 @@ var UnitTest;
         var y = 0;
         var z = 0;
         setInterval(function () {
-            // node.transform.localRotation = rot.FromEulerAngle(new QE.Vector3(x, y++, z));
+            node.transform.localRotation = rot.fromEulerAngle(new QE.Vector3(x, y++, z));
             // node.transform.localPosition = new QE.Vector3((x++) * 0.01, 0, 0);
         }, 100);
     }
@@ -326,38 +327,38 @@ var UnitTest;
         function run() {
             var count = 1000;
             var testObj = new TestGetSetObj();
-            //for (let i = 0; i < count; i++) {
+            // for (let i = 0; i < count; i++) {
             //    array[i] = i;
             //    floatArray[i] = i;
-            //}
-            console.time("get function");
+            // }
+            console.time('get function');
             for (var i = 0; i < count; i++) {
                 var t = testObj.hehe;
             }
-            console.timeEnd("get function");
-            console.time("property value");
+            console.timeEnd('get function');
+            console.time('property value');
             for (var i = 0; i < count; i++) {
                 var t = testObj._hehe;
             }
-            console.timeEnd("property value");
-            console.time("getHehe function");
+            console.timeEnd('property value');
+            console.time('getHehe function');
             for (var i = 0; i < count; i++) {
                 var t = testObj.getHehe();
             }
-            console.timeEnd("getHehe function");
+            console.timeEnd('getHehe function');
         }
         TestGetSet.run = run;
     })(TestGetSet = UnitTest.TestGetSet || (UnitTest.TestGetSet = {}));
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
-    //最小堆：根结点的键值是所有堆结点键值中最小者。
+    // 最小堆：根结点的键值是所有堆结点键值中最小者。
     function testMinHeap() {
-        //let k, n = 11, a = [0, 5, 2, 4, 9, 7, 3, 1, 10, 8, 6];
-        //let test = new QE.MinHeap<number>();
-        //for (k = 0; k < n; k++)
+        // let k, n = 11, a = [0, 5, 2, 4, 9, 7, 3, 1, 10, 8, 6];
+        // let test = new QE.MinHeap<number>();
+        // for (k = 0; k < n; k++)
         //    test.enqueue(a[k]);
-        //for (k = 0; k < n; k++)
+        // for (k = 0; k < n; k++)
         //    console.log(test.dequeue());
         function comparer(x, y) {
             return x.v - y.v;
@@ -376,17 +377,19 @@ var UnitTest;
             { v: 6, b: 2 }
         ];
         var test = new QE.MinHeap(comparer);
-        for (k = 0; k < n; k++)
+        for (k = 0; k < n; k++) {
             test.enqueue(a[k]);
-        for (k = 0; k < n; k++)
+        }
+        for (k = 0; k < n; k++) {
             console.log(test.dequeue());
+        }
     }
     UnitTest.testMinHeap = testMinHeap;
 })(UnitTest || (UnitTest = {}));
 var UnitTest;
 (function (UnitTest) {
     function testTextLoader() {
-        QE.ResourceManager.load('assets/res/test.txt').then(function (textRes) {
+        QE.ResourceManager.load('assets/assets/test.txt').then(function (textRes) {
             console.log(textRes.text);
         });
     }
@@ -441,23 +444,26 @@ var UnitTest;
 (function (UnitTest) {
     // TODO: 重构测试框架
     function run() {
+        var _this = this;
         var div = document.getElementById('gameDiv');
         QE.run({
             width: 720,
             height: 1280,
             div: div,
             debugMode: false,
-            onEnginePrepared: function () {
-                // testTextLoader();
-                // testEvent();
-                // TestGetSet.run();
-                // testMinHeap();
-                // UnitTest.TestMatrix.run();
-                UnitTest.testSprite();
-                // testAnimation();
-                // testGeometry();
-                // testFbxModel();
-            }
+            onEnginePrepared: function () { return __awaiter(_this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    // testTextLoader();
+                    // testEvent();
+                    // TestGetSet.run();
+                    // testMinHeap();
+                    // UnitTest.TestMatrix.run();
+                    // await testSprite();
+                    // testAnimation();
+                    UnitTest.testGeometry();
+                    return [2 /*return*/];
+                });
+            }); }
         });
     }
     UnitTest.run = run;
@@ -501,3 +507,5 @@ function findChild(name) {
     var rootChild = QE.SceneManager.instance.currentScene.children[1].transform.node;
     return rootChild.transform.find(name);
 }
+
+//# sourceMappingURL=unittest.js.map

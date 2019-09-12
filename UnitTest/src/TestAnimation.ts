@@ -20,9 +20,8 @@ module UnitTest {
         cameraNode.localPosition = new QE.Vector3(0, 0, -6);
 
         // mesh
-        const mesh = new QE.Mesh();
+        const mesh = QE.BuiltinResFactory.getCube();
         mesh.name = 'myMesh';
-        QE.PrefabFactory.createCube(mesh);
 
         const node = mainScene.createNode();
 
@@ -33,10 +32,8 @@ module UnitTest {
         node.transform.localPosition = new QE.Vector3(0, 0, 0);
         node.name = 'Node';
         // mesh
-        const sphereMesh = new QE.Mesh();
+        const sphereMesh = QE.BuiltinResFactory.getSphere();
         sphereMesh.name = 'mySphereMesh';
-
-        QE.PrefabFactory.createCube(sphereMesh);
 
         const sphereNode = mainScene.createNode(node.transform);
         sphereNode.name = 'sphereNode';
@@ -45,7 +42,7 @@ module UnitTest {
         sphereMeshRender.mesh = sphereMesh;
         sphereMeshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
 
-        QE.ResourceManager.load<QE.Texture>('assets/res/icon.png').then((tex: QE.Texture) => {
+        QE.ResourceManager.load<QE.Texture>('assets/assets/icon.png').then((tex: QE.Texture) => {
             sphereMeshRender.getMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
 
             sphereNode.transform.localPosition = new QE.Vector3(1, 0, 0);

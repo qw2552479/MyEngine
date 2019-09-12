@@ -18,14 +18,14 @@ namespace QE {
             return this._children.length;
         }
 
-         /**
+        /**
          * 返回父节点
          */
         public get parent() {
             return this._parent;
         }
 
-         /**
+        /**
          * 设置父节点
          * @param {QE.Transform} parent 父节点, 为空则从当前父节点删除
          */
@@ -273,6 +273,7 @@ namespace QE {
 
             return worldMatrix;
         }
+
         protected _children: Transform[] = [];
         protected _parent: Transform = undefined;
 
@@ -302,9 +303,9 @@ namespace QE {
         private _childNameDict: { [key: string]: Transform } = {};
 
         public removeChildren() {
-            const childs = this._children;
-            for (let i = 0, len = childs.length; i < len; i++) {
-                const c = childs[i];
+            const children = this._children;
+            for (let i = 0, len = children.length; i < len; i++) {
+                const c = children[i];
                 c.parent = null;
             }
             this._children = [];
@@ -312,9 +313,9 @@ namespace QE {
         }
 
         public getChildByIndex(index: number) {
-            const childs = this._children;
+            const children = this._children;
 
-            if (index < 0 || index >= childs.length) {
+            if (index < 0 || index >= children.length) {
                 throw new Error('out of range');
             }
 
@@ -348,10 +349,8 @@ namespace QE {
                 return null;
             }
 
-            let theNode: Transform;
-
             const name = pathSegment[startIdx];
-            if (this.node.name != name) {
+            if (this.node.name !== name) {
                 return null;
             }
 
@@ -359,9 +358,9 @@ namespace QE {
                 return this;
             }
 
-            const childs = this._children;
-            for (let i = 0, len = childs.length; i < len; i++) {
-                const find = childs[i]._findByPath(pathSegment, startIdx + 1);
+            const children = this._children;
+            for (let i = 0, len = children.length; i < len; i++) {
+                const find = children[i]._findByPath(pathSegment, startIdx + 1);
                 if (find) {
                     return find;
                 }
@@ -369,7 +368,6 @@ namespace QE {
         }
 
         public findChild(name: string): Transform {
-            const thisChildNameDict = this._childNameDict;
             const pathSegment = name.split('/').splice(0, 0, this.node.name + '/');
             return this._findByPath(pathSegment, 1);
         }
@@ -390,17 +388,17 @@ namespace QE {
 
             // 子节点树改变或者父节点改变，都需要更新子节点
             if (this._needChildUpdate || parentHasChanged) {
-                const childs = this._children;
-                for (let i = 0, len = childs.length; i < len; i++) {
-                    childs[i].update(true, true);
+                const children = this._children;
+                for (let i = 0, len = children.length; i < len; i++) {
+                    children[i].update(true, true);
                 }
 
                 this._needChildUpdate = false;
             } else {
                 // 存在待更新的子节点
-                const childs = this._childrenToUpdate;
-                for (let i = 0, len = childs.length; i < len; i++) {
-                    childs[i].update(true, false);
+                const childrenToUpdate = this._childrenToUpdate;
+                for (let i = 0, len = childrenToUpdate.length; i < len; i++) {
+                    childrenToUpdate[i].update(true, false);
                 }
             }
 

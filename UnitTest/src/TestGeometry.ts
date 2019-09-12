@@ -1,41 +1,42 @@
-﻿module UnitTest {
+module UnitTest {
 
     export function testGeometry() {
 
-        let mainScene = QE.SceneManager.instance.currentScene;
-        let mainCamera = QE.Camera.MainCamera;
+        const mainScene = QE.SceneManager.instance.currentScene;
+        const mainCamera = QE.Camera.MainCamera;
         mainCamera.setCameraType(QE.CameraType.Perspective);
         mainCamera.renderContext.setColorClear(QE.ClearMask.ALL, [0, 0, 0, 0], 1, 0);
 
-        let cameraNode = mainCamera.transform;
+        const cameraNode = mainCamera.transform;
         cameraNode.localPosition = new QE.Vector3(0, 0, -3);
         cameraNode.localEulerAngle = new QE.Vector3(45, 45, 0);
 
         // mesh
-        let mesh = new QE.Mesh();
+        const mesh = QE.BuiltinResFactory.getCube();
         mesh.name = 'myMesh';
-        QE.PrefabFactory.createCube(mesh);
         // mesh
-        let sphereMesh = new QE.Mesh();
+        const sphereMesh = QE.BuiltinResFactory.getSphere();
         sphereMesh.name = 'mySphereMesh';
 
-        QE.PrefabFactory.createSphere(sphereMesh);
-
-        let node = mainScene.createNode();
-        let meshRender = node.addComponent<QE.MeshRender>(QE.MeshRender);
+        const node = mainScene.createNode();
+        const meshRender = node.addComponent<QE.MeshRender>(QE.MeshRender);
         meshRender.mesh = sphereMesh;
         meshRender.setMaterial(QE.Material.getDefaultCubeMaterial());
+        // meshRender.getMaterial().textures
+        QE.ResourceManager.load<QE.Texture>('UnitTest/assets/res/icon.png').then((tex) => {
+            QE.Material.getDefaultCubeMaterial().shader.shaderPasses[0].getSamplers()[0].samplerTex = tex;
+        });
 
         node.transform.localPosition = new QE.Vector3(0, 0, 0);
         node.name = 'Node';
-        let rot = new QE.Quaternion();
+        const rot = new QE.Quaternion();
 
-        let x = 0;
+        const x = 0;
         let y = 0;
-        let z = 0;
+        const z = 0;
 
         setInterval(function () {
-            // node.transform.localRotation = rot.FromEulerAngle(new QE.Vector3(x, y++, z));
+            node.transform.localRotation = rot.fromEulerAngle(new QE.Vector3(x, y++, z));
             // node.transform.localPosition = new QE.Vector3((x++) * 0.01, 0, 0);
         }, 100);
     }

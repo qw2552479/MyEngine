@@ -2,7 +2,7 @@ namespace QE {
     export class WebGLIndexBuffer {
         private readonly _usage: BufferUsage;
         private _buffer: WebGLBuffer;
-        public _data: Uint16Array;
+        private _data: Uint16Array;
 
         public get count() {
             return this._data.length;

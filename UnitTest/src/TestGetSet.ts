@@ -1,4 +1,4 @@
-﻿module UnitTest.TestGetSet {
+module UnitTest.TestGetSet {
 
     // 测试js不同方式获取值的性能
     // 1. get set方法
@@ -22,30 +22,30 @@
 
     export function run() {
 
-        let count = 1000;
-        let testObj = new TestGetSetObj();
-        //for (let i = 0; i < count; i++) {
+        const count = 1000;
+        const testObj = new TestGetSetObj();
+        // for (let i = 0; i < count; i++) {
         //    array[i] = i;
         //    floatArray[i] = i;
-        //}
+        // }
 
-        console.time("get function");
+        console.time('get function');
         for (let i = 0; i < count; i++) {
-            let t = testObj.hehe;
+            const t = testObj.hehe;
         }
-        console.timeEnd("get function");
+        console.timeEnd('get function');
 
-        console.time("property value");
+        console.time('property value');
         for (let i = 0; i < count; i++) {
-            let t = testObj._hehe;
+            const t = testObj._hehe;
         }
-        console.timeEnd("property value");
+        console.timeEnd('property value');
 
-        console.time("getHehe function");
+        console.time('getHehe function');
         for (let i = 0; i < count; i++) {
-            let t = testObj.getHehe();
+            const t = testObj.getHehe();
         }
-        console.timeEnd("getHehe function");
+        console.timeEnd('getHehe function');
     }
 
 }

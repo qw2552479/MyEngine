@@ -5,6 +5,7 @@
     "sourceMap": true,
     "outFile": "dist/quick.js",
     "declaration": true,
+    "declarationMap": false,
     "experimentalDecorators": true,
     "lib": [
       "dom",
